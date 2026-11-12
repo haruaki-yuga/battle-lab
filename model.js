@@ -34,7 +34,7 @@ export function ensureTargetCriteria(rule){
 export const ACTIONS={attack:'通常攻撃',skill:'指定アクティブスキル',effectiveAttack:'効果的な攻撃',healHP:'効果的なHP回復スキル',healAP:'効果的なAP回復スキル',healBS:'効果的なBS回復スキル',focusAttack:'攻撃集中',focusDefense:'防御集中',block:'ブロック',cover:'庇う',move:'移動のみ',wait:'待機',carry:'行動値持ち越し'};
 export const RANGES={touch:'至近 / 3m',near:'近接 / 10m',mid:'中距離 / 20m',far:'遠距離 / 30m',super:'超遠 / 40m',special:'特レ / 指定距離'};
 export const SCOPES={single:'単体',random:'ランダム',self:'自身',area:'範囲 / 半径5m',wide:'広域 / 半径10m',selfArea:'自範 / 半径5m',selfWide:'自域 / 半径10m',pierce:'貫通',cone:'扇',line:'列',special:'特殊 / 指定半径'};
-export const SKILL_KINDS={attack:'攻撃',hp:'HP回復',ap:'AP回復',ha:'HP・AP回復',cleanse:'BS回復',buff:'付与',passive:'パッシブ'};
+export const SKILL_KINDS={attack:'攻撃',hp:'HP回復',ap:'AP回復',ha:'HP・AP回復',cleanse:'BS回復',buff:'付与'};
 export const EFFECTS={side:'副',versatile:'万能',identify:'識別',noDamage:'ダ無',sureHit:'必中',dash:'移',knockback:'飛',reflect:'反',thorns:'棘',break:'ブレイク',nonlethal:'不殺',curseKill:'呪殺',reverse:'逆凪',revenge:'復讐',clever:'巧妙',steady:'堅実',multiShadow:'多重影',evil:'邪道',demon:'鬼道',healEfficiency:'回復効率',regen:'再生',charge:'充填',efficiency:'能率',dot:'ダメージ',lost:'ロスト',erosion:'摩耗',hpDrain:'HP吸収',apDrain:'AP吸収',haDrain:'HA吸収',offensiveCleanse:'攻勢BS回復',bsHeal:'BS回復',hpArmor:'HP鎧',apArmor:'AP鎧',bsArmor:'BS鎧',bsEase:'BS緩和',splash:'スプラッシュ',pursuit:'追撃',weak:'弱点',curve:'曲射',heavy:'重甲',recoil:'反動',chargeTime:'溜',fastCast:'高速詠唱',bind:'拘束',lethal:'必殺',radiance:'光輝',breakGuard:'ブレイクガード',extraHP:'追加HP回復'};
 export const BOOL_EFFECTS=['side','versatile','identify','noDamage','sureHit','dash','knockback','reflect','thorns','break','nonlethal','curseKill','reverse'];
 export const BS_GROUPS=[['毒','猛毒','致死毒','廃滅'],['火炎','業炎','炎獄','紅焔'],['凍結','氷結','氷漬','絶凍'],['痺れ','ショック','感電','雷陣'],['乱れ','崩れ','体勢不利','崩落'],['出血','流血','失血','滂沱'],['窒息','苦鳴','懊悩','無常'],['足止','泥沼','停滞','退化'],['不調','不遇','不発','奈落'],['鈍り','欠刃','錆付','腐朽'],['不吉','不運','魔凶','塔'],['軟化','弱体','脆弱','伽藍'],['麻痺','呪縛','石化'],['混乱','狂気','魅了'],['怒り','激怒','赫怒','逆上']];
@@ -50,7 +50,7 @@ export function normalizeMoveModes(config){
 }
 export function freshRule(overrides={}){return {id:uid('r'),enabled:true,conditions:[freshCondition()],action:'attack',skillId:'',target:'enemies',sort:'nearest',targetConditions:[],autoMove:true,moveMode:'fixed',minDist:0,maxDist:3,splitMovement:false,moveTargetMode:'same',moveSubject:'previous',moveUnitId:'',moveConditions:[],moveSort:'nearest',movePriority:'action',...overrides};}
 export function freshSkill(overrides={}){return {id:uid('s'),name:'新しいスキル',kind:'attack',ap:100,cost:70,range:'near',scope:'single',customRange:20,radius:5,mainPct:100,mainBonus:100,subPct:100,subBonus:0,hitBonus:0,power:100,bs:[],bsTurns:3,buffTurns:8,modifiers:{},effects:{identify:1},trigger:'instant',passiveWhen:'always',interval:1,note:'',...overrides};}
-export function freshUnit(overrides={}){return {id:uid('u'),name:'新しいユニット',team:'A',maxHp:6000,maxAp:2400,main:650,sub:120,heal:250,hit:65,evade:40,defense:35,resist:30,speed:180,mobility:2,critical:8,fumble:3,drama:10,startHp:100,startAp:100,x:-10,y:0,normalRange:'near',reactiveKite:false,reactiveKiteLimit:2,effects:{},initialBS:[],immunities:[],skills:['wiki-001','wiki-041'],rules:[freshRule({action:'effectiveAttack'}),freshRule({conditions:[],action:'carry',autoMove:false,target:'self'})],...overrides};}
+export function freshUnit(overrides={}){return {id:uid('u'),name:'新しいユニット',team:'A',maxHp:6000,maxAp:2400,main:650,sub:120,heal:250,hit:65,evade:40,defense:35,resist:30,speed:180,mobility:2,critical:8,fumble:3,drama:10,startHp:100,startAp:100,x:-10,y:0,normalRange:'near',effects:{},initialBS:[],immunities:[],skills:['wiki-001','wiki-041'],rules:[freshRule({action:'effectiveAttack'}),freshRule({conditions:[],action:'carry',autoMove:false,target:'self'})],...overrides};}
 // X: 10m either side of arena centre (20m between teams).
 // Y: evenly spaced at 5m with the team's midpoint on the horizontal centre line.
 export function arrangeInitialPositions(units){
@@ -114,7 +114,7 @@ export function validateConfig(c){
   }
   for(const q of [...r.conditions,...(r.splitMovement&&r.moveTargetMode==='individual'&&Array.isArray(r.moveConditions)?r.moveConditions:[])]){if(q.type==='who'&&(!SUBJECTS[q.subject]||!METRICS[q.metric]||!Number.isFinite(q.min)||!Number.isFinite(q.max)||q.min>q.max))errors.push(`${u.name}: 条件の項目・範囲を確認してください。`);if(q.type==='turn'&&(!Number.isFinite(q.multiple)||q.multiple<1||!Number.isFinite(q.offset)||q.offset<0))errors.push(`${u.name}: ターン条件は倍数1以上、加算0以上です。`);if(q.type==='chance'&&(!Number.isFinite(q.chance)||q.chance<0||q.chance>100))errors.push(`${u.name}: 確率は0～100%です。`);}}
  }
- if(c.settings.combatMode!==undefined&&!['official','extended'].includes(c.settings.combatMode))errors.push('戦闘ルールは公式準拠または拡張ルールを選択してください。');
+ if(c.settings.combatMode!==undefined&&c.settings.combatMode!=='official')errors.push('戦闘ルールの設定が不正です。');
  if(!Number.isInteger(c.settings.turns)||c.settings.turns<1||c.settings.turns>200)errors.push('最大ターン数は1～200です。');
  return [...new Set(errors)];
 }

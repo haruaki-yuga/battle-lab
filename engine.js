@@ -43,7 +43,7 @@ export class Battle {
   const errors=validateConfig(config);if(errors.length)throw Error(errors.join('\n'));
   seed=runSeed(config,seed);this.config=normalizeSettings(clone(config));this.random=seededRandom(seed);this.seed=seed;this.turn=0;this.gauge=0;this.events=[];this.logs=[];this.frames=[];this.done=false;this.winner=null;this.tiebreak=null;this.quiet=quiet;this.seq=0;this.processed=0;this.warnings=[];
   this.skills=new Map(config.skills.map(s=>[s.id,clone(s)]));
-  this.units=config.units.map(u=>({...clone(u),hp:u.maxHp*u.startHp/100,ap:u.maxAp*u.startAp/100,av:0,carry:0,actions:0,totalActions:0,damageDealt:0,healing:0,hits:0,cleanHits:0,alive:u.startHp>0,ctLoss:0,luckLoss:0,evadeLoss:0,dramaCount:0,focusA:false,focusD:false,pending:false,waiting:false,carrying:false,afterWait:false,waitCount:0,coverId:null,blockId:null,reactiveRetreats:0,totalReactiveRetreats:0,distanceMoved:0,movementAvSpent:0,incomingHits:0,damageTaken:0,outOfRangeFails:0,intercepts:[],retaliations:[],buffs:[],bs:(u.initialBS||[]).map(name=>({name,remaining:3,source:u.id})),doneTurn:false}));
+  this.units=config.units.map(u=>({...clone(u),hp:u.maxHp*u.startHp/100,ap:u.maxAp*u.startAp/100,av:0,carry:0,actions:0,totalActions:0,damageDealt:0,healing:0,hits:0,cleanHits:0,alive:u.startHp>0,ctLoss:0,luckLoss:0,evadeLoss:0,dramaCount:0,focusA:false,focusD:false,pending:false,waiting:false,carrying:false,afterWait:false,waitCount:0,coverId:null,blockId:null,distanceMoved:0,movementAvSpent:0,incomingHits:0,damageTaken:0,outOfRangeFails:0,intercepts:[],retaliations:[],buffs:[],bs:(u.initialBS||[]).map(name=>({name,remaining:3,source:u.id})),doneTurn:false}));
   for(const u of this.units){u.hp=Math.floor(this.stat(u,'maxHp')*u.startHp/100);u.ap=Math.floor(this.stat(u,'maxAp')*u.startAp/100);}
   this.snapshot('初期配置');
  }
@@ -51,11 +51,8 @@ export class Battle {
  get(id){return this.units.find(u=>u.id===id);}
  skillFor(u,id){const skill=this.skills.get(id);if(!skill)return null;const alias=u?.skillAliases?.[id];return alias&&alias!==skill.name?{...skill,name:alias}:skill;}
  statuses(u){return effectiveBS(u.bs);}
- passives(u){return u.skills.map(id=>this.skills.get(id)).filter(s=>s?.kind==='passive'&&(s.passiveWhen!=='full'||u.hp>=u.maxHp*.8)&&(s.passiveWhen!=='low'||u.hp<=u.maxHp*.3)&&(s.passiveWhen!=='timed'||this.turn<=s.interval));}
- passiveMultiplier(s){return s.passiveWhen==='accelerate'?Math.min(Math.max(1,Math.floor(20/Math.max(1,s.interval))),1+Math.floor(Math.max(0,this.turn-1)/Math.max(1,s.interval))):1;}
  stat(u,key){
   let n=Number(u[key]||0);const bs=this.statuses(u);
-  for(const s of this.passives(u))n+=Number(s.modifiers?.[key]||0)*this.passiveMultiplier(s);
   if(!bs.has('無策'))n+=sumBuff(u.buffs.map(b=>b.modifiers||{}),key);
   const drama=Math.min(5,u.dramaCount);if(['main','sub','speed'].includes(key))n+=40*drama;if(key==='critical')n+=2*drama;
   if(u.focusA&&key==='hit')n+=10;if(u.focusD&&['evade','defense','resist'].includes(key))n+=5;
@@ -69,7 +66,7 @@ export class Battle {
   if(['maxHp','maxAp','mobility','fumble'].includes(key))n=Math.max(key==='maxHp'?1:0,n);
   return n;
  }
- effectRaw(u,key){let n=Number(u.effects?.[key]||0);for(const s of this.passives(u))n+=Number(s.effects?.[key]||0)*this.passiveMultiplier(s);if(!u.bs.some(b=>b.name==='無策'))n+=sumBuff(u.buffs.map(b=>b.effects||{}),key);return n;}
+ effectRaw(u,key){let n=Number(u.effects?.[key]||0);if(!u.bs.some(b=>b.name==='無策'))n+=sumBuff(u.buffs.map(b=>b.effects||{}),key);return n;}
  effect(u,skill,key){return this.effectRaw(u,key)+Number(skill?.effects?.[key]||0);}
  roll(u,mods={},commit=true){const die=this.d(),fb=Math.max(0,this.stat(u,'fumble')+Number(mods.fumble||0));const ct=this.stat(u,'critical')+Number(mods.critical||0);const fumble=die<=fb,critical=!fumble&&die>=100-ct;if(critical&&commit){u.ctLoss+=10;u.luckLoss++;}return {die,fumble,critical,fb,ct};}
  log(type,message,detail='',actor=null,target=null,tags=[]){
@@ -324,7 +321,7 @@ export class Battle {
   return {r:{action:'carry'},index:-1};
  }
  enqueue(u,type,gauge,plan=null){this.events.push({u,type,gauge,plan,seq:this.seq++,tie:this.random(),speed:this.stat(u,'speed')});}
- startTurn(){this.gauge=0;this.turn++;this.log('turn',`第${this.turn}ターン`);for(const u of this.units){if(!u.alive)continue;u.ctLoss=0;u.luckLoss=0;u.evadeLoss=0;u.actions=0;u.focusA=false;u.focusD=false;u.coverId=null;u.blockId=null;u.pending=false;u.waiting=false;u.afterWait=false;u.waitCount=0;u.carrying=false;u.doneTurn=false;u.blocked=false;u.sealed=false;u.reactiveRetreats=0;
+ startTurn(){this.gauge=0;this.turn++;this.log('turn',`第${this.turn}ターン`);for(const u of this.units){if(!u.alive)continue;u.ctLoss=0;u.luckLoss=0;u.evadeLoss=0;u.actions=0;u.focusA=false;u.focusD=false;u.coverId=null;u.blockId=null;u.pending=false;u.waiting=false;u.afterWait=false;u.waitCount=0;u.carrying=false;u.doneTurn=false;u.blocked=false;u.sealed=false;
    const active=this.statuses(u),res=this.stat(u,'resist'),ease=this.effectRaw(u,'bsEase');
    for(const name of active){let dmg=0,ap=0;for(const gi of [0,1]){let i=BS_GROUPS[gi].indexOf(name);if(i>=0){i=Math.max(0,i-ease);dmg+=clamp(Math.floor(this.stat(u,'maxHp')*(.02+i*.01)),80*(i+1),240*(i+1));}}
     let bleed=BS_GROUPS[5].indexOf(name),suff=BS_GROUPS[6].indexOf(name);if(bleed>=0)dmg+=120*(Math.max(0,bleed-ease)+1);if(suff>=0)ap+=120*(Math.max(0,suff-ease)+1);
@@ -351,45 +348,8 @@ export class Battle {
  stepTurn(){if(this.done)return this.result();if(!this.startTurn())return this.result();let count=0;while(this.events.length&&!this.done){if(++count>10000||++this.processed>200000){this.warnings.push('過剰な反復を検出したため停止しました。');this.resolveDraw('反復上限により終了');break;}this.events.sort((a,b)=>b.gauge-a.gauge||b.speed-a.speed||b.tie-a.tie||a.seq-b.seq);const e=this.events.shift(),u=e.u;if(!u.alive||u.doneTurn)continue;this.gauge=e.gauge;if(e.type==='decide')this.decide(u);else if(e.type==='wake'){u.afterWait=true;u.waiting=false;this.decide(u);}else this.execute(u,e.plan);this.checkEnd();}this.events=[];this.endTurn();return this.result();}
  run(){while(!this.done)this.stepTurn();return this.result();}
  result(){return {winner:this.winner,tiebreak:this.tiebreak,turns:this.turn,seed:this.seed,units:this.units,logs:this.logs,frames:this.frames,warnings:this.warnings,done:this.done};}
- // Kiting response at the opponent's execution: not a free teleport. Each
- // successful response costs normal movement action value and is limited per turn.
- // The attacker still executes its committed action, which may fail on range.
- reactToOpponentAction(actor,plan){
-  // Official arena logs do not establish an automatic defensive interruption.
-  // Keep the legacy behavior accessible only via explicit expanded rules.
-  if(this.config.settings.combatMode!=='extended'||!actor?.alive)return;
-  const isOffense=plan.s?.kind==='attack'||plan.r.action==='attack';
-  const moving=!!plan.move;
-  if(!isOffense&&!moving)return;
-  for(const defender of this.units){
-   if(!defender.alive||!defender.reactiveKite||defender.team===actor.team)continue;
-   const budget=Math.max(1,this.config.settings.moveCost||40);
-   const limit=Math.max(0,Math.min(5,Number(defender.reactiveKiteLimit??2)));
-   if(defender.reactiveRetreats>=limit||defender.av<budget)continue;
-   // A long-range shot or an incoming movement is threatening when it can
-   // reach the defender; otherwise the reaction is saved for a later action.
-   const activeRange=isOffense?rangeInfo(plan.s||normalSkill(actor),0,this.config.settings.rangePolicy).max:0;
-   const near=distance(actor,defender);
-   if(near>Math.max(34,activeRange+2))continue;
-   const ideal=activeRange>=39?45:38;
-   const destination=this.kiteMovePlan(defender,actor,{minDist:ideal-1,maxDist:ideal+1},this.stat(defender,'mobility')*10);
-   if(!destination||distance(destination,defender)<.1)continue;
-   const newDistance=distance(destination,actor);
-   if(newDistance<=near+.1)continue;
-   defender.distanceMoved+=distance(defender,destination);
-   defender.movementAvSpent+=budget;defender.totalReactiveRetreats++;
-   defender.x=destination.x;defender.y=destination.y;
-   defender.av=Math.max(0,defender.av-budget);
-   defender.reactiveRetreats++;
-   // If a reserved action remains, its execution gauge is also delayed.
-   for(const event of this.events)if(event.u.id===defender.id)event.gauge=Math.max(0,event.gauge-budget);
-   // The retreat is a silent response. The following attack/miss log snapshot
-   // still records the updated position, but no extra reaction log is emitted.
-  }
- }
  execute(u,p){u.pending=false;if(!u.alive)return;
   if(p.move){const check=this.movePlan(u,p.moveTarget||p.target,p.r,p.s,this.stat(u,'mobility')*10+10*(p.extraSteps||0));if(check){const moved=distance(u,check);u.x=check.x;u.y=check.y;u.distanceMoved+=moved;u.movementAvSpent+=(this.config.settings.moveCost||40)+this.extraMovementCost(p.extraSteps||0);this.log('move',`${u.name}が${moved.toFixed(1)}m移動`,`(${u.x.toFixed(1)}, ${u.y.toFixed(1)})`,u);}}
-  this.reactToOpponentAction(u,p);
   const a=p.r.action;
   if(a==='focusAttack'){u.focusA=true;this.log('buff',`${u.name}は攻撃集中（命中＋10）`, '',u);}
   else if(a==='focusDefense'){u.focusD=true;this.log('buff',`${u.name}は防御集中（回避・防技・抵抗＋5）`, '',u);}

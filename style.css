@@ -34,21 +34,8 @@
 .effect-editor{padding:4px 0 10px}.effect-edit-row{display:grid;grid-template-columns:minmax(170px,1fr) minmax(86px,130px) auto;gap:10px;align-items:center;margin:8px 0}.effect-edit-row select,.effect-edit-row input{width:100%;min-width:0}.effect-editor>.btnrow{margin-top:8px}@media(max-width:650px){.effect-edit-row{grid-template-columns:minmax(115px,1fr) 75px auto;gap:5px}.effect-edit-row .small{padding-left:6px;padding-right:6px}}
 
 /* Ready-to-fight enemy presets (v1.5.6). */
-.sample-enemy-picker{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
-.sample-enemy-title{display:block;font-weight:650;font-size:12px;margin-bottom:8px;color:var(--ink)}
-.sample-enemy-title small{font-weight:400;color:var(--muted);font-size:10px;margin-left:7px}
-.sample-enemy-buttons{display:flex;gap:7px;flex-wrap:wrap}
-.sample-enemy-button{white-space:nowrap;background:#fff7f3;border:1px solid #e5cabe;color:#8b5545}
-.sample-enemy-button:hover{background:#f9e8df;border-color:#bc8b75}
 
 /* Clear, actionable sample enemy controls. */
-.sample-enemy-picker{min-width:0}
-.sample-enemy-title{margin-bottom:9px}
-.sample-enemy-buttons{gap:8px}
-.sample-enemy-button{min-height:34px;padding:7px 11px;font-size:12px;font-weight:650;cursor:pointer}
-.sample-enemy-button:disabled{opacity:.45;cursor:not-allowed}
-.sample-enemy-note{font-size:11px;color:var(--muted);line-height:1.6;margin:9px 0 0}
-.sample-enemy-note.capacity-warning{color:#a45b48;font-weight:600}
 
 
 /* Visible combat effects and three-way draw tiebreak (v1.5.9) */
@@ -109,11 +96,6 @@
 .target-condition-row{margin-top:7px}
 
 /* Reactive retreat: a limited-cost tactical movement. */
-.reactive-kite-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0;padding:12px 14px;border:1px solid #c6ddce;background:#f0f8f2;border-radius:8px}
-.reactive-kite-controls .checkbox-label{font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
-.reactive-kite-controls .field{width:150px}
-.reactive-kite-controls .field input{width:100%;max-width:150px}
-.reactive-kite-controls p{flex-basis:100%}
 
 /* v1.6.13 — マップ拡大／相対距離表示 */
 .map-view{min-width:0}.map-tools{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-bottom:12px}

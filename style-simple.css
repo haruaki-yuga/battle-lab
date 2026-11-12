@@ -63,7 +63,7 @@ h3 {font-size:13px}
 
 /* Flat rectangular groupings, minimal chrome and restrained highlights. */
 .panel,.team-strip,.steps,.skill-card,.rule-card,.kpi,.meter-field,
-.unit-tactics-management,.reactive-kite-controls,.map-surface,
+.unit-tactics-management,.map-surface,
 .map-distance-list,.replay-team,.empty,.tiebreak-grid,.notice,.hint,
 .bs-condition-chooser,.bs-condition-item,.map-dialog,dialog {
   border-radius:3px;
@@ -112,7 +112,7 @@ h3 {font-size:13px}
 .rule-head {background:#f5f6f7}
 .equipped-list button {background:#f2f4f5;border-color:#d8dfe3}
 .rule-count {color:#6a7882}
-.unit-tactics-management,.condition-row .bs-condition-chooser,.reactive-kite-controls {
+.unit-tactics-management,.condition-row .bs-condition-chooser {
   background:#f8f9f9;border-color:#dce1e4
 }
 .bs-condition-chooser>summary {color:#435f72}

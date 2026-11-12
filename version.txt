@@ -1,2 +1,2 @@
-Battle Lab Web static edition based on 1.6.24
-Character URL import: not available in static edition
+Battle Lab Web v1.6.24 — character URL importer + no sample enemies (2026-11-13)
+画面表示と回復フィルタを整理した改訂版

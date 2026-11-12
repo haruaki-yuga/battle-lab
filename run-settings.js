@@ -5,7 +5,7 @@ export function newRunSeed(){
 }
 export function normalizeSettings(config){
  config.settings.rangePolicy='text';
- config.settings.combatMode=config.settings.combatMode==='extended'?'extended':'official';
+ config.settings.combatMode='official';
  config.settings.seedMode=config.settings.seedMode==='fixed'?'fixed':'auto';
  config.settings.seed=String(config.settings.seed||'ARCADIA-01');
  return config;
