@@ -72,7 +72,7 @@ export function sampleConfig(){
    freshRule({conditions:[{...freshCondition(),subject:'self',metric:'actions',min:0,max:0}],action:'focusDefense',target:'self',autoMove:false}),
    freshRule({action:'effectiveAttack',maxDist:8})
   ]}),
-  freshUnit({id:'b2',name:'スカーミッシャー',team:'B',maxHp:5000,main:500,hit:85,evade:70,speed:230,x:10,y:2.5,normalRange:'far',skills:['wiki-018','wiki-021'],rules:[
+  freshUnit({id:'b2',name:'トリックスター',team:'B',maxHp:5000,main:500,hit:85,evade:70,speed:230,x:10,y:2.5,normalRange:'far',skills:['wiki-018','wiki-021'],rules:[
    freshRule({action:'skill',skillId:'wiki-018',minDist:21,maxDist:29}),
    freshRule({conditions:[],action:'attack',minDist:21,maxDist:29})
   ]})

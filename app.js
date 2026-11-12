@@ -36,7 +36,7 @@ function adaptAccelDraft(draft){
  return draft;
 }
 const KEY='arcadia-battle-lab-v1';
-function makeSample(){const c=sampleConfig();c.name='新しい対戦';c.units=[freshUnit({id:'a1',name:'チームAのキャラクター',team:'A',x:-10,y:0,skills:[]}),freshUnit({id:'b1',name:'チームBのキャラクター',team:'B',x:10,y:0,skills:[]})];return c;}
+function makeSample(){const c=sampleConfig();c.name='新しい対戦';c.units=[freshUnit({id:'a1',name:'チームAのキャラクター',team:'A',x:-10,y:0,skills:[]}),freshUnit({id:'b1',name:'トリックスター',team:'B',x:10,y:0,skills:[]})];return c;}
 let config;try{config=JSON.parse(localStorage.getItem(KEY));if(!config||config.version!==1||!Array.isArray(config.units)||!config.units.length||!Array.isArray(config.skills)||!config.settings)config=makeSample();}catch{config=makeSample();}
 migrateLegacyDemoSkills(config);
 cleanWebConfiguration(config);
