@@ -353,7 +353,10 @@ export class Battle {
   const a=p.r.action;
   if(a==='focusAttack'){u.focusA=true;this.log('buff',`${u.name}は攻撃集中（命中＋10）`, '',u);}
   else if(a==='focusDefense'){u.focusD=true;this.log('buff',`${u.name}は防御集中（回避・防技・抵抗＋5）`, '',u);}
-  else if(a==='cover'||a==='block'){if(p.target.alive&&distance(u,p.target)<=3){u[a==='cover'?'coverId':'blockId']=p.target.id;this.log('buff',`${u.name}は${p.target.name}を${a==='cover'?'庇う':'ブロック'}`, '',u,p.target);}else this.log('miss','対象が至近距離にいないため不発', '',u);}
+  else if(a==='cover'||a==='block'){if(p.target.alive&&distance(u,p.target)<=3){u[a==='cover'?'coverId':'blockId']=p.target.id;
+    if(a==='cover')this.log('action',`${u.name}は${p.target.name}への攻撃を警戒している…`,'',u,p.target);
+    else this.log('buff',`${u.name}は${p.target.name}をブロック`,'',u,p.target);
+   }else this.log('miss','対象が至近距離にいないため不発', '',u);}
   else if(p.s){const s=p.s;if(this.apCost(u,s)>u.ap)this.log('miss',`${s.name}はAP不足で不発`, '',u);else if(u.sealed&&s.id!=='normal')this.log('miss',`${s.name}は封印により不発`, '',u);else{
     u.ap-=this.apCost(u,s);
     if(['intercept','retaliate'].includes(s.trigger)){u[s.trigger==='intercept'?'intercepts':'retaliations'].push({skill:clone(s),remaining:8});this.log('buff',`${u.name}は${s.name}の${s.trigger==='intercept'?'迎撃':'報復'}を準備`, '',u);}
@@ -443,7 +446,7 @@ export class Battle {
  }
  attack(u,original,s,depth=0,split=1,mad=false,hitIndex=0,sharedAccuracy=null,preResolvedDefender=null){
   const t=preResolvedDefender||this.coverRecipient(u,original,s);
-  if(t!==original)this.log('buff',`${t.name}が${original.name}を庇った`,'',t,original);
+  if(t!==original)this.log('action',`${t.name}が${original.name}をかばう！`,'',t,original);
   this.counter(t,u,'intercepts',depth);if(!u.alive)return;
   if(sharedAccuracy&&!sharedAccuracy.roll){
    sharedAccuracy.roll=this.attackRoll(u,s);
