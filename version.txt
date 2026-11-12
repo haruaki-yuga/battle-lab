@@ -1,0 +1,2 @@
+Battle Lab Web static edition based on 1.6.24
+Character URL import: not available in static edition
