@@ -1,5 +1,0 @@
-Battle Lab Web v1.6.24 — character URL importer + no sample enemies (2026-11-13)
-画面表示と回復フィルタを整理した改訂版
-公式アリーナ戦闘ログを参考に「庇う」関連表示を調整（戦闘計算変更なし）
-表示名を「闘技趣味レーター」に変更。初期配置のチームB名称を「チームBのキャラクター」に変更。
-HTML/CSS/JavaScript/SVGを読みやすく整形（戦闘計算の変更なし）。
