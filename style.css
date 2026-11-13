@@ -1141,6 +1141,12 @@ h3 {
   color: #af6853;
 }
 
+/* A follow-up damage breakdown is visually distinct, but remains a separate log row. */
+.log.pursuit .type {
+  background: #fff1d8;
+  color: #936015;
+}
+
 .log.skill .type {
   background: #e5efea;
   color: var(--green);

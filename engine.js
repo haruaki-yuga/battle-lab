@@ -1356,17 +1356,34 @@ export class Battle {
             m *= 1 + (15 + defRoll.fb) / 100;
         if (defense < 0)
             m *= 1 + Math.min(1, Math.ceil(-defense / 10) * .2);
-        let extra = main * this.effect(u, s, 'pursuit') / 100;
+        // 追撃は本体攻撃の一部として1回だけHPに反映する。ログ表示用に内訳を保持する。
+        const pursuitBase = main * this.effect(u, s, 'pursuit') / 100;
+        let extra = pursuitBase;
         if (this.effect(u, s, 'reverse'))
             extra += Math.min(this.stat(t, 'heal'), this.stat(u, 'main'));
         if (this.effect(u, s, 'curseKill'))
             extra += new Set(t.bs.map(b => b.name)).size * 66;
-        let total = (m + subD + extra) * (1 + Number(s.elementCorrection || 0) / 100);
+        const elementFactor = 1 + Number(s.elementCorrection || 0) / 100;
+        let total = (m + subD + extra) * elementFactor;
+        let euphoriaFactor = 1;
         if (this.statuses(t).has('恍惚')) {
-            total *= 1 + (this.d() + 30) / 100;
+            euphoriaFactor = 1 + (this.d() + 30) / 100;
+            total *= euphoriaFactor;
             t.bs = t.bs.filter(b => b.name !== '恍惚');
         }
-        total = this.effect(u, s, 'noDamage') ? 0 : Math.max(0, Math.floor(total - this.effectRaw(t, 'hpArmor')));
+        const noDamage = this.effect(u, s, 'noDamage');
+        const hpArmor = this.effectRaw(t, 'hpArmor');
+        total = noDamage ? 0 : Math.max(0, Math.floor(total - hpArmor));
+        // 属性補正・恍惚・HP鎧・端数切り捨て後の、追撃による実際の増加分。
+        // 元の合計値(total)を変えずに、表示上だけ本体／追撃を分離する。
+        let pursuitDamage = 0;
+        if (pursuitBase > 0 && !noDamage && total > 0) {
+            let withoutPursuit = (m + subD + extra - pursuitBase) * elementFactor;
+            withoutPursuit *= euphoriaFactor;
+            withoutPursuit = Math.max(0, Math.floor(withoutPursuit - hpArmor));
+            pursuitDamage = Math.max(0, Math.min(total, total - withoutPursuit));
+        }
+        const baseDamage = total - pursuitDamage;
         const weakness = this.effect(u, s, 'weak');
         const reductionWithoutWeakness = clamp(70 + this.effectRaw(t, 'heavy') - (defRoll.critical ? 0 : main * .003), 0, 100) / 100;
         const weaknessReduction = defended ? Math.max(0, Math.round((reductionWithoutWeakness - reduction) * 1000) / 10) : 0;
@@ -1378,7 +1395,11 @@ export class Battle {
             25,
             50,
             100
-        ][rank], this.effect(u, s, 'lethal'), () => this.log('damage', `${t.name}に${total.toLocaleString()}ダメージ`, `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})`, u, t, processTags));
+        ][rank], this.effect(u, s, 'lethal'), () => {
+            this.log('damage', `${t.name}に${baseDamage.toLocaleString()}ダメージ`, `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})`, u, t, processTags);
+            if (pursuitDamage > 0)
+                this.log('pursuit', `追撃により追加で${pursuitDamage.toLocaleString()}ダメージ！`, `対象：${t.name} / この命中の合計 ${total.toLocaleString()}ダメージ`, u, t);
+        });
         if (amount > 0 && u.team !== t.team)
             t.incomingHits++;
         u.hits++;
