@@ -4,161 +4,625 @@
   JavaScript/CSS. This stylesheet only changes visual presentation.
 */
 :root {
-  --ink:#252a30;
-  --muted:#65707b;
-  --line:#d9dfe3;
-  --green:#365d76;              /* restrained accent; not a green dashboard theme */
-  --green-light:#ecf1f4;
-  --paper:#f7f8f9;
-  --red:#995344;
-  --red-light:#f5efed;
-  --white:#ffffff;
-  --font:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
+  --ink: #252a30;
+  --muted: #65707b;
+  --line: #d9dfe3;
+  --green: #365d76;
+  /* restrained accent; not a green dashboard theme */
+  --green-light: #ecf1f4;
+  --paper: #f7f8f9;
+  --red: #995344;
+  --red-light: #f5efed;
+  --white: #ffffff;
+  --font: "Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
 }
-body {background:var(--paper);color:var(--ink);font-size:13px;line-height:1.6}
-a {color:var(--green)}
-button,input,select,textarea {border-radius:3px;transition:none}
-button {padding:7px 11px;border-color:#d2d8dc;background:#fff;font-weight:500}
-button:hover {background:#f0f2f3}
-button:active {transform:none}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--green);
+}
+
+button,input,select,textarea {
+  border-radius: 3px;
+  transition: none;
+}
+
+button {
+  padding: 7px 11px;
+  border-color: #d2d8dc;
+  background: #fff;
+  font-weight: 500;
+}
+
+button:hover {
+  background: #f0f2f3;
+}
+
+button:active {
+  transform: none;
+}
+
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible {
-  outline:2px solid #6d91ad;outline-offset:2px
+  outline: 2px solid #6d91ad;
+  outline-offset: 2px;
 }
-input,select,textarea {border-color:#cfd6db;padding:7px 9px;background:#fff}
-input[type=checkbox],input[type=range] {accent-color:#49677c}
-h1 {font-size:22px;font-weight:700;letter-spacing:0;line-height:1.45}
-h2 {font-size:15px;font-weight:650}
-h3 {font-size:13px}
+
+input,select,textarea {
+  border-color: #cfd6db;
+  padding: 7px 9px;
+  background: #fff;
+}
+
+input[type=checkbox],input[type=range] {
+  accent-color: #49677c;
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+h2 {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+h3 {
+  font-size: 13px;
+}
 
 /* Neutral navigation rather than a dark, brand-forward dashboard. */
-.sidebar {background:#f1f3f4;color:var(--ink);border-right:1px solid #dce1e4;padding:18px 11px}
-.brand {margin:0 0 6px;padding:8px 11px 19px;border-bottom:1px solid #dbe0e3}
-.brand strong {font-size:14px;font-weight:700;letter-spacing:0;color:#252d33}
-.brand small {font-size:11px;letter-spacing:0;color:#65707b}
-.brand-mark {transform:none;border-color:#c7d0d7;color:var(--green)}
-.nav-label {padding:14px 11px 7px;color:#78838b;font-size:10px;letter-spacing:0}
-.nav {gap:2px}
-.nav button {padding:10px 10px;color:#3f4a53;border-radius:3px;font-size:12px}
-.nav button:hover {background:#e7ebee;color:#25313a}
-.nav button.active {background:#fff;color:#2b4e65;font-weight:700;box-shadow:inset 3px 0 0 #53778e}
-.nav .count {background:#e4e9ec;color:#58656e;border:1px solid #d6dde1;border-radius:2px}
-.sidebar-footer {color:#76818a;border-top:1px solid #dbe0e3;padding:12px 10px}
-.sidebar-footer b {color:var(--ink)}
-.dot {background:#8797a1}
+.sidebar {
+  background: #f1f3f4;
+  color: var(--ink);
+  border-right: 1px solid #dce1e4;
+  padding: 18px 11px;
+}
+
+.brand {
+  margin: 0 0 6px;
+  padding: 8px 11px 19px;
+  border-bottom: 1px solid #dbe0e3;
+}
+
+.brand strong {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #252d33;
+}
+
+.brand small {
+  font-size: 11px;
+  letter-spacing: 0;
+  color: #65707b;
+}
+
+.brand-mark {
+  transform: none;
+  border-color: #c7d0d7;
+  color: var(--green);
+}
+
+.nav-label {
+  padding: 14px 11px 7px;
+  color: #78838b;
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+.nav {
+  gap: 2px;
+}
+
+.nav button {
+  padding: 10px 10px;
+  color: #3f4a53;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.nav button:hover {
+  background: #e7ebee;
+  color: #25313a;
+}
+
+.nav button.active {
+  background: #fff;
+  color: #2b4e65;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 #53778e;
+}
+
+.nav .count {
+  background: #e4e9ec;
+  color: #58656e;
+  border: 1px solid #d6dde1;
+  border-radius: 2px;
+}
+
+.sidebar-footer {
+  color: #76818a;
+  border-top: 1px solid #dbe0e3;
+  padding: 12px 10px;
+}
+
+.sidebar-footer b {
+  color: var(--ink);
+}
+
+.dot {
+  background: #8797a1;
+}
 
 /* Compact header and section rhythm. */
-.topbar {height:52px;background:#fff;padding:0 25px;border-color:#dce1e4}
-.breadcrumb {font-size:11px;color:#65717b;letter-spacing:0}
-.top-actions {gap:7px}
-.top-actions button {font-size:11px;padding:5px 8px}
-.content {max-width:1460px;padding:24px 26px 44px}
-.page-heading {margin-bottom:19px;gap:15px}
-.page-heading .eyebrow {display:none}
-.subtitle {font-size:11px;margin-top:4px}
-.primary {background:#3b5e77;border-color:#3b5e77;color:#fff;font-weight:600}
-.primary:hover {background:#294b63}
-.ghost {color:#46525a;background:transparent}
-.danger {color:#954b46}
-.small {padding:5px 8px}
+.topbar {
+  height: 52px;
+  background: #fff;
+  padding: 0 25px;
+  border-color: #dce1e4;
+}
+
+.breadcrumb {
+  font-size: 11px;
+  color: #65717b;
+  letter-spacing: 0;
+}
+
+.top-actions {
+  gap: 7px;
+}
+
+.top-actions button {
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
+.content {
+  max-width: 1460px;
+  padding: 24px 26px 44px;
+}
+
+.page-heading {
+  margin-bottom: 19px;
+  gap: 15px;
+}
+
+.page-heading .eyebrow {
+  display: none;
+}
+
+.subtitle {
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.primary {
+  background: #3b5e77;
+  border-color: #3b5e77;
+  color: #fff;
+  font-weight: 600;
+}
+
+.primary:hover {
+  background: #294b63;
+}
+
+.ghost {
+  color: #46525a;
+  background: transparent;
+}
+
+.danger {
+  color: #954b46;
+}
+
+.small {
+  padding: 5px 8px;
+}
 
 /* Flat rectangular groupings, minimal chrome and restrained highlights. */
 .panel,.team-strip,.steps,.skill-card,.rule-card,.kpi,.meter-field,
 .unit-tactics-management,.map-surface,
 .map-distance-list,.replay-team,.empty,.tiebreak-grid,.notice,.hint,
 .bs-condition-chooser,.bs-condition-item,.map-dialog,dialog {
-  border-radius:3px;
-  box-shadow:none;
+  border-radius: 3px;
+  box-shadow: none;
 }
-.panel,.team-strip,.skill-card,.rule-card,.kpi,.replay-team {border-color:#dce1e4;background:#fff}
-.panel-head {padding:13px 16px;background:#fff}
-.panel-body {padding:17px}
-.panel+.panel {margin-top:14px}
-.team-strip {padding:13px}
-.teams {gap:12px;margin-bottom:16px}
-.team-title b,.team-strip.enemy .team-title b {font-size:11px;letter-spacing:0;color:#3f4e59}
-.team-title .subtle {color:var(--muted)}
-.unit-chip {border-radius:3px;padding:7px 8px}
-.unit-chip.selected {background:#f4f7f8;border-color:#6f8a9a;box-shadow:inset 0 0 0 1px #6f8a9a}
-.enemy .unit-chip.selected {background:#fcf8f7;border-color:#b78e84;box-shadow:inset 0 0 0 1px #b78e84}
-.avatar {border-radius:3px;background:#e9eff3;color:#3d6178}
-.avatar.enemy {background:#f2eae7;color:#955a4f}
-.steps {margin-bottom:18px}
-.step {padding:11px 13px;font-size:11px}
-.step span {color:#7c8992}
-.step.active {background:#f2f5f6;color:#2c5068;box-shadow:inset 0 -2px 0 #56768a}
-.step.active span {color:inherit}
-.pill {border-radius:2px;background:#f1f3f4;color:#59636b;padding:2px 6px}
-.pill.green {background:#eef3f5;color:#3a6177}
-.pill.red {background:#f6f0ee;color:#97584b}
-.pill.gold {background:#f5f3ed;color:#806b43}
-.field-section {letter-spacing:0;font-size:11px;color:#4c5862}
-.fields {gap:11px}
-.meter-field {padding:11px;background:#f7f8f8;border:1px solid #e0e4e6}
-.meter-field .bar {background:#dae2e7}
-.meter-field.ap .bar {background:#d4dce6}
-.meter-field input {font-size:19px}
-.hint {background:#f4f6f7;color:#59666e;padding:10px 12px}
-.notice {background:#faf8f2;color:#736748;border-color:#e6dfd1}
-.mini-rule {border-color:#e7e9eb}
+
+.panel,.team-strip,.skill-card,.rule-card,.kpi,.replay-team {
+  border-color: #dce1e4;
+  background: #fff;
+}
+
+.panel-head {
+  padding: 13px 16px;
+  background: #fff;
+}
+
+.panel-body {
+  padding: 17px;
+}
+
+.panel+.panel {
+  margin-top: 14px;
+}
+
+.team-strip {
+  padding: 13px;
+}
+
+.teams {
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.team-title b,.team-strip.enemy .team-title b {
+  font-size: 11px;
+  letter-spacing: 0;
+  color: #3f4e59;
+}
+
+.team-title .subtle {
+  color: var(--muted);
+}
+
+.unit-chip {
+  border-radius: 3px;
+  padding: 7px 8px;
+}
+
+.unit-chip.selected {
+  background: #f4f7f8;
+  border-color: #6f8a9a;
+  box-shadow: inset 0 0 0 1px #6f8a9a;
+}
+
+.enemy .unit-chip.selected {
+  background: #fcf8f7;
+  border-color: #b78e84;
+  box-shadow: inset 0 0 0 1px #b78e84;
+}
+
+.avatar {
+  border-radius: 3px;
+  background: #e9eff3;
+  color: #3d6178;
+}
+
+.avatar.enemy {
+  background: #f2eae7;
+  color: #955a4f;
+}
+
+.steps {
+  margin-bottom: 18px;
+}
+
+.step {
+  padding: 11px 13px;
+  font-size: 11px;
+}
+
+.step span {
+  color: #7c8992;
+}
+
+.step.active {
+  background: #f2f5f6;
+  color: #2c5068;
+  box-shadow: inset 0 -2px 0 #56768a;
+}
+
+.step.active span {
+  color: inherit;
+}
+
+.pill {
+  border-radius: 2px;
+  background: #f1f3f4;
+  color: #59636b;
+  padding: 2px 6px;
+}
+
+.pill.green {
+  background: #eef3f5;
+  color: #3a6177;
+}
+
+.pill.red {
+  background: #f6f0ee;
+  color: #97584b;
+}
+
+.pill.gold {
+  background: #f5f3ed;
+  color: #806b43;
+}
+
+.field-section {
+  letter-spacing: 0;
+  font-size: 11px;
+  color: #4c5862;
+}
+
+.fields {
+  gap: 11px;
+}
+
+.meter-field {
+  padding: 11px;
+  background: #f7f8f8;
+  border: 1px solid #e0e4e6;
+}
+
+.meter-field .bar {
+  background: #dae2e7;
+}
+
+.meter-field.ap .bar {
+  background: #d4dce6;
+}
+
+.meter-field input {
+  font-size: 19px;
+}
+
+.hint {
+  background: #f4f6f7;
+  color: #59666e;
+  padding: 10px 12px;
+}
+
+.notice {
+  background: #faf8f2;
+  color: #736748;
+  border-color: #e6dfd1;
+}
+
+.mini-rule {
+  border-color: #e7e9eb;
+}
 
 /* Data-first skills / rules. */
-.tabs button.active {color:#385e78;border-bottom-color:#597f96}
-.skill-grid {gap:10px}
-.skill-card {padding:13px;min-height:175px}
-.skill-card.equipped {background:#f8fafb;border-color:#adc1ce}
-.skill-card h3 {font-size:12px}
-.skill-card .description {color:#606c74}
-.rule-card {margin-bottom:11px}
-.rule-head {background:#f5f6f7}
-.equipped-list button {background:#f2f4f5;border-color:#d8dfe3}
-.rule-count {color:#6a7882}
-.unit-tactics-management,.condition-row .bs-condition-chooser {
-  background:#f8f9f9;border-color:#dce1e4
+.tabs button.active {
+  color: #385e78;
+  border-bottom-color: #597f96;
 }
-.bs-condition-chooser>summary {color:#435f72}
-.bs-condition-item:has(input:checked) {background:#eaf1f4;border-color:#9db4c2;color:#34576d}
+
+.skill-grid {
+  gap: 10px;
+}
+
+.skill-card {
+  padding: 13px;
+  min-height: 175px;
+}
+
+.skill-card.equipped {
+  background: #f8fafb;
+  border-color: #adc1ce;
+}
+
+.skill-card h3 {
+  font-size: 12px;
+}
+
+.skill-card .description {
+  color: #606c74;
+}
+
+.rule-card {
+  margin-bottom: 11px;
+}
+
+.rule-head {
+  background: #f5f6f7;
+}
+
+.equipped-list button {
+  background: #f2f4f5;
+  border-color: #d8dfe3;
+}
+
+.rule-count {
+  color: #6a7882;
+}
+
+.unit-tactics-management,.condition-row .bs-condition-chooser {
+  background: #f8f9f9;
+  border-color: #dce1e4;
+}
+
+.bs-condition-chooser>summary {
+  color: #435f72;
+}
+
+.bs-condition-item:has(input:checked) {
+  background: #eaf1f4;
+  border-color: #9db4c2;
+  color: #34576d;
+}
 
 /* Replays keep signal colors for damage / BS, without an overall decorative tint. */
-.battle-map {background:#f7f9fa;border-color:#dee3e5;border-radius:2px}
-.map-surface,.map-distance-list {background:#fff;border-color:#dce1e4}
-.map-zoom-controls output,.map-distance-row strong {color:#456174}
-.map-dialog::backdrop,dialog::backdrop {background:#252c3370;backdrop-filter:none}
-.map-dialog {padding:15px 19px}
-.replay-team {border-color:#dce1e4}
-.replay-team-head {background:#f1f4f6;color:#405b6d;border-color:#dce1e4}
-.replay-team.enemy {border-color:#e6ddda}
-.replay-team.enemy .replay-team-head {background:#f7f3f2;color:#896052;border-color:#e6ddda}
-.replay-log-panel .log:hover {background:#f5f7f8}
-.replay-log-panel .selected-log {background:#edf2f5;border-left-color:#577b92}
-.log.turn {background:#f5f6f7}
-.kpi {padding:14px 16px}
-.tiebreak-total {color:#3b6076}
-.tiebreak-caption {background:#f3f5f6;color:#46515a}
-.tiebreak-value.point-awarded {background:#eaf2f2;color:#2b5b59}
-.tiebreak-value b {background:#cce1df}
-.log-tag {border-radius:2px;font-weight:600}
-#toast {background:#29333c;border-radius:3px;box-shadow:0 5px 15px #1112;transition:opacity .14s,transform .14s}
-dialog {box-shadow:0 12px 36px #10182035}
-.modal-header {background:#f5f7f8}
+.battle-map {
+  background: #f7f9fa;
+  border-color: #dee3e5;
+  border-radius: 2px;
+}
+
+.map-surface,.map-distance-list {
+  background: #fff;
+  border-color: #dce1e4;
+}
+
+.map-zoom-controls output,.map-distance-row strong {
+  color: #456174;
+}
+
+.map-dialog::backdrop,dialog::backdrop {
+  background: #252c3370;
+  backdrop-filter: none;
+}
+
+.map-dialog {
+  padding: 15px 19px;
+}
+
+.replay-team {
+  border-color: #dce1e4;
+}
+
+.replay-team-head {
+  background: #f1f4f6;
+  color: #405b6d;
+  border-color: #dce1e4;
+}
+
+.replay-team.enemy {
+  border-color: #e6ddda;
+}
+
+.replay-team.enemy .replay-team-head {
+  background: #f7f3f2;
+  color: #896052;
+  border-color: #e6ddda;
+}
+
+.replay-log-panel .log:hover {
+  background: #f5f7f8;
+}
+
+.replay-log-panel .selected-log {
+  background: #edf2f5;
+  border-left-color: #577b92;
+}
+
+.log.turn {
+  background: #f5f6f7;
+}
+
+.kpi {
+  padding: 14px 16px;
+}
+
+.tiebreak-total {
+  color: #3b6076;
+}
+
+.tiebreak-caption {
+  background: #f3f5f6;
+  color: #46515a;
+}
+
+.tiebreak-value.point-awarded {
+  background: #eaf2f2;
+  color: #2b5b59;
+}
+
+.tiebreak-value b {
+  background: #cce1df;
+}
+
+.log-tag {
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+#toast {
+  background: #29333c;
+  border-radius: 3px;
+  box-shadow: 0 5px 15px #1112;
+  transition: opacity .14s,transform .14s;
+}
+
+dialog {
+  box-shadow: 0 12px 36px #10182035;
+}
+
+.modal-header {
+  background: #f5f7f8;
+}
 
 /* Respect existing narrow-screen layout rules while keeping navigation legible. */
-@media(max-width:1150px) {
-  .sidebar {padding:13px 8px}
-  .content {padding:21px 20px 32px}
+@media (max-width:1150px) {
+  .sidebar {
+    padding: 13px 8px;
+  }
+
+  .content {
+    padding: 21px 20px 32px;
+  }
+
 }
-@media(max-width:700px) {
-  .sidebar {padding:9px 12px 0;border-right:0;border-bottom:1px solid #d9dfe3}
-  .brand {padding:4px 6px 11px;border-bottom:0;margin:0}
-  .nav button {padding:9px 10px;border-radius:2px 2px 0 0}
-  .nav button.active {box-shadow:inset 0 -2px 0 #56768a}
-  .topbar {height:auto;min-height:47px;padding:9px 14px}
-  .content {padding:19px 14px 30px}
-  h1 {font-size:20px}
-  .page-heading {margin-bottom:16px}
-  .panel-head {padding:12px 13px}
-  .panel-body {padding:13px}
-  .skill-card {padding:11px}
+
+@media (max-width:700px) {
+  .sidebar {
+    padding: 9px 12px 0;
+    border-right: 0;
+    border-bottom: 1px solid #d9dfe3;
+  }
+
+  .brand {
+    padding: 4px 6px 11px;
+    border-bottom: 0;
+    margin: 0;
+  }
+
+  .nav button {
+    padding: 9px 10px;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .nav button.active {
+    box-shadow: inset 0 -2px 0 #56768a;
+  }
+
+  .topbar {
+    height: auto;
+    min-height: 47px;
+    padding: 9px 14px;
+  }
+
+  .content {
+    padding: 19px 14px 30px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .page-heading {
+    margin-bottom: 16px;
+  }
+
+  .panel-head {
+    padding: 12px 13px;
+  }
+
+  .panel-body {
+    padding: 13px;
+  }
+
+  .skill-card {
+    padding: 11px;
+  }
+
 }
+
 @media (prefers-reduced-motion:reduce) {
-  *,*::before,*::after {animation-duration:.01ms!important;transition:none!important;scroll-behavior:auto!important}
+  *,*::before,*::after {
+    animation-duration: .01ms !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+
 }
