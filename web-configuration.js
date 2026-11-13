@@ -6,6 +6,8 @@ export function cleanWebConfiguration(config) {
         config.settings.combatMode = 'official';
     if (!Array.isArray(config.skills) || !Array.isArray(config.units))
         return config;
+    // The baseline duration of every skill-inflicted BS is fixed at three turns.
+    for (const skill of config.skills) skill.bsTurns = 3;
     const retired = new Set(config.skills.filter(skill => skill?.kind === 'passive').map(skill => skill.id));
     config.skills = config.skills.filter(skill => skill?.kind !== 'passive');
     for (const unit of config.units) {

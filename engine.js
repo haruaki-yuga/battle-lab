@@ -1457,7 +1457,7 @@ export class Battle {
             count = Math.max(count, 1 + Math.ceil(roll.fb / 10));
         count = Math.min(100, count);
         const doubled = res < 0 && this.d() < Math.min(101, -res);
-        const baseTurns = Math.max(1, s.bsTurns || 3), duration = baseTurns * (doubled ? 2 : 1);
+        const baseTurns = 3, duration = baseTurns * (doubled ? 2 : 1);
         const added = Array.from({ length: count }, () => ({ name, remaining: duration, source: u.id, durationDoubled: doubled }));
         t.bs.push(...added);
         const active = t.bs.filter(b => b.name === name && b.remaining > 0);

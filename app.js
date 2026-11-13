@@ -4,6 +4,7 @@ import { Battle, clamp } from './engine.js';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
 import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName } from './skill-dedup.js';
@@ -49,6 +50,12 @@ function adaptAccelDraft(draft) {
     if (draft.scope === 'special')
         draft.scope = 'area';
     draft.effects = Object.fromEntries(Object.entries(draft.effects || {}).filter(([key]) => key in accelEffects(draft.kind)));
+    for (const group of ['effects', 'grantedEffects', 'selfEffects']) {
+        for (const key of Object.keys(draft[group] || {})) {
+            if (FLAG_EFFECTS.has(key)) draft[group][key] = 1;
+        }
+    }
+    draft.bsTurns = 3;
     if (draft.kind !== 'attack') {
         draft.trigger = 'instant';
         draft.bs = [];
@@ -58,6 +65,7 @@ function adaptAccelDraft(draft) {
     return draft;
 }
 const KEY = 'arcadia-battle-lab-v1';
+const FLAG_EFFECTS = new Set(BOOL_EFFECTS);
 function makeSample() {
     const c = sampleConfig();
     c.name = '新しい対戦';
@@ -103,7 +111,7 @@ if (config.initialLayoutVersion !== 2) {
     arrangeInitialPositions(config.units);
     config.initialLayoutVersion = 2;
 }
-let selectedLogId = -1, logScrollTop = null, logScrollFrame = 0, unitTacticsImportTarget = null, arenaImportTarget = null, arenaImportReport = null;
+let selectedLogId = -1, logScrollTop = null, logScrollFrame = 0, unitTacticsImportTarget = null, characterJsonImportTarget = null, arenaImportTarget = null, arenaImportReport = null;
 let mapZoom = 1, mapRelations = false, mapMoveCircle = false, mapFocus = 'selected', mapPan = { x: 0, y: 0 }, mapDrag = null;
 let page = 'setup', selected = config.units[0].id, skillSearch = '', kindFilter = 'all', skillFilter = 'all', skillPage = 0, sim = null, frame = -1, logType = 'main', logTurn = 'all', logSearch = '', worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
 const $ = s => document.querySelector(s), app = $('#app');
@@ -139,7 +147,7 @@ const save = () => {
     }
     catch {
         saveFailed = true;
-        toast('自動保存できません。設定を書き出して保存してください。');
+        toast('自動保存できません。必要なキャラをJSONで書き出して保存してください。');
     }
     const el = $('#save-status');
     if (el)
@@ -178,7 +186,7 @@ function render() {
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
 <div class="sidebar-footer"><div class="version">Web版 1.6.24</div></div></aside><main class="main"><header class="topbar"><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
-<div class="top-actions"><span class="saved" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('読込', 'import')}${btn('設定を書き出す', 'export')}</div>\
+<div class="top-actions"><span class="saved" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>\
 </header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main></div>`;
     if (page === 'sim' && sim)
@@ -348,8 +356,8 @@ function setupPage() {
 <div>${esc(actionName(r, u))}<small>${r.conditions.length ? conditionSummary(r.conditions[0]) : '無条件'}</small>\
 </div></div>`).join('')}<div class="hint">\
 上のルールから順に判定し、実行できる最初の行動を選択します。</div></div></section><section class="panel"><div class="panel-body"><h3>データ管理</h3><p class="subtitle">\
-設定はブラウザに自動保存されます。</p><div class="unit-tactics-management"><h3>${esc(u.name)} のスキル・AI</h3>\
-<p class="subtle">装備スキル・AIルールだけを保存／読込（能力値・チームは変更しません）</p>${unitTacticsControls()}</div>${btn('初期編成に戻す', 'reset-config', 'small danger', 'style="margin-top:12px"')}</div>\
+設定はブラウザに自動保存されます。</p><div class="unit-tactics-management"><h3>${esc(u.name)} のキャラクター設定</h3>\
+<p class="subtle">上部の「キャラJSON」で、このキャラの能力値とスキル・AIを1人ずつ入出力できます。</p><div class="unit-tactics-buttons">${btn('このキャラをJSONで書き出す', 'export-character', 'small')}${btn('このキャラにJSONを読み込む', 'import-character', 'small')}</div><p class="subtle">スキル・AIのみを移す場合：</p>${unitTacticsControls()}</div>${btn('初期編成に戻す', 'reset-config', 'small danger', 'style="margin-top:12px"')}</div>\
 </section></aside></div>`;
 }
 const actionName = (r, u = current()) => r.action === 'skill' ? displayedSkillName(u, config.skills.find(s => s.id === r.skillId)) || 'スキル未選択' : ACTIONS[r.action];
@@ -693,7 +701,7 @@ function effectEditor(group, labels, title) {
     const entries = Object.entries(effects).filter(([key]) => key in labels);
     const rows = entries.map(([key, value]) => `<div class="effect-edit-row">
  ${select(labels, key, `data-effect-key="${esc(group)}:${esc(key)}" aria-label="${esc(title)}の種類"`)}
- <input type="number" step="any" data-effect-value="${esc(group)}:${esc(key)}" value="${esc(value)}" aria-label="${esc(key)}の効果量">
+ ${FLAG_EFFECTS.has(key) ? '<span class="effect-no-value">数値入力不要</span>' : `<input type="number" step="any" data-effect-value="${esc(group)}:${esc(key)}" value="${esc(value)}" aria-label="${esc(key)}の効果量">`}
  ${btn('削除', `remove-effect:${group}:${key}`, 'small danger')}
  </div>`).join('');
     return `<div class="effect-editor"><div class="field-section">${esc(title)}</div>${rows}${Object.keys(labels).some(key => !(key in effects)) ? btn('＋ 効果を追加', `add-effect:${group}`, 'small ghost') : ''}</div>`;
@@ -727,7 +735,7 @@ function openSkill(id, copy = false) {
 function renderModal() {
     if (modalMode === 'unit') {
         $('#modal').innerHTML = `<div class="modal-header"><h2>${esc(current().name)}の固有効果</h2>${btn('×', 'close-modal', 'ghost')}</div>\
-<div class="modal-form"><p class="subtle">数値なしの効果は1で有効、0で無効。</p>${effectEditor('effects', EFFECTS, '固有の特殊効果')}</div>\
+<div class="modal-form"><p class="subtle">数値を使わない効果は、選択するだけで有効になります。</p>${effectEditor('effects', EFFECTS, '固有の特殊効果')}</div>\
 <div class="modal-footer">${btn('キャンセル', 'close-modal')}${btn('保存', 'save-unit-effects', 'primary')}</div>`;
         return;
     }
@@ -747,12 +755,12 @@ function renderModal() {
   ${attacking ? `<div class="field-section">威力・命中</div><div class="fields three">${namedField('主攻撃力に加算', 'mainBonus', s.mainBonus)}${namedField('副攻撃力に加算', 'subBonus', s.subBonus)}${namedField('命中に加算', 'hitBonus', s.hitBonus)}${namedField('主攻撃力の使用率 (%)', 'mainPct', s.mainPct)}${namedField('副攻撃力の使用率 (%)', 'subPct', s.subPct)}</div>` : ''}
   ${healing ? `<div class="field-section">回復量</div>${field('回復力に加算する威力', `<input type="number" step="any" data-draft="power" value="${esc(s.power)}">`)}` : ''}
   <details class="accordion" open><summary>特殊効果${attacking ? '・BS' : ''}</summary>
-   <p class="subtle" style="margin-top:10px">数値なしの効果は1で有効、0で無効です。</p>
+   <p class="subtle" style="margin-top:10px">数値を使わない効果は、選択するだけで有効になります。</p>
    ${healing ? field('回復の特殊効果', select(ACCEL_HEAL_MODES, s.kind, 'data-heal-mode aria-label="回復の特殊効果"')) : ''}
    ${attacking ? field('迎撃・報復', select({ instant: '通常発動', intercept: '迎撃', retaliate: '報復' }, s.trigger, 'data-draft="trigger"')) : ''}
    ${!attacking ? '<p class="subtle">範囲回復・範囲付与は「識別」がない場合、敵味方両方に効果が及びます。</p>' : ''}
    ${effectEditor('effects', effectsList, 'このスキルの特殊効果')}
-   ${attacking ? `<div class="fields two" style="margin-top:15px">${field('命中時に与えるBS（複数選択可）', `<select multiple class="multi-bs" data-draft-bs>${BS_NAMES.map(b => `<option ${(s.bs || []).includes(b) ? 'selected' : ''}>${b}</option>`).join('')}</select>`)}${namedField('BSの持続ターン', 'bsTurns', s.bsTurns)}</div>` : ''}
+   ${attacking ? `<div class="fields two" style="margin-top:15px">${field('命中時に与えるBS（複数選択可／基本3ターン）', `<select multiple class="multi-bs" data-draft-bs>${BS_NAMES.map(b => `<option ${(s.bs || []).includes(b) ? 'selected' : ''}>${b}</option>`).join('')}</select>`)}</div>` : ''}
    ${healing && s.kind === 'cleanse' ? '<p class="subtle">BS回復の成功率は、上記「BS回復」の効果量（%）で指定できます。</p>' : ''}
   </details>
   <details class="accordion"><summary>能力補正・付与・自分付与</summary>
@@ -771,6 +779,11 @@ function syncDraft() {
     if (!modalDraft)
         return;
     $('#modal').querySelectorAll('[data-draft]').forEach(el => modalDraft[el.dataset.draft] = el.type === 'number' ? Number(el.value) : el.value);
+    for (const group of ['effects', 'grantedEffects', 'selfEffects']) {
+        for (const key of Object.keys(modalDraft[group] || {})) {
+            if (FLAG_EFFECTS.has(key)) modalDraft[group][key] = 1;
+        }
+    }
     $('#modal').querySelectorAll('[data-effect-value]').forEach(el => {
         const [key, k] = el.dataset.effectValue.split(':');
         modalDraft[key][k] = Number(el.value);
@@ -960,6 +973,7 @@ async function onAction(act) {
     if (a === 'save-unit-effects') {
         syncDraft();
         u.effects = clone(modalDraft.effects);
+        for (const key of Object.keys(u.effects)) if (FLAG_EFFECTS.has(key)) u.effects[key] = 1;
         $('#modal').close();
         save();
         render();
@@ -1137,12 +1151,17 @@ async function onAction(act) {
         render();
         return;
     }
-    else if (a === 'export') {
-        download('arcadia-battle-config.json', config);
+    else if (a === 'export-character') {
+        try {
+            const filename = (u.name || 'character').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').slice(0, 60) || 'character';
+            download(`${filename}-キャラクター.json`, exportUnitCharacter(config, u.id));
+            toast(`${u.name}のキャラクター設定を書き出しました。`);
+        } catch (err) { toast('書き出せません：' + err.message); }
         return;
     }
-    else if (a === 'import') {
-        $('#file-import').click();
+    else if (a === 'import-character') {
+        characterJsonImportTarget = u.id;
+        $('#character-json-import').click();
         return;
     }
     else if (a === 'export-result') {
@@ -1358,7 +1377,7 @@ document.addEventListener('change', e => {
         const [key, old] = el.dataset.effectKey.split(':');
         const val = modalDraft[key][old];
         delete modalDraft[key][old];
-        modalDraft[key][el.value] = val;
+        modalDraft[key][el.value] = FLAG_EFFECTS.has(el.value) ? 1 : (FLAG_EFFECTS.has(old) ? 1 : val);
         renderModal();
         return;
     }
@@ -1429,35 +1448,34 @@ document.addEventListener('input', e => {
         refreshLogList();
     }
 });
-$('#file-import').addEventListener('change', async (e) => {
-    const f = e.target.files[0];
-    if (!f)
-        return;
+$('#character-json-import').addEventListener('change', async (e) => {
+    const f = e.target.files?.[0];
+    const targetId = characterJsonImportTarget;
+    characterJsonImportTarget = null;
+    if (!f) return;
     try {
-        if (f.size > 5000000)
-            throw Error('設定ファイルは5MB以下にしてください。');
-        const c = normalizeMoveModes(cleanWebConfiguration(migrateLegacyDemoSkills(JSON.parse(await f.text()))));
-        deduplicateImportedSkills(c);
-        const errs = validateConfig(c);
-        if (errs.length)
-            throw Error(errs.join('\n'));
-        config = normalizeSettings(c);
-        if (config.initialLayoutVersion !== 2) {
-            arrangeInitialPositions(config.units);
-            config.initialLayoutVersion = 2;
-        }
-        selected = c.units[0].id;
+        if (f.size > 3000000) throw Error('キャラJSONは3MB以下にしてください。');
+        const payload = JSON.parse(await f.text());
+        const target = config.units.find(unit => unit.id === targetId);
+        if (!target) throw Error('読み込み先のキャラクターが見つかりません。');
+        const result = importUnitCharacter(config, targetId, payload);
+        if (!confirm(`選択中の「${target.name}」を「${result.name}」の設定で置き換えます。\n能力値・固有効果・開始時BS・装備スキル・AIを読み込みます。\nチーム・初期座標と他のキャラクターは変更しません。\n続行しますか？`)) return;
+        config = normalizeSettings(cleanWebConfiguration(result.config));
+        normalizeMoveModes(config);
+        selected = targetId;
         sim = null;
         batch = null;
+        frame = -1;
+        selectedLogId = -1;
         errors = [];
         save();
         render();
-        toast('設定を読み込みました。');
+        toast(`${result.name}のキャラクター設定を読み込みました。`);
+    } catch (err) {
+        toast('キャラJSONを読み込めません：' + err.message);
+    } finally {
+        e.target.value = '';
     }
-    catch (err) {
-        toast('読み込めません：' + err.message);
-    }
-    e.target.value = '';
 });
 $('#unit-tactics-import').addEventListener('change', async (e) => {
     const f = e.target.files?.[0];

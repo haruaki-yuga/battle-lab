@@ -2930,3 +2930,13 @@ h1 {
   }
 
 }
+
+/* Checkbox-like skill effects do not need a numerical value. */
+.effect-no-value {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
