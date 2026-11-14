@@ -602,7 +602,7 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
 </section></div>`;
 }
 function visibleLogs() {
-    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && ['pursuit', 'suddenDamage'].includes(l.type)) && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
+    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && (['pursuit', 'suddenDamage'].includes(l.type) || l.type === 'bs' && l.message.includes('障壁が'))) && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
 }
 function logEntries() {
     const logs = visibleLogs(), types = {

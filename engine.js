@@ -273,12 +273,13 @@ export class Battle {
     }
     absorbBarrier(u, damage) {
         const slot = this.barrierSlot(u);
+        const before = this.barrierValue(u);
         const blocked = Math.min(Math.max(0, Math.floor(damage)), slot?.left || 0);
         if (blocked) {
             if (slot.type === 'base') u.baseBarrierLeft -= blocked;
             else slot.ref.barrierLeft = slot.left - blocked;
         }
-        return { blocked, left: this.barrierValue(u) };
+        return { before, blocked, left: this.barrierValue(u) };
     }
     /** Only HP/AP damage is shielded; paying AP for a skill or periodic upkeep is not. */
     apDamage(u, value, source = null, { amplify = true } = {}) {
@@ -289,10 +290,20 @@ export class Battle {
         const applied = Math.min(u.ap, incoming);
         u.ap = Math.max(0, u.ap - incoming);
         // AP overrun is handled by the caller according to the underlying effect (摩耗 only).
-        return { total, blocked: shield.blocked, applied, overflow: incoming - applied, barrier: shield.left };
+        return { total, before: shield.before, blocked: shield.blocked, applied, overflow: incoming - applied, left: shield.left, barrier: shield.left };
     }
-    barrierNote(info) {
-        return info?.blocked ? ` / 障壁が${info.blocked.toLocaleString()}肩代わり（残${(info.left ?? info.barrier ?? 0).toLocaleString()}）` : '';
+    /** Single concise log entry: shield consumption and damage that actually passed through. */
+    barrierLog(name, info, resource = 'HP') {
+        if (!info?.blocked) return null;
+        const before = Math.max(0, Number(info.before ?? info.blocked) || 0);
+        const left = Math.max(0, Number(info.left ?? info.barrier ?? 0) || 0);
+        const applied = Math.max(0, Number(info.applied ?? (info.incoming - info.blocked)) || 0);
+        const amount = Math.max(0, Number(info.incoming ?? (info.blocked + applied)) || 0);
+        const fmt = n => Math.floor(n).toLocaleString();
+        return {
+            message: `${name}：障壁が${fmt(info.blocked)}ダメージを吸収${left === 0 ? 'して消失' : ''}`,
+            detail: `障壁 ${fmt(before)} → ${fmt(left)} ｜ ${resource}被害 ${fmt(applied)} ｜ 被ダメージ ${fmt(amount)}`
+        };
     }
     /** Keep passive/付与 upkeep independent so an unaffordable grant is cancelled. */
     applyUpkeep(u, key) {
@@ -436,12 +447,16 @@ export class Battle {
     hurt(u, value, source = null, dramaPenalty = 0, lethal = 0, onDamageResolved = null, suddenExempt = false, bypassBarrier = false) {
         if (!u.alive) return 0;
         const n = this.damageAmount(value, suddenExempt);
-        const shield = bypassBarrier ? { blocked: 0, left: this.barrierValue(u) } : this.absorbBarrier(u, n);
+        const shield = bypassBarrier
+            ? { before: this.barrierValue(u), blocked: 0, left: this.barrierValue(u) }
+            : this.absorbBarrier(u, n);
         const hpDamage = n - shield.blocked;
         const actual = Math.min(Math.max(0, u.hp), hpDamage);
         u.hp -= hpDamage;
         if (source && source.team !== u.team) {
-            source.damageDealt += n;
+            // Only damage passing through the barrier counts toward dealt damage.
+            // Preserve the prior overkill rule; never count absorbed damage.
+            source.damageDealt += hpDamage;
             u.damageTaken += hpDamage;
         }
         let outcome = null;
@@ -475,7 +490,7 @@ export class Battle {
         // Record the damage first, then the resulting drama/down event in the battle log.
         // The snapshot for each log already reflects the resolved HP/alive state.
         if (onDamageResolved)
-            onDamageResolved(hpDamage, { incoming: n, blocked: shield.blocked, left: shield.left });
+            onDamageResolved(hpDamage, { incoming: n, before: shield.before, blocked: shield.blocked, left: shield.left, applied: hpDamage, actual });
         if (outcome)
             this.log(outcome.type, outcome.message, outcome.detail, outcome.actor, outcome.target);
         return actual;
@@ -948,8 +963,11 @@ export class Battle {
                 const tax = Math.ceil(before * .20);
                 this.hurt(u, tax, null, 0, 0, (_applied, shield) => {
                     const lost = Math.max(0, before - u.hp);
-                    const detail = `HP ${before.toLocaleString()} → ${u.hp.toLocaleString()}${this.barrierNote(shield)}`;
-                    this.log('suddenDamage', `サドンデスにより${u.name}に${lost.toLocaleString()}ダメージ`, detail, null, u);
+                    const barrier = this.barrierLog(u.name, shield);
+                    const detail = barrier
+                        ? `${barrier.detail} ｜ HP ${before.toLocaleString()} → ${u.hp.toLocaleString()}`
+                        : `HP ${before.toLocaleString()} → ${u.hp.toLocaleString()}`;
+                    this.log('suddenDamage', barrier ? `サドンデスにより${barrier.message}` : `サドンデスにより${u.name}に${lost.toLocaleString()}ダメージ`, detail, null, u);
                 }, true);
             }
             // If the opening HP loss ends the battle, no one may act this turn.
@@ -993,12 +1011,18 @@ export class Battle {
                     ap += 120 * (Math.max(0, suff - ease) + 1);
                 if (dmg > 0) {
                     dmg = Math.max(0, dmg - res * 2 - this.effectRaw(u, 'bsArmor'));
-                    this.hurt(u, dmg, null, 0, 0, (applied, info) => this.log('bs', `${u.name}：${name}でHP −${applied}${this.barrierNote(info)}`));
+                    this.hurt(u, dmg, null, 0, 0, (applied, info) => {
+                        const barrier = this.barrierLog(u.name, info);
+                        this.log('bs', barrier?.message || `${u.name}：${name}でHP −${applied}`,
+                            barrier ? `${name} ｜ ${barrier.detail}` : '');
+                    });
                 }
                 if (ap > 0) {
                     ap = Math.max(0, ap - res * 2 - this.effectRaw(u, 'bsArmor'));
                     const apResult = this.apDamage(u, ap);
-                    this.log('bs', `${u.name}：${name}でAP −${apResult.applied}${this.barrierNote(apResult)}`);
+                    const barrier = this.barrierLog(u.name, { ...apResult, incoming: apResult.total }, 'AP');
+                    this.log('bs', barrier?.message || `${u.name}：${name}でAP −${apResult.applied}`,
+                        barrier ? `${name} ｜ ${barrier.detail}` : '');
                 }
                 const par = BS_GROUPS[12].indexOf(name);
                 if (par >= 0 && this.d() <= 20 + Math.max(0, par - ease) * 5)
@@ -1350,7 +1374,11 @@ export class Battle {
         this.addBuff(u, { ...s, id: s.id + '-self' }, s.selfModifiers, s.selfEffects, u);
         const recoil = this.effect(u, s, 'recoil');
         if (recoil && u.alive) {
-            this.hurt(u, recoil, null, 0, 0, applied => this.log('damage', `${u.name}は反動でHP −${applied}`, '', u));
+            this.hurt(u, recoil, null, 0, 0, (applied, info) => {
+                const barrier = this.barrierLog(u.name, info);
+                this.log('damage', barrier?.message || `${u.name}は反動でHP −${applied}`,
+                    barrier ? `反動 ｜ ${barrier.detail}` : '', u);
+            });
         }
     }
     cleanse(t, chance, u) {
@@ -1509,9 +1537,29 @@ export class Battle {
             50,
             100
         ][rank], this.effect(u, s, 'lethal'), (applied, shield) => {
-            this.log('damage', `${t.name}に${scaledBase.toLocaleString()}ダメージ${this.barrierNote(shield)}`, `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})`, u, t, processTags);
-            if (scaledPursuit > 0)
-                this.log('pursuit', `追撃により追加で${scaledPursuit.toLocaleString()}ダメージ！`, `対象：${t.name} / この命中の合計 ${scaledTotal.toLocaleString()}ダメージ`, u, t);
+            // The engine resolves base attack + pursuit as one HP hit. Split its
+            // single absorption result in the same order solely for log display.
+            const baseBlocked = Math.min(scaledBase, shield.blocked);
+            const pursuitBlocked = shield.blocked - baseBlocked;
+            const baseLeft = Math.max(0, shield.before - baseBlocked);
+            // When the strongest source is depleted, another independently
+            // active barrier may become visible rather than reaching zero.
+            const baseDisplayedLeft = baseLeft || shield.left;
+            const baseBarrier = this.barrierLog(t.name, {
+                incoming: scaledBase, before: shield.before, blocked: baseBlocked,
+                left: scaledPursuit ? baseDisplayedLeft : shield.left, applied: scaledBase - baseBlocked
+            });
+            const attackDetail = `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})`;
+            this.log('damage', baseBarrier?.message || `${t.name}に${scaledBase.toLocaleString()}ダメージ`,
+                baseBarrier ? `${baseBarrier.detail} ｜ ${attackDetail}` : attackDetail, u, t, processTags);
+            if (scaledPursuit > 0) {
+                const pursuitBarrier = this.barrierLog(t.name, {
+                    incoming: scaledPursuit, before: baseLeft, blocked: pursuitBlocked,
+                    left: shield.left, applied: scaledPursuit - pursuitBlocked
+                });
+                this.log('pursuit', pursuitBarrier ? `追撃：${pursuitBarrier.message}` : `追撃により追加で${scaledPursuit.toLocaleString()}ダメージ！`,
+                    pursuitBarrier ? pursuitBarrier.detail : `対象：${t.name} / この命中の合計 ${scaledTotal.toLocaleString()}ダメージ`, u, t);
+            }
         });
         if (amount > 0 && u.team !== t.team)
             t.incomingHits++;
@@ -1521,14 +1569,23 @@ export class Battle {
         const erosion = Math.max(0, this.effect(u, s, 'erosion') - this.effectRaw(t, 'apArmor'));
         if (erosion) {
             const apResult = this.apDamage(t, erosion);
-            const note = this.barrierNote(apResult);
+            const apBarrier = this.barrierLog(t.name, { ...apResult, incoming: apResult.total }, 'AP');
             if (apResult.overflow) {
                 // The sudden-death increase is applied once to the original AP damage.
                 // Spillover into HP does not multiply the same damage a second time.
                 this.hurt(t, Math.max(0, apResult.overflow - this.effectRaw(t, 'hpArmor')), u, 0, 0,
-                    (hpApplied, shield) => this.log('damage', `${t.name}のAP −${apResult.applied}${note}`, `摩耗：AP不足でHPに追加${hpApplied}ダメージ${this.barrierNote(shield)}`, u, t), true);
+                    (hpApplied, shield) => {
+                        const hpBarrier = this.barrierLog(t.name, shield);
+                        const msg = apBarrier?.message || hpBarrier?.message || `${t.name}のAP −${apResult.applied}`;
+                        const detail = apBarrier || hpBarrier
+                            ? ['摩耗', apBarrier?.detail || `AP被害 ${apResult.applied.toLocaleString()}`,
+                                hpBarrier?.detail || `AP不足でHP被害 ${hpApplied.toLocaleString()}`].join(' ｜ ')
+                            : `摩耗：AP不足でHPに追加${hpApplied}ダメージ`;
+                        this.log('damage', msg, detail, u, t);
+                    }, true);
             } else {
-                this.log('damage', `${t.name}のAP −${apResult.applied}${note}`, '摩耗', u, t);
+                this.log('damage', apBarrier?.message || `${t.name}のAP −${apResult.applied}`,
+                    apBarrier ? `摩耗 ｜ ${apBarrier.detail}` : '摩耗', u, t);
             }
         }
         if (amount > 0) {
@@ -1541,13 +1598,19 @@ export class Battle {
                 this.cleanse(u, this.effect(u, s, 'offensiveCleanse'), u);
             const reflected = amount * (this.effectRaw(t, 'thorns') ? .3 : this.effectRaw(t, 'reflect') ? .15 : 0);
             if (reflected && depth < 8)
-                this.hurt(u, reflected, t);
+                this.hurt(u, reflected, t, 0, 0, (_applied, info) => {
+                    const barrier = this.barrierLog(u.name, info);
+                    if (barrier) this.log('damage', barrier.message, `反射 ｜ ${barrier.detail}`, t, u);
+                });
         }
         if (t.alive) {
             if (this.effect(u, s, 'break') && rank >= 2 && this.random() * 100 >= this.effectRaw(t, 'breakGuard')) {
                 const before = this.stat(t, 'maxHp');
                 t.buffs = [];
-                this.hurt(t, Math.max(0, before - this.stat(t, 'maxHp')));
+                this.hurt(t, Math.max(0, before - this.stat(t, 'maxHp')), null, 0, 0, (_applied, info) => {
+                    const barrier = this.barrierLog(t.name, info);
+                    if (barrier) this.log('damage', barrier.message, `ブレイク ｜ ${barrier.detail}`, u, t);
+                });
                 this.log('buff', `${t.name}の付与をブレイク`, '', u, t);
             }
             for (const name of s.bs || [])
