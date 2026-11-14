@@ -91,11 +91,15 @@ export const CATALOG = [
         "subBonus": 50,
         "hitBonus": 12,
         "power": 0,
-        "bs": ["乱れ"],
+        "bs": [
+            "乱れ"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 10 },
+        "effects": {
+            "evil": 10
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -134,7 +138,9 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "fumble": 1 },
+        "castMods": {
+            "fumble": 1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -167,11 +173,15 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["毒"],
+        "bs": [
+            "毒"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 10 },
+        "effects": {
+            "demon": 10
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -205,12 +215,18 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 34,
         "power": 0,
-        "bs": ["怒り"],
+        "bs": [
+            "怒り"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "noDamage": 1 },
-        "castMods": { "fumble": 3 },
+        "effects": {
+            "noDamage": 1
+        },
+        "castMods": {
+            "fumble": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -243,11 +259,16 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 32,
         "power": 0,
-        "bs": ["窒息"],
+        "bs": [
+            "窒息"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "noDamage": 1, "knockback": 1 },
+        "effects": {
+            "noDamage": 1,
+            "knockback": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -285,8 +306,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 1 },
-        "castMods": { "critical": 2 },
+        "effects": {
+            "lethal": 1
+        },
+        "castMods": {
+            "critical": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -319,12 +344,16 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["足止"],
+        "bs": [
+            "足止"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "fumble": -3 },
+        "castMods": {
+            "fumble": -3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -366,7 +395,9 @@ export const CATALOG = [
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "無": 1 },
+        "elements": {
+            "無": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -395,16 +426,24 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["火炎"],
+        "bs": [
+            "火炎"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 5 },
-        "castMods": { "fumble": -1 },
+        "effects": {
+            "demon": 5
+        },
+        "castMods": {
+            "fumble": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "火": 1 },
+        "elements": {
+            "火": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -438,11 +477,15 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 2 },
+        "castMods": {
+            "critical": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "闇": 1 },
+        "elements": {
+            "闇": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -471,16 +514,23 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["出血"],
+        "bs": [
+            "出血"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 1, "fumble": -1 },
+        "castMods": {
+            "critical": 1,
+            "fumble": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "水": 1 },
+        "elements": {
+            "水": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -513,12 +563,18 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "break": 1 },
-        "castMods": { "fumble": -2 },
+        "effects": {
+            "break": 1
+        },
+        "castMods": {
+            "fumble": -2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "土": 1 },
+        "elements": {
+            "土": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -551,12 +607,20 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "dash": 1, "versatile": 1 },
-        "castMods": { "critical": 2, "fumble": -1 },
+        "effects": {
+            "dash": 1,
+            "versatile": 1
+        },
+        "castMods": {
+            "critical": 2,
+            "fumble": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "風": 1 },
+        "elements": {
+            "風": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -585,16 +649,23 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 7,
         "power": 0,
-        "bs": ["痺れ"],
+        "bs": [
+            "痺れ"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 20, "erosion": 100 },
+        "effects": {
+            "demon": 20,
+            "erosion": 100
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "光": 1 },
+        "elements": {
+            "光": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -628,7 +699,10 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 5, "fumble": 2 },
+        "castMods": {
+            "critical": 5,
+            "fumble": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -666,7 +740,10 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 2, "fumble": -1 },
+        "castMods": {
+            "critical": 2,
+            "fumble": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -704,7 +781,10 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 1, "fumble": -1 },
+        "castMods": {
+            "critical": 1,
+            "fumble": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -742,7 +822,10 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 2, "fumble": 2 },
+        "castMods": {
+            "critical": 2,
+            "fumble": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -779,8 +862,14 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 1, "chargeTime": 100 },
-        "castMods": { "critical": 1, "fumble": -1 },
+        "effects": {
+            "lethal": 1,
+            "chargeTime": 100
+        },
+        "castMods": {
+            "critical": 1,
+            "fumble": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -818,7 +907,9 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 3 },
+        "castMods": {
+            "critical": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -851,12 +942,18 @@ export const CATALOG = [
         "subBonus": 65,
         "hitBonus": 0,
         "power": 0,
-        "bs": ["足止"],
+        "bs": [
+            "足止"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "splash": 1 },
-        "castMods": { "critical": 3 },
+        "effects": {
+            "splash": 1
+        },
+        "castMods": {
+            "critical": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -894,7 +991,10 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 1, "fumble": -1 },
+        "castMods": {
+            "critical": 1,
+            "fumble": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -927,12 +1027,18 @@ export const CATALOG = [
         "subBonus": 50,
         "hitBonus": 12,
         "power": 0,
-        "bs": ["乱れ"],
+        "bs": [
+            "乱れ"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 30 },
-        "castMods": { "critical": 2 },
+        "effects": {
+            "evil": 30
+        },
+        "castMods": {
+            "critical": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -969,7 +1075,9 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "recoil": 50 },
+        "effects": {
+            "recoil": 50
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -1007,12 +1115,18 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "break": 1 },
-        "castMods": { "critical": 7 },
+        "effects": {
+            "break": 1
+        },
+        "castMods": {
+            "critical": 7
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "光": 1 },
+        "elements": {
+            "光": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1041,12 +1155,17 @@ export const CATALOG = [
         "subBonus": 150,
         "hitBonus": 8,
         "power": 0,
-        "bs": ["ショック"],
+        "bs": [
+            "ショック"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 6, "fumble": 3 },
+        "castMods": {
+            "critical": 6,
+            "fumble": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -1083,12 +1202,18 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 1 },
-        "castMods": { "critical": 2 },
+        "effects": {
+            "lethal": 1
+        },
+        "castMods": {
+            "critical": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "無": 1 },
+        "elements": {
+            "無": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1121,8 +1246,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "multiShadow": 1 },
-        "castMods": { "fumble": -5 },
+        "effects": {
+            "multiShadow": 1
+        },
+        "castMods": {
+            "fumble": -5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -1159,7 +1288,9 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "break": 1 },
+        "effects": {
+            "break": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -1193,11 +1324,15 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["苦鳴"],
+        "bs": [
+            "苦鳴"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "erosion": 100 },
+        "effects": {
+            "erosion": 100
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -1235,8 +1370,13 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 20, "recoil": 100 },
-        "castMods": { "critical": 3 },
+        "effects": {
+            "evil": 20,
+            "recoil": 100
+        },
+        "castMods": {
+            "critical": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -1269,16 +1409,24 @@ export const CATALOG = [
         "subBonus": 100,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["出血", "流血"],
+        "bs": [
+            "出血",
+            "流血"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 2, "fumble": 2 },
+        "castMods": {
+            "critical": 2,
+            "fumble": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "風": 1 },
+        "elements": {
+            "風": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1307,11 +1455,15 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["猛毒"],
+        "bs": [
+            "猛毒"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 30 },
+        "effects": {
+            "demon": 30
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -1349,12 +1501,18 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "steady": 40 },
-        "castMods": { "fumble": 1 },
+        "effects": {
+            "steady": 40
+        },
+        "castMods": {
+            "fumble": 1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "土": 1 },
+        "elements": {
+            "土": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1383,16 +1541,25 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 8,
         "power": 0,
-        "bs": ["暗闇", "無策"],
+        "bs": [
+            "暗闇",
+            "無策"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 25, "recoil": 55, "curseKill": 1 },
+        "effects": {
+            "demon": 25,
+            "recoil": 55,
+            "curseKill": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "闇": 1 },
+        "elements": {
+            "闇": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1426,7 +1593,10 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 4, "fumble": -5 },
+        "castMods": {
+            "critical": 4,
+            "fumble": -5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -1464,11 +1634,16 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": -2, "fumble": -2 },
+        "castMods": {
+            "critical": -2,
+            "fumble": -2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "光": 1 },
+        "elements": {
+            "光": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1497,16 +1672,22 @@ export const CATALOG = [
         "subBonus": 120,
         "hitBonus": 16,
         "power": 0,
-        "bs": ["凍結"],
+        "bs": [
+            "凍結"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 3 },
+        "castMods": {
+            "critical": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "水": 1 },
+        "elements": {
+            "水": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1535,16 +1716,24 @@ export const CATALOG = [
         "subBonus": 100,
         "hitBonus": 12,
         "power": 0,
-        "bs": ["火炎", "業炎"],
+        "bs": [
+            "火炎",
+            "業炎"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 3, "fumble": 6 },
+        "castMods": {
+            "critical": 3,
+            "fumble": 6
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "火": 1 },
+        "elements": {
+            "火": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1573,7 +1762,9 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["麻痺"],
+        "bs": [
+            "麻痺"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
@@ -1582,7 +1773,9 @@ export const CATALOG = [
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "土": 1 },
+        "elements": {
+            "土": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1616,7 +1809,10 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 3, "fumble": -2 },
+        "castMods": {
+            "critical": 3,
+            "fumble": -2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -1649,16 +1845,23 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["致命"],
+        "bs": [
+            "致命"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 1, "curseKill": 1 },
+        "effects": {
+            "lethal": 1,
+            "curseKill": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "闇": 1 },
+        "elements": {
+            "闇": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1687,16 +1890,22 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 12,
         "power": 0,
-        "bs": ["崩れ"],
+        "bs": [
+            "崩れ"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "knockback": 1 },
+        "effects": {
+            "knockback": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "水": 1 },
+        "elements": {
+            "水": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1725,16 +1934,22 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["不発"],
+        "bs": [
+            "不発"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "break": 1 },
+        "effects": {
+            "break": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "無": 1 },
+        "elements": {
+            "無": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1763,16 +1978,23 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 6,
         "power": 0,
-        "bs": ["火炎", "業炎"],
+        "bs": [
+            "火炎",
+            "業炎"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "fumble": 4 },
+        "castMods": {
+            "fumble": 4
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "火": 1 },
+        "elements": {
+            "火": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1801,11 +2023,17 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 35,
         "power": 0,
-        "bs": ["怒り"],
+        "bs": [
+            "怒り"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "noDamage": 1, "erosion": 100, "identify": 1 },
+        "effects": {
+            "noDamage": 1,
+            "erosion": 100,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -1843,8 +2071,15 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "steady": 30, "lethal": 1, "chargeTime": 200 },
-        "castMods": { "critical": 3, "fumble": -2 },
+        "effects": {
+            "steady": 30,
+            "lethal": 1,
+            "chargeTime": 200
+        },
+        "castMods": {
+            "critical": 3,
+            "fumble": -2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -1881,12 +2116,18 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "offensiveCleanse": 30 },
-        "castMods": { "critical": 3 },
+        "effects": {
+            "offensiveCleanse": 30
+        },
+        "castMods": {
+            "critical": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "無": 1 },
+        "elements": {
+            "無": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -1919,7 +2160,10 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 1, "break": 1 },
+        "effects": {
+            "lethal": 1,
+            "break": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -1953,11 +2197,16 @@ export const CATALOG = [
         "subBonus": 65,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["足止", "苦鳴"],
+        "bs": [
+            "足止",
+            "苦鳴"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "erosion": 150 },
+        "effects": {
+            "erosion": 150
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -1995,8 +2244,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 30 },
-        "castMods": { "critical": 5 },
+        "effects": {
+            "evil": 30
+        },
+        "castMods": {
+            "critical": 5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2029,16 +2282,24 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["乱れ", "崩れ", "出血"],
+        "bs": [
+            "乱れ",
+            "崩れ",
+            "出血"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "fumble": -3 },
+        "castMods": {
+            "fumble": -3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "水": 1 },
+        "elements": {
+            "水": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2067,12 +2328,19 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["体勢不利"],
+        "bs": [
+            "体勢不利"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "knockback": 1, "bind": 1 },
-        "castMods": { "critical": 2 },
+        "effects": {
+            "knockback": 1,
+            "bind": 1
+        },
+        "castMods": {
+            "critical": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2105,12 +2373,18 @@ export const CATALOG = [
         "subBonus": 300,
         "hitBonus": 20,
         "power": 0,
-        "bs": ["不吉", "致命"],
+        "bs": [
+            "不吉",
+            "致命"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 15, "fumble": 15 },
+        "castMods": {
+            "critical": 15,
+            "fumble": 15
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2143,16 +2417,25 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 12,
         "power": 0,
-        "bs": ["重圧"],
+        "bs": [
+            "重圧"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "hpDrain": 15, "offensiveCleanse": 30 },
-        "castMods": { "fumble": 3 },
+        "effects": {
+            "hpDrain": 15,
+            "offensiveCleanse": 30
+        },
+        "castMods": {
+            "fumble": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "闇": 1 },
+        "elements": {
+            "闇": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2181,12 +2464,18 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 6,
         "power": 0,
-        "bs": ["凍結", "氷結", "足止"],
+        "bs": [
+            "凍結",
+            "氷結",
+            "足止"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "fumble": -1 },
+        "castMods": {
+            "fumble": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2219,12 +2508,20 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["流血", "致命"],
+        "bs": [
+            "流血",
+            "致命"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "hpDrain": 10 },
-        "castMods": { "critical": 1, "fumble": 3 },
+        "effects": {
+            "hpDrain": 10
+        },
+        "castMods": {
+            "critical": 1,
+            "fumble": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2261,12 +2558,18 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "multiShadow": 2 },
-        "castMods": { "fumble": -5 },
+        "effects": {
+            "multiShadow": 2
+        },
+        "castMods": {
+            "fumble": -5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "光": 1 },
+        "elements": {
+            "光": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2295,16 +2598,22 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 12,
         "power": 0,
-        "bs": ["炎獄"],
+        "bs": [
+            "炎獄"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 30 },
+        "effects": {
+            "demon": 30
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "火": 1 },
+        "elements": {
+            "火": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2337,7 +2646,10 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 30, "splash": 2 },
+        "effects": {
+            "evil": 30,
+            "splash": 2
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -2371,11 +2683,19 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["痺れ", "足止", "重圧"],
+        "bs": [
+            "痺れ",
+            "足止",
+            "重圧"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 2, "recoil": 300, "weak": 1 },
+        "effects": {
+            "lethal": 2,
+            "recoil": 300,
+            "weak": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -2409,12 +2729,20 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["乱れ", "崩れ"],
+        "bs": [
+            "乱れ",
+            "崩れ"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "steady": 22 },
-        "castMods": { "critical": 1, "fumble": -1 },
+        "effects": {
+            "steady": 22
+        },
+        "castMods": {
+            "critical": 1,
+            "fumble": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2452,11 +2780,16 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 10, "fumble": 6 },
+        "castMods": {
+            "critical": 10,
+            "fumble": 6
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "闇": 1 },
+        "elements": {
+            "闇": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2485,16 +2818,27 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["不調", "不遇", "不発", "麻痺"],
+        "bs": [
+            "不調",
+            "不遇",
+            "不発",
+            "麻痺"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bind": 1 },
-        "castMods": { "fumble": 3 },
+        "effects": {
+            "bind": 1
+        },
+        "castMods": {
+            "fumble": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "土": 1 },
+        "elements": {
+            "土": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2523,16 +2867,22 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 20,
         "power": 0,
-        "bs": ["窒息"],
+        "bs": [
+            "窒息"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "knockback": 1 },
+        "effects": {
+            "knockback": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "風": 1 },
+        "elements": {
+            "風": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2561,16 +2911,24 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["氷結"],
+        "bs": [
+            "氷結"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 20 },
-        "castMods": { "critical": 1 },
+        "effects": {
+            "demon": 20
+        },
+        "castMods": {
+            "critical": 1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "水": 1 },
+        "elements": {
+            "水": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2599,7 +2957,11 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 17,
         "power": 0,
-        "bs": ["窒息", "足止", "暗闇"],
+        "bs": [
+            "窒息",
+            "足止",
+            "暗闇"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
@@ -2608,7 +2970,9 @@ export const CATALOG = [
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "土": 1 },
+        "elements": {
+            "土": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2637,11 +3001,16 @@ export const CATALOG = [
         "subBonus": 80,
         "hitBonus": 20,
         "power": 0,
-        "bs": ["苦鳴", "麻痺"],
+        "bs": [
+            "苦鳴",
+            "麻痺"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 20 },
+        "effects": {
+            "demon": 20
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -2675,12 +3044,20 @@ export const CATALOG = [
         "subBonus": 80,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["泥沼", "致命"],
+        "bs": [
+            "泥沼",
+            "致命"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 1 },
-        "castMods": { "critical": 5, "fumble": 5 },
+        "effects": {
+            "lethal": 1
+        },
+        "castMods": {
+            "critical": 5,
+            "fumble": 5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2713,12 +3090,21 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["痺れ", "乱れ", "出血", "不調"],
+        "bs": [
+            "痺れ",
+            "乱れ",
+            "出血",
+            "不調"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "break": 1 },
-        "castMods": { "critical": 3 },
+        "effects": {
+            "break": 1
+        },
+        "castMods": {
+            "critical": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2751,12 +3137,19 @@ export const CATALOG = [
         "subBonus": 120,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["混乱"],
+        "bs": [
+            "混乱"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bind": 1 },
-        "castMods": { "critical": 5, "fumble": 3 },
+        "effects": {
+            "bind": 1
+        },
+        "castMods": {
+            "critical": 5,
+            "fumble": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2789,7 +3182,11 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 13,
         "power": 0,
-        "bs": ["毒", "猛毒", "致死毒"],
+        "bs": [
+            "毒",
+            "猛毒",
+            "致死毒"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
@@ -2798,7 +3195,9 @@ export const CATALOG = [
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "風": 1 },
+        "elements": {
+            "風": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2827,16 +3226,23 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 6,
         "power": 0,
-        "bs": ["業炎", "炎獄"],
+        "bs": [
+            "業炎",
+            "炎獄"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "fumble": 5 },
+        "castMods": {
+            "fumble": 5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "火": 1 },
+        "elements": {
+            "火": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -2865,12 +3271,17 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 5,
         "power": 0,
-        "bs": ["ショック", "感電"],
+        "bs": [
+            "ショック",
+            "感電"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 2 },
+        "castMods": {
+            "critical": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -2903,11 +3314,17 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 20,
         "power": 0,
-        "bs": ["窒息", "泥沼", "不吉"],
+        "bs": [
+            "窒息",
+            "泥沼",
+            "不吉"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "curseKill": 1 },
+        "effects": {
+            "curseKill": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -2945,7 +3362,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "steady": 60, "lethal": 2, "chargeTime": 300, "recoil": 200 },
+        "effects": {
+            "steady": 60,
+            "lethal": 2,
+            "chargeTime": 300,
+            "recoil": 200
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -2983,12 +3405,18 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "steady": 25, "sureHit": 1, "weak": 2 },
+        "effects": {
+            "steady": 25,
+            "sureHit": 1,
+            "weak": 2
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "光": 1 },
+        "elements": {
+            "光": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -3017,11 +3445,18 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["無策"],
+        "bs": [
+            "無策"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 25, "break": 1, "chargeTime": 150, "recoil": 150 },
+        "effects": {
+            "evil": 25,
+            "break": 1,
+            "chargeTime": 150,
+            "recoil": 150
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -3059,8 +3494,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "identify": 1 },
-        "castMods": { "critical": 5 },
+        "effects": {
+            "identify": 1
+        },
+        "castMods": {
+            "critical": 5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3097,7 +3536,11 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "revenge": 30, "curseKill": 1, "offensiveCleanse": 40 },
+        "effects": {
+            "revenge": 30,
+            "curseKill": 1,
+            "offensiveCleanse": 40
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -3135,7 +3578,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 1, "break": 1, "chargeTime": 80, "weak": 1 },
+        "effects": {
+            "lethal": 1,
+            "break": 1,
+            "chargeTime": 80,
+            "weak": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -3169,11 +3617,17 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 8,
         "power": 0,
-        "bs": ["混乱"],
+        "bs": [
+            "混乱"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "dash": 1, "recoil": 100, "weak": 1 },
+        "effects": {
+            "dash": 1,
+            "recoil": 100,
+            "weak": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -3211,7 +3665,11 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 20, "splash": 2, "weak": 1 },
+        "effects": {
+            "evil": 20,
+            "splash": 2,
+            "weak": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -3245,11 +3703,16 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 25,
         "power": 0,
-        "bs": ["体勢不利", "足止"],
+        "bs": [
+            "体勢不利",
+            "足止"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "chargeTime": 80 },
+        "effects": {
+            "chargeTime": 80
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -3283,12 +3746,18 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 20,
         "power": 0,
-        "bs": ["欠刃"],
+        "bs": [
+            "欠刃"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "pursuit": 20 },
-        "castMods": { "critical": 3 },
+        "effects": {
+            "pursuit": 20
+        },
+        "castMods": {
+            "critical": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3321,16 +3790,27 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 6,
         "power": 0,
-        "bs": ["乱れ", "崩れ"],
+        "bs": [
+            "乱れ",
+            "崩れ"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "knockback": 1, "lethal": 3, "recoil": 180 },
-        "castMods": { "fumble": 3 },
+        "effects": {
+            "knockback": 1,
+            "lethal": 3,
+            "recoil": 180
+        },
+        "castMods": {
+            "fumble": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "土": 1 },
+        "elements": {
+            "土": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -3359,12 +3839,19 @@ export const CATALOG = [
         "subBonus": 300,
         "hitBonus": 20,
         "power": 0,
-        "bs": ["猛毒"],
+        "bs": [
+            "猛毒"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 2 },
-        "castMods": { "critical": 8, "fumble": 4 },
+        "effects": {
+            "lethal": 2
+        },
+        "castMods": {
+            "critical": 8,
+            "fumble": 4
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3397,16 +3884,26 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 25,
         "power": 0,
-        "bs": ["ショック"],
+        "bs": [
+            "ショック"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "break": 1, "offensiveCleanse": 40, "nonlethal": 1 },
-        "castMods": { "fumble": -2 },
+        "effects": {
+            "break": 1,
+            "offensiveCleanse": 40,
+            "nonlethal": 1
+        },
+        "castMods": {
+            "fumble": -2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "光": 1 },
+        "elements": {
+            "光": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -3435,12 +3932,19 @@ export const CATALOG = [
         "subBonus": 500,
         "hitBonus": 14,
         "power": 0,
-        "bs": ["凍結"],
+        "bs": [
+            "凍結"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 20 },
-        "castMods": { "critical": 12, "fumble": 9 },
+        "effects": {
+            "evil": 20
+        },
+        "castMods": {
+            "critical": 12,
+            "fumble": 9
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3477,8 +3981,13 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "chargeTime": 150 },
-        "castMods": { "critical": 5, "fumble": 2 },
+        "effects": {
+            "chargeTime": 150
+        },
+        "castMods": {
+            "critical": 5,
+            "fumble": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3511,12 +4020,18 @@ export const CATALOG = [
         "subBonus": 120,
         "hitBonus": 12,
         "power": 0,
-        "bs": ["崩れ", "窒息", "足止"],
+        "bs": [
+            "崩れ",
+            "窒息",
+            "足止"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 3 },
+        "castMods": {
+            "critical": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3549,16 +4064,24 @@ export const CATALOG = [
         "subBonus": 50,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["麻痺"],
+        "bs": [
+            "麻痺"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "weak": 2 },
-        "castMods": { "critical": 1 },
+        "effects": {
+            "weak": 2
+        },
+        "castMods": {
+            "critical": 1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "風": 1 },
+        "elements": {
+            "風": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -3587,11 +4110,18 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 18,
         "power": 0,
-        "bs": ["出血", "流血"],
+        "bs": [
+            "出血",
+            "流血"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 20, "recoil": 100, "hpDrain": 20 },
+        "effects": {
+            "demon": 20,
+            "recoil": 100,
+            "hpDrain": 20
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -3625,16 +4155,27 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 14,
         "power": 0,
-        "bs": ["不運", "呪い", "暗闇"],
+        "bs": [
+            "不運",
+            "呪い",
+            "暗闇"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "recoil": 200, "curseKill": 1 },
-        "castMods": { "fumble": 2 },
+        "effects": {
+            "recoil": 200,
+            "curseKill": 1
+        },
+        "castMods": {
+            "fumble": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "闇": 1 },
+        "elements": {
+            "闇": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -3667,8 +4208,14 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "steady": 30, "sureHit": 1, "pursuit": 20 },
-        "castMods": { "critical": -1 },
+        "effects": {
+            "steady": 30,
+            "sureHit": 1,
+            "pursuit": 20
+        },
+        "castMods": {
+            "critical": -1
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3705,8 +4252,13 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "multiShadow": 2, "weak": 1 },
-        "castMods": { "critical": 2 },
+        "effects": {
+            "multiShadow": 2,
+            "weak": 1
+        },
+        "castMods": {
+            "critical": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3739,12 +4291,20 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 14,
         "power": 0,
-        "bs": ["混乱"],
+        "bs": [
+            "混乱"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 30, "splash": 2, "pursuit": 10 },
-        "castMods": { "fumble": 2 },
+        "effects": {
+            "evil": 30,
+            "splash": 2,
+            "pursuit": 10
+        },
+        "castMods": {
+            "fumble": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3777,12 +4337,20 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["致死毒"],
+        "bs": [
+            "致死毒"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 2, "pursuit": 40 },
-        "castMods": { "critical": 15, "fumble": 15 },
+        "effects": {
+            "lethal": 2,
+            "pursuit": 40
+        },
+        "castMods": {
+            "critical": 15,
+            "fumble": 15
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3815,16 +4383,23 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 10,
         "power": 0,
-        "bs": ["氷結", "麻痺"],
+        "bs": [
+            "氷結",
+            "麻痺"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bind": 2 },
+        "effects": {
+            "bind": 2
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "水": 1 },
+        "elements": {
+            "水": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -3853,12 +4428,20 @@ export const CATALOG = [
         "subBonus": 100,
         "hitBonus": 25,
         "power": 0,
-        "bs": ["体勢不利"],
+        "bs": [
+            "体勢不利"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "knockback": 1, "chargeTime": 60, "nonlethal": 1 },
-        "castMods": { "critical": 4 },
+        "effects": {
+            "knockback": 1,
+            "chargeTime": 60,
+            "nonlethal": 1
+        },
+        "castMods": {
+            "critical": 4
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -3891,11 +4474,17 @@ export const CATALOG = [
         "subBonus": 250,
         "hitBonus": 20,
         "power": 0,
-        "bs": ["不調", "不遇", "不発"],
+        "bs": [
+            "不調",
+            "不遇",
+            "不発"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 1 },
+        "effects": {
+            "lethal": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -3929,16 +4518,27 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 20,
         "power": 0,
-        "bs": ["ショック", "乱れ", "窒息", "混乱"],
+        "bs": [
+            "ショック",
+            "乱れ",
+            "窒息",
+            "混乱"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "erosion": 160, "demon": 10, "chargeTime": 200 },
+        "effects": {
+            "erosion": 160,
+            "demon": 10,
+            "chargeTime": 200
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "無": 1 },
+        "elements": {
+            "無": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -3971,12 +4571,22 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "dash": 1, "chargeTime": 150, "offensiveCleanse": 75, "pursuit": 40 },
-        "castMods": { "critical": 5, "fumble": 5 },
+        "effects": {
+            "dash": 1,
+            "chargeTime": 150,
+            "offensiveCleanse": 75,
+            "pursuit": 40
+        },
+        "castMods": {
+            "critical": 5,
+            "fumble": 5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "風": 1 },
+        "elements": {
+            "風": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -4005,12 +4615,20 @@ export const CATALOG = [
         "subBonus": 200,
         "hitBonus": 17,
         "power": 0,
-        "bs": ["出血", "不遇"],
+        "bs": [
+            "出血",
+            "不遇"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 2 },
-        "castMods": { "critical": 5, "fumble": 3 },
+        "effects": {
+            "lethal": 2
+        },
+        "castMods": {
+            "critical": 5,
+            "fumble": 3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -4043,16 +4661,25 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 40,
         "power": 0,
-        "bs": ["業炎", "激怒"],
+        "bs": [
+            "業炎",
+            "激怒"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "erosion": 110, "noDamage": 1, "identify": 1 },
+        "effects": {
+            "erosion": 110,
+            "noDamage": 1,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "火": 1 },
+        "elements": {
+            "火": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -4081,11 +4708,18 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 18,
         "power": 0,
-        "bs": ["流血"],
+        "bs": [
+            "流血"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "revenge": 40, "break": 1, "recoil": 200, "haDrain": 10 },
+        "effects": {
+            "revenge": 40,
+            "break": 1,
+            "recoil": 200,
+            "haDrain": 10
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4119,16 +4753,27 @@ export const CATALOG = [
         "subBonus": 230,
         "hitBonus": 16,
         "power": 0,
-        "bs": ["凍結", "退化"],
+        "bs": [
+            "凍結",
+            "退化"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "dash": 1, "splash": 2 },
-        "castMods": { "critical": 8, "fumble": 8 },
+        "effects": {
+            "dash": 1,
+            "splash": 2
+        },
+        "castMods": {
+            "critical": 8,
+            "fumble": 8
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "闇": 1 },
+        "elements": {
+            "闇": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -4157,12 +4802,22 @@ export const CATALOG = [
         "subBonus": 150,
         "hitBonus": 16,
         "power": 0,
-        "bs": ["ショック", "感電"],
+        "bs": [
+            "ショック",
+            "感電"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 20, "lethal": 1, "chargeTime": 40 },
-        "castMods": { "critical": 4, "fumble": 4 },
+        "effects": {
+            "demon": 20,
+            "lethal": 1,
+            "chargeTime": 40
+        },
+        "castMods": {
+            "critical": 4,
+            "fumble": 4
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -4195,16 +4850,22 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 18,
         "power": 0,
-        "bs": ["炎獄"],
+        "bs": [
+            "炎獄"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "chargeTime": 60 },
+        "effects": {
+            "chargeTime": 60
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "火": 1 },
+        "elements": {
+            "火": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -4237,12 +4898,19 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "lethal": 2, "break": 1, "chargeTime": 150, "offensiveCleanse": 75 },
+        "effects": {
+            "lethal": 2,
+            "break": 1,
+            "chargeTime": 150,
+            "offensiveCleanse": 75
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "光": 1 },
+        "elements": {
+            "光": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -4271,7 +4939,11 @@ export const CATALOG = [
         "subBonus": 30,
         "hitBonus": 15,
         "power": 0,
-        "bs": ["泥沼", "鈍り", "錆付"],
+        "bs": [
+            "泥沼",
+            "鈍り",
+            "錆付"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
@@ -4283,11 +4955,15 @@ export const CATALOG = [
             "chargeTime": 100,
             "recoil": 100
         },
-        "castMods": { "fumble": -3 },
+        "castMods": {
+            "fumble": -3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "土": 1 },
+        "elements": {
+            "土": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -4316,11 +4992,19 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 14,
         "power": 0,
-        "bs": ["不調", "不運", "呪い", "鈍り"],
+        "bs": [
+            "不調",
+            "不運",
+            "呪い",
+            "鈍り"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 20, "curseKill": 1 },
+        "effects": {
+            "demon": 20,
+            "curseKill": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4354,12 +5038,24 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 17,
         "power": 0,
-        "bs": ["猛毒", "業炎", "感電", "呪縛"],
+        "bs": [
+            "猛毒",
+            "業炎",
+            "感電",
+            "呪縛"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "demon": 30, "evil": 30, "chargeTime": 130, "recoil": 100 },
-        "castMods": { "fumble": 5 },
+        "effects": {
+            "demon": 30,
+            "evil": 30,
+            "chargeTime": 130,
+            "recoil": 100
+        },
+        "castMods": {
+            "fumble": 5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -4392,16 +5088,27 @@ export const CATALOG = [
         "subBonus": 160,
         "hitBonus": 16,
         "power": 0,
-        "bs": ["窒息", "苦鳴"],
+        "bs": [
+            "窒息",
+            "苦鳴"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "erosion": 400, "chargeTime": 200 },
-        "castMods": { "critical": 4, "fumble": 2 },
+        "effects": {
+            "erosion": 400,
+            "chargeTime": 200
+        },
+        "castMods": {
+            "critical": 4,
+            "fumble": 2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "水": 1 },
+        "elements": {
+            "水": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -4434,12 +5141,21 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "steady": 30, "sureHit": 1, "weak": 2, "curve": 50 },
-        "castMods": { "fumble": -3 },
+        "effects": {
+            "steady": 30,
+            "sureHit": 1,
+            "weak": 2,
+            "curve": 50
+        },
+        "castMods": {
+            "fumble": -3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "無": 1 },
+        "elements": {
+            "無": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -4468,11 +5184,16 @@ export const CATALOG = [
         "subBonus": 210,
         "hitBonus": 24,
         "power": 0,
-        "bs": ["麻痺"],
+        "bs": [
+            "麻痺"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "break": 1, "bind": 2 },
+        "effects": {
+            "break": 1,
+            "bind": 2
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4506,11 +5227,16 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 16,
         "power": 0,
-        "bs": ["業炎", "氷結"],
+        "bs": [
+            "業炎",
+            "氷結"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "splash": 1 },
+        "effects": {
+            "splash": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4544,12 +5270,20 @@ export const CATALOG = [
         "subBonus": 375,
         "hitBonus": 8,
         "power": 0,
-        "bs": ["雷陣"],
+        "bs": [
+            "雷陣"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "evil": 30, "recoil": 200 },
-        "castMods": { "critical": 6, "fumble": 4 },
+        "effects": {
+            "evil": 30,
+            "recoil": 200
+        },
+        "castMods": {
+            "critical": 6,
+            "fumble": 4
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -4582,12 +5316,20 @@ export const CATALOG = [
         "subBonus": 500,
         "hitBonus": 16,
         "power": 0,
-        "bs": ["ショック", "致命"],
+        "bs": [
+            "ショック",
+            "致命"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "chargeTime": 100 },
-        "castMods": { "critical": 12, "fumble": 6 },
+        "effects": {
+            "chargeTime": 100
+        },
+        "castMods": {
+            "critical": 12,
+            "fumble": 6
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -4620,7 +5362,10 @@ export const CATALOG = [
         "subBonus": 100,
         "hitBonus": 50,
         "power": 0,
-        "bs": ["重圧", "無策"],
+        "bs": [
+            "重圧",
+            "無策"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
@@ -4665,12 +5410,21 @@ export const CATALOG = [
         "subBonus": 0,
         "hitBonus": 12,
         "power": 0,
-        "bs": ["奈落", "不吉", "無策"],
+        "bs": [
+            "奈落",
+            "不吉",
+            "無策"
+        ],
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "haDrain": 5, "identify": 1 },
-        "castMods": { "critical": 4 },
+        "effects": {
+            "haDrain": 5,
+            "identify": 1
+        },
+        "castMods": {
+            "critical": 4
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -4706,8 +5460,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "main": 50 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "main": 50
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4744,8 +5502,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "sub": 50 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "sub": 50
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4782,8 +5544,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "hit": 5 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "hit": 5
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4820,8 +5586,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "evade": 5 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "evade": 5
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4858,8 +5628,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 4, "hit": 2, "evade": 2 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "speed": 4,
+            "hit": 2,
+            "evade": 2
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4896,8 +5672,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 10 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "defense": 10
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4934,8 +5714,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "resist": 10 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "resist": 10
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -4972,8 +5756,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 36, "fumble": 1 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "speed": 36,
+            "fumble": 1
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5010,8 +5799,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "evade": -3, "fumble": -2 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "evade": -3,
+            "fumble": -2
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5048,8 +5842,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "mobility": 1 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "mobility": 1
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5086,8 +5884,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "drama": 10 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "drama": 10
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5124,7 +5926,10 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "main": 60, "hit": 4 },
+        "modifiers": {
+            "main": 60,
+            "hit": 4
+        },
         "effects": {},
         "castMods": {},
         "grantedEffects": {},
@@ -5162,7 +5967,10 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 56, "fumble": 1 },
+        "modifiers": {
+            "speed": 56,
+            "fumble": 1
+        },
         "effects": {},
         "castMods": {},
         "grantedEffects": {},
@@ -5200,10 +6008,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "maxHp": 500, "defense": 10 },
+        "modifiers": {
+            "defense": 10
+        },
         "effects": {},
         "castMods": {},
-        "grantedEffects": {},
+        "grantedEffects": {
+            "barrier": 1000
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -5213,7 +6025,7 @@ export const CATALOG = [
         "interval": 1,
         "note": "アンデッドの『なりそこない』を召喚し、使い捨ての盾にします。",
         "source": "添付WIKI（アクティブ）",
-        "original": "【効果】中単：【付：最大HP+500】【付：防技+10】",
+        "original": "【効果】中単：【付：障壁1000】【付：防技+10】",
         "requirements": "",
         "sp": "2",
         "updated": "2025/08/23 最大HP250→500 に修正",
@@ -5238,7 +6050,10 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "resist": 12, "evade": 4 },
+        "modifiers": {
+            "resist": 12,
+            "evade": 4
+        },
         "effects": {},
         "castMods": {},
         "grantedEffects": {},
@@ -5276,8 +6091,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "resist": 4, "hit": 3 },
-        "effects": { "chargeTime": 50, "identify": 1 },
+        "modifiers": {
+            "resist": 4,
+            "hit": 3
+        },
+        "effects": {
+            "chargeTime": 50,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5314,8 +6135,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 4, "evade": 3 },
-        "effects": { "chargeTime": 50, "identify": 1 },
+        "modifiers": {
+            "defense": 4,
+            "evade": 3
+        },
+        "effects": {
+            "chargeTime": 50,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5352,8 +6179,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 20 },
-        "effects": { "chargeTime": 50, "identify": 1 },
+        "modifiers": {
+            "speed": 20
+        },
+        "effects": {
+            "chargeTime": 50,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5390,8 +6222,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "sub": 60, "critical": 4, "fumble": 3 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "sub": 60,
+            "critical": 4,
+            "fumble": 3
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5435,7 +6273,9 @@ export const CATALOG = [
             "hit": 5,
             "evade": -2
         },
-        "effects": { "side": 1 },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5472,10 +6312,18 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "maxHp": 300, "defense": 4, "resist": 4, "drama": 6 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "defense": 4,
+            "resist": 4,
+            "drama": 6
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": {},
+        "grantedEffects": {
+            "barrier": 600
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -5485,7 +6333,7 @@ export const CATALOG = [
         "interval": 1,
         "note": "その身には信念の鎧。",
         "source": "添付WIKI（アクティブ）",
-        "original": "【効果】自単：【副】【自：最大HP+300】【自：防技+4】【自：抵抗+4】【自：ドラマ+6】",
+        "original": "【効果】自単：【副】【自：障壁600】【自：防技+4】【自：抵抗+4】【自：ドラマ+6】",
         "requirements": "ランク1のアクティブスキル：3つ以上取得レベル：5",
         "sp": "3",
         "updated": "2025/05/09",
@@ -5510,8 +6358,15 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "main": 60, "sub": 40, "critical": 2, "fumble": 2 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "main": 60,
+            "sub": 40,
+            "critical": 2,
+            "fumble": 2
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5548,8 +6403,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 56, "fumble": 1 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "speed": 56,
+            "fumble": 1
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5586,8 +6446,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "hit": 10 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "hit": 10
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5624,8 +6488,12 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "evade": 10 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "evade": 10
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5662,8 +6530,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": -24, "critical": 1, "fumble": -3 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "speed": -24,
+            "critical": 1,
+            "fumble": -3
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5700,8 +6574,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 14, "evade": 3 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "defense": 14,
+            "evade": 3
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5738,8 +6617,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "resist": 14, "evade": 3 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "resist": 14,
+            "evade": 3
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -5777,9 +6661,13 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "side": 1 },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": { "regen": 100 },
+        "grantedEffects": {
+            "regen": 100
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -5815,9 +6703,13 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "side": 1 },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": { "charge": 100 },
+        "grantedEffects": {
+            "charge": 100
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -5852,10 +6744,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "maxHp": 500 },
+        "modifiers": {},
         "effects": {},
         "castMods": {},
-        "grantedEffects": { "regen": 50, "charge": 50 },
+        "grantedEffects": {
+            "regen": 50,
+            "charge": 50,
+            "barrier": 1000
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -5865,7 +6761,7 @@ export const CATALOG = [
         "interval": 1,
         "note": "簡易な術で小さな加護と一時の聖域を付与します。",
         "source": "添付WIKI（アクティブ）",
-        "original": "【効果】至単：【付：最大HP+500】【付：再生50】【付：充填50】",
+        "original": "【効果】至単：【付：障壁1000】【付：再生50】【付：充填50】",
         "requirements": "ランク1のアクティブスキル：3つ以上取得レベル：5",
         "sp": "3",
         "updated": "2025/05/23 最大HP+250→+500 に修正",
@@ -5890,10 +6786,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "maxHp": 500 },
+        "modifiers": {},
         "effects": {},
         "castMods": {},
-        "grantedEffects": { "reflect": 1 },
+        "grantedEffects": {
+            "reflect": 1,
+            "barrier": 1000
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -5903,7 +6802,7 @@ export const CATALOG = [
         "interval": 1,
         "note": "あなたを守り、蝕み、触れる者を傷つける。",
         "source": "添付WIKI（アクティブ）",
-        "original": "【効果】至単：【付：最大HP+500】【付：反】",
+        "original": "【効果】至単：【付：障壁1000】【付：反】",
         "requirements": "ランク1のアクティブスキル：3つ以上取得レベル：5",
         "sp": "3",
         "updated": "2025/08/23 最大HP+250→+500 に修正",
@@ -5928,10 +6827,15 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 6, "resist": 6 },
+        "modifiers": {
+            "defense": 6,
+            "resist": 6
+        },
         "effects": {},
         "castMods": {},
-        "grantedEffects": { "hpArmor": 90 },
+        "grantedEffects": {
+            "hpArmor": 90
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -5966,7 +6870,11 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 20, "mobility": 1, "evade": 2 },
+        "modifiers": {
+            "speed": 20,
+            "mobility": 1,
+            "evade": 2
+        },
         "effects": {},
         "castMods": {},
         "grantedEffects": {},
@@ -6004,10 +6912,18 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 8, "hit": 2, "evade": 2 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "speed": 8,
+            "hit": 2,
+            "evade": 2
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": { "erosion": 40 },
+        "grantedEffects": {
+            "erosion": 40
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -6042,8 +6958,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "main": 50, "hit": 4 },
-        "effects": { "chargeTime": 100, "identify": 1 },
+        "modifiers": {
+            "main": 50,
+            "hit": 4
+        },
+        "effects": {
+            "chargeTime": 100,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6080,8 +7002,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "critical": 1, "drama": 10 },
-        "effects": { "chargeTime": 100, "identify": 1 },
+        "modifiers": {
+            "critical": 1,
+            "drama": 10
+        },
+        "effects": {
+            "chargeTime": 100,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6118,8 +7046,15 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 6, "resist": 6, "speed": 12 },
-        "effects": { "chargeTime": 100, "identify": 1 },
+        "modifiers": {
+            "defense": 6,
+            "resist": 6,
+            "speed": 12
+        },
+        "effects": {
+            "chargeTime": 100,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6156,13 +7091,19 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "main": 150 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "main": 150
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "火": 1 },
+        "elements": {
+            "火": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -6194,8 +7135,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 12, "critical": 3 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "speed": 12,
+            "critical": 3
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6232,8 +7178,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "hit": 7, "fumble": -2 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "hit": 7,
+            "fumble": -2
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6270,13 +7221,22 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 5, "resist": 5, "hit": 5, "evade": 5 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "defense": 5,
+            "resist": 5,
+            "hit": 5,
+            "evade": 5
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "闇": 1 },
+        "elements": {
+            "闇": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -6308,10 +7268,17 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "maxHp": 500, "defense": 10, "resist": 10 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "defense": 10,
+            "resist": 10
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": {},
+        "grantedEffects": {
+            "barrier": 1000
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -6321,7 +7288,7 @@ export const CATALOG = [
         "interval": 1,
         "note": "向かってくる攻撃を切り払い、または撃ち落とす為の構えを取ります。",
         "source": "添付WIKI（アクティブ）",
-        "original": "【効果】自単：【副】【自：最大HP+500】【自：防技+10】【自：抵抗+10】",
+        "original": "【効果】自単：【副】【自：障壁1000】【自：防技+10】【自：抵抗+10】",
         "requirements": "ランク2のアクティブスキル：3つ以上取得レベル：10",
         "sp": "4",
         "updated": "2025/05/09",
@@ -6346,10 +7313,19 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": -20, "fumble": 2, "drama": -4 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "speed": -20,
+            "fumble": 2,
+            "drama": -4
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": { "regen": 150, "charge": 150 },
+        "grantedEffects": {
+            "regen": 150,
+            "charge": 150
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -6384,13 +7360,21 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "evade": 8 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "evade": 8
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": { "erosion": 70 },
+        "grantedEffects": {
+            "erosion": 70
+        },
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "無": 1 },
+        "elements": {
+            "無": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -6422,8 +7406,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "resist": 30, "evade": -5, "drama": 10 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "resist": 30,
+            "evade": -5,
+            "drama": 10
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6460,10 +7450,17 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "maxHp": 250, "defense": 5, "resist": 5, "drama": 5 },
+        "modifiers": {
+            "defense": 5,
+            "resist": 5,
+            "drama": 5
+        },
         "effects": {},
         "castMods": {},
-        "grantedEffects": { "reflect": 1 },
+        "grantedEffects": {
+            "reflect": 1,
+            "barrier": 500
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -6473,7 +7470,7 @@ export const CATALOG = [
         "interval": 1,
         "note": "鉄壁なる戦の加護を与えます。",
         "source": "添付WIKI（アクティブ）",
-        "original": "【効果】至単：【付：最大HP+250】【付：防技+5】【付：抵抗+5】【付：ドラマ+5】【付：反】",
+        "original": "【効果】至単：【付：障壁500】【付：防技+5】【付：抵抗+5】【付：ドラマ+5】【付：反】",
         "requirements": "ランク2のアクティブスキル：3つ以上取得レベル：10",
         "sp": "4",
         "updated": "2025/08/23 最大HP+250が追加",
@@ -6498,7 +7495,10 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 60, "evade": 5 },
+        "modifiers": {
+            "speed": 60,
+            "evade": 5
+        },
         "effects": {},
         "castMods": {},
         "grantedEffects": {},
@@ -6536,7 +7536,10 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "main": 100, "hit": 10 },
+        "modifiers": {
+            "main": 100,
+            "hit": 10
+        },
         "effects": {},
         "castMods": {},
         "grantedEffects": {},
@@ -6574,7 +7577,11 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "main": 75, "sub": 75, "speed": 20 },
+        "modifiers": {
+            "main": 75,
+            "sub": 75,
+            "speed": 20
+        },
         "effects": {},
         "castMods": {},
         "grantedEffects": {},
@@ -6612,8 +7619,16 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 6, "resist": 6, "fumble": -1, "drama": 6 },
-        "effects": { "chargeTime": 200, "identify": 1 },
+        "modifiers": {
+            "defense": 6,
+            "resist": 6,
+            "fumble": -1,
+            "drama": 6
+        },
+        "effects": {
+            "chargeTime": 200,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6650,8 +7665,15 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "mobility": 1, "hit": 4, "evade": 4 },
-        "effects": { "chargeTime": 200, "identify": 1 },
+        "modifiers": {
+            "mobility": 1,
+            "hit": 4,
+            "evade": 4
+        },
+        "effects": {
+            "chargeTime": 200,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6688,8 +7710,15 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "main": 40, "sub": 40, "speed": 20 },
-        "effects": { "chargeTime": 200, "identify": 1 },
+        "modifiers": {
+            "main": 40,
+            "sub": 40,
+            "speed": 20
+        },
+        "effects": {
+            "chargeTime": 200,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6727,9 +7756,15 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "chargeTime": 200, "identify": 1 },
+        "effects": {
+            "chargeTime": 200,
+            "identify": 1
+        },
         "castMods": {},
-        "grantedEffects": { "regen": 65, "charge": 65 },
+        "grantedEffects": {
+            "regen": 65,
+            "charge": 65
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -6764,10 +7799,17 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "maxHp": 500, "critical": 2 },
-        "effects": { "chargeTime": 200, "identify": 1 },
+        "modifiers": {
+            "critical": 2
+        },
+        "effects": {
+            "chargeTime": 200,
+            "identify": 1
+        },
         "castMods": {},
-        "grantedEffects": {},
+        "grantedEffects": {
+            "barrier": 1000
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -6777,7 +7819,7 @@ export const CATALOG = [
         "interval": 1,
         "note": "恐怖に打ち勝たんとする人の意志の気高さを思い起こさせます。",
         "source": "添付WIKI（アクティブ）",
-        "original": "【効果】特レ：【溜+200】【付：最大HP+500】【付：CT+2】",
+        "original": "【効果】特レ：【溜+200】【付：障壁1000】【付：CT+2】",
         "requirements": "ランク2のアクティブスキル：3つ以上取得レベル：10",
         "sp": "4",
         "updated": "2025/05/09",
@@ -6802,8 +7844,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "main": 150, "hit": 5 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "main": 150,
+            "hit": 5
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6840,8 +7887,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 60, "evade": 5 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "speed": 60,
+            "evade": 5
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6878,8 +7930,13 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "sub": 80, "critical": 3 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "sub": 80,
+            "critical": 3
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6916,13 +7973,21 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 20, "hit": 5, "drama": 20 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "speed": 20,
+            "hit": 5,
+            "drama": 20
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "風": 1 },
+        "elements": {
+            "風": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -6954,8 +8019,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 15, "resist": 15, "evade": 5 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "defense": 15,
+            "resist": 15,
+            "evade": 5
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -6993,9 +8064,13 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "side": 1 },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": { "regen": 200 },
+        "grantedEffects": {
+            "regen": 200
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -7031,12 +8106,19 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "side": 1 },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": { "clever": 20, "steady": 20 },
+        "grantedEffects": {
+            "clever": 20,
+            "steady": 20
+        },
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "土": 1 },
+        "elements": {
+            "土": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -7068,10 +8150,16 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "heal": 100 },
-        "effects": { "side": 1 },
+        "modifiers": {
+            "heal": 100
+        },
+        "effects": {
+            "side": 1
+        },
         "castMods": {},
-        "grantedEffects": { "charge": 100 },
+        "grantedEffects": {
+            "charge": 100
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -7106,13 +8194,19 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "hit": 5 },
+        "modifiers": {
+            "hit": 5
+        },
         "effects": {},
         "castMods": {},
-        "grantedEffects": { "evil": 20 },
+        "grantedEffects": {
+            "evil": 20
+        },
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "闇": 1 },
+        "elements": {
+            "闇": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -7144,10 +8238,14 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "hit": 5 },
+        "modifiers": {
+            "hit": 5
+        },
         "effects": {},
         "castMods": {},
-        "grantedEffects": { "demon": 20 },
+        "grantedEffects": {
+            "demon": 20
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -7182,10 +8280,15 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 40, "drama": 20 },
+        "modifiers": {
+            "speed": 40,
+            "drama": 20
+        },
         "effects": {},
         "castMods": {},
-        "grantedEffects": { "revenge": 10 },
+        "grantedEffects": {
+            "revenge": 10
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -7223,10 +8326,16 @@ export const CATALOG = [
         "modifiers": {},
         "effects": {},
         "castMods": {},
-        "grantedEffects": { "clever": 10, "reflect": 1, "hpArmor": 100 },
+        "grantedEffects": {
+            "clever": 10,
+            "reflect": 1,
+            "hpArmor": 100
+        },
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "火": 1 },
+        "elements": {
+            "火": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -7258,10 +8367,18 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "maxHp": 700, "resist": 10 },
-        "effects": { "chargeTime": 250, "identify": 1 },
+        "modifiers": {
+            "resist": 10
+        },
+        "effects": {
+            "chargeTime": 250,
+            "identify": 1
+        },
         "castMods": {},
-        "grantedEffects": { "bsArmor": 100 },
+        "grantedEffects": {
+            "bsArmor": 100,
+            "barrier": 1400
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -7271,7 +8388,7 @@ export const CATALOG = [
         "interval": 1,
         "note": "春風の祝福は、襲い来る脅威を退けます。",
         "source": "添付WIKI（アクティブ）",
-        "original": "【効果】特レ：【溜+250】【付：最大HP+700】【付：抵抗+10】【付：BS鎧100】",
+        "original": "【効果】特レ：【溜+250】【付：障壁1400】【付：抵抗+10】【付：BS鎧100】",
         "requirements": "ランク3のアクティブスキル：3つ以上取得レベル：25",
         "sp": "5",
         "updated": "2026/02/23　修正",
@@ -7296,10 +8413,19 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 5, "resist": 5, "evade": 5 },
-        "effects": { "chargeTime": 250, "identify": 1 },
+        "modifiers": {
+            "defense": 5,
+            "resist": 5,
+            "evade": 5
+        },
+        "effects": {
+            "chargeTime": 250,
+            "identify": 1
+        },
         "castMods": {},
-        "grantedEffects": { "regen": 70 },
+        "grantedEffects": {
+            "regen": 70
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -7334,8 +8460,15 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "speed": 28, "hit": 6, "critical": 1 },
-        "effects": { "chargeTime": 250, "identify": 1 },
+        "modifiers": {
+            "speed": 28,
+            "hit": 6,
+            "critical": 1
+        },
+        "effects": {
+            "chargeTime": 250,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -7372,13 +8505,26 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "defense": 3, "resist": 3, "hit": 3, "evade": 3 },
-        "effects": { "chargeTime": 250, "identify": 1 },
+        "modifiers": {
+            "defense": 3,
+            "resist": 3,
+            "hit": 3,
+            "evade": 3
+        },
+        "effects": {
+            "chargeTime": 250,
+            "identify": 1
+        },
         "castMods": {},
-        "grantedEffects": { "hpArmor": 40, "apArmor": 40 },
+        "grantedEffects": {
+            "hpArmor": 40,
+            "apArmor": 40
+        },
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "水": 1 },
+        "elements": {
+            "水": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -7410,13 +8556,22 @@ export const CATALOG = [
         "bs": [],
         "bsTurns": 3,
         "buffTurns": 8,
-        "modifiers": { "fumble": -2 },
-        "effects": { "chargeTime": 250, "identify": 1 },
+        "modifiers": {
+            "fumble": -2
+        },
+        "effects": {
+            "chargeTime": 250,
+            "identify": 1
+        },
         "castMods": {},
-        "grantedEffects": { "breakGuard": 45 },
+        "grantedEffects": {
+            "breakGuard": 45
+        },
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "無": 1 },
+        "elements": {
+            "無": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -7450,7 +8605,10 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "critical": 1, "fumble": -3 },
+        "castMods": {
+            "critical": 1,
+            "fumble": -3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7487,8 +8645,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 50 },
-        "castMods": { "fumble": -2 },
+        "effects": {
+            "bsHeal": 50
+        },
+        "castMods": {
+            "fumble": -2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7525,8 +8687,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 30 },
-        "castMods": { "fumble": -3 },
+        "effects": {
+            "bsHeal": 30
+        },
+        "castMods": {
+            "fumble": -3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7563,8 +8729,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 30 },
-        "castMods": { "fumble": -3 },
+        "effects": {
+            "bsHeal": 30
+        },
+        "castMods": {
+            "fumble": -3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7601,8 +8771,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 60 },
-        "castMods": { "fumble": -3 },
+        "effects": {
+            "bsHeal": 60
+        },
+        "castMods": {
+            "fumble": -3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7640,7 +8814,9 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "fumble": -5 },
+        "castMods": {
+            "fumble": -5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7677,8 +8853,13 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 40, "identify": 1 },
-        "castMods": { "fumble": -5 },
+        "effects": {
+            "bsHeal": 40,
+            "identify": 1
+        },
+        "castMods": {
+            "fumble": -5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7716,7 +8897,9 @@ export const CATALOG = [
         "buffTurns": 8,
         "modifiers": {},
         "effects": {},
-        "castMods": { "fumble": -3 },
+        "castMods": {
+            "fumble": -3
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7753,8 +8936,12 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "identify": 1 },
-        "castMods": { "fumble": -5 },
+        "effects": {
+            "identify": 1
+        },
+        "castMods": {
+            "fumble": -5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7791,8 +8978,14 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 55, "healEfficiency": 10 },
-        "castMods": { "critical": 1, "fumble": -2 },
+        "effects": {
+            "bsHeal": 55,
+            "healEfficiency": 10
+        },
+        "castMods": {
+            "critical": 1,
+            "fumble": -2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -7829,12 +9022,20 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 30, "healEfficiency": 10, "identify": 1 },
-        "castMods": { "fumble": -4 },
+        "effects": {
+            "bsHeal": 30,
+            "healEfficiency": 10,
+            "identify": 1
+        },
+        "castMods": {
+            "fumble": -4
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "水": 1 },
+        "elements": {
+            "水": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -7867,12 +9068,19 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 75, "healEfficiency": 20 },
-        "castMods": { "fumble": -2 },
+        "effects": {
+            "bsHeal": 75,
+            "healEfficiency": 20
+        },
+        "castMods": {
+            "fumble": -2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "光": 1 },
+        "elements": {
+            "光": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -7905,7 +9113,10 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 40, "healEfficiency": 20 },
+        "effects": {
+            "bsHeal": 40,
+            "healEfficiency": 20
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -7943,9 +9154,16 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 45 },
-        "castMods": { "critical": 10, "fumble": 8 },
-        "grantedEffects": { "charge": 20 },
+        "effects": {
+            "bsHeal": 45
+        },
+        "castMods": {
+            "critical": 10,
+            "fumble": 8
+        },
+        "grantedEffects": {
+            "charge": 20
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -7981,7 +9199,9 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "healEfficiency": 20 },
+        "effects": {
+            "healEfficiency": 20
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -8019,12 +9239,20 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 75, "chargeTime": 80, "identify": 1 },
-        "castMods": { "fumble": -5 },
+        "effects": {
+            "bsHeal": 75,
+            "chargeTime": 80,
+            "identify": 1
+        },
+        "castMods": {
+            "fumble": -5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "風": 1 },
+        "elements": {
+            "風": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -8057,12 +9285,20 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "healEfficiency": 20 },
-        "castMods": { "fumble": -3 },
-        "grantedEffects": { "regen": 25 },
+        "effects": {
+            "healEfficiency": 20
+        },
+        "castMods": {
+            "fumble": -3
+        },
+        "grantedEffects": {
+            "regen": 25
+        },
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "土": 1 },
+        "elements": {
+            "土": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",
@@ -8095,7 +9331,10 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "chargeTime": 80, "healEfficiency": 10 },
+        "effects": {
+            "chargeTime": 80,
+            "healEfficiency": 10
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -8135,7 +9374,10 @@ export const CATALOG = [
         "modifiers": {},
         "effects": {},
         "castMods": {},
-        "grantedEffects": { "regen": 50, "charge": 50 },
+        "grantedEffects": {
+            "regen": 50,
+            "charge": 50
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -8171,7 +9413,11 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 70, "chargeTime": 80, "identify": 1 },
+        "effects": {
+            "bsHeal": 70,
+            "chargeTime": 80,
+            "identify": 1
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -8209,9 +9455,14 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 50, "identify": 1 },
+        "effects": {
+            "bsHeal": 50,
+            "identify": 1
+        },
         "castMods": {},
-        "grantedEffects": { "regen": 50 },
+        "grantedEffects": {
+            "regen": 50
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -8247,7 +9498,11 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "bsHeal": 70, "extraHP": 200, "healEfficiency": 20 },
+        "effects": {
+            "bsHeal": 70,
+            "extraHP": 200,
+            "healEfficiency": 20
+        },
         "castMods": {},
         "grantedEffects": {},
         "selfModifiers": {},
@@ -8285,9 +9540,13 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "healEfficiency": 20 },
+        "effects": {
+            "healEfficiency": 20
+        },
         "castMods": {},
-        "grantedEffects": { "charge": 100 },
+        "grantedEffects": {
+            "charge": 100
+        },
         "selfModifiers": {},
         "selfEffects": {},
         "elements": {},
@@ -8330,7 +9589,10 @@ export const CATALOG = [
             "healEfficiency": 20,
             "identify": 1
         },
-        "castMods": { "critical": 2, "fumble": -2 },
+        "castMods": {
+            "critical": 2,
+            "fumble": -2
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
@@ -8367,12 +9629,18 @@ export const CATALOG = [
         "bsTurns": 3,
         "buffTurns": 8,
         "modifiers": {},
-        "effects": { "healEfficiency": 30 },
-        "castMods": { "critical": 5 },
+        "effects": {
+            "healEfficiency": 30
+        },
+        "castMods": {
+            "critical": 5
+        },
         "grantedEffects": {},
         "selfModifiers": {},
         "selfEffects": {},
-        "elements": { "光": 1 },
+        "elements": {
+            "光": 1
+        },
         "elementCorrection": 0,
         "trigger": "instant",
         "passiveWhen": "always",

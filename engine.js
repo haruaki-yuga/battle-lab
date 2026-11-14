@@ -3,6 +3,7 @@ import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targe
 import { scoreDraw } from './battle-summary.js';
 import { selectDiskDestination } from './movement-disk.js';
 import { bsLogLabel } from './combat-log-format.js';
+import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export function seededRandom(seed) {
@@ -110,6 +111,7 @@ export function rangeInfo(skill, d, policy = 'text', versatile = false) {
 }
 export class Battle {
     constructor(config, seed, { quiet = false } = {}) {
+        config = normalizeLegacyBarrierConfig(clone(config));
         const errors = validateConfig(config);
         if (errors.length)
             throw Error(errors.join('\n'));
@@ -164,6 +166,8 @@ export class Battle {
             intercepts: [],
             retaliations: [],
             buffs: [],
+            baseBarrierLeft: Math.max(0, Math.floor(Number(u.effects?.barrier) || 0)),
+            passivesSuppressed: false,
             bs: (u.initialBS || []).map(name => ({ name, remaining: 3, source: u.id })),
             doneTurn: false
         }));
@@ -240,13 +244,82 @@ export class Battle {
         return n;
     }
     effectRaw(u, key) {
-        let n = Number(u.effects?.[key] || 0);
+        if (key === 'barrier') return this.barrierValue(u);
+        let n = u.passivesSuppressed ? 0 : Number(u.effects?.[key] || 0);
         if (!u.bs.some(b => b.name === '無策'))
             n += sumBuff(u.buffs.map(b => b.effects || {}), key);
         return n;
     }
     effect(u, skill, key) {
         return this.effectRaw(u, key) + Number(skill?.effects?.[key] || 0);
+    }
+    /** The remaining strength of the strongest active barrier source.
+     * Buff barriers are individually depleted; values are never added together.
+     */
+    barrierSlot(u) {
+        let best = null;
+        if (!u.passivesSuppressed && u.baseBarrierLeft > 0)
+            best = { left: u.baseBarrierLeft, type: 'base', ref: u };
+        if (!this.statuses(u).has('無策')) {
+            for (const buff of u.buffs) {
+                const left = Math.max(0, Math.floor(Number(buff.barrierLeft ?? buff.effects?.barrier ?? 0)));
+                if (left > (best?.left || 0)) best = { left, type: 'buff', ref: buff };
+            }
+        }
+        return best;
+    }
+    barrierValue(u) {
+        return this.barrierSlot(u)?.left || 0;
+    }
+    absorbBarrier(u, damage) {
+        const slot = this.barrierSlot(u);
+        const blocked = Math.min(Math.max(0, Math.floor(damage)), slot?.left || 0);
+        if (blocked) {
+            if (slot.type === 'base') u.baseBarrierLeft -= blocked;
+            else slot.ref.barrierLeft = slot.left - blocked;
+        }
+        return { blocked, left: this.barrierValue(u) };
+    }
+    /** Only HP/AP damage is shielded; paying AP for a skill or periodic upkeep is not. */
+    apDamage(u, value, source = null, { amplify = true } = {}) {
+        if (!u.alive) return { total: 0, blocked: 0, applied: 0, overflow: 0, barrier: this.barrierValue(u) };
+        const total = amplify ? this.damageAmount(value) : Math.max(0, Math.floor(value));
+        const shield = this.absorbBarrier(u, total);
+        const incoming = total - shield.blocked;
+        const applied = Math.min(u.ap, incoming);
+        u.ap = Math.max(0, u.ap - incoming);
+        // AP overrun is handled by the caller according to the underlying effect (摩耗 only).
+        return { total, blocked: shield.blocked, applied, overflow: incoming - applied, barrier: shield.left };
+    }
+    barrierNote(info) {
+        return info?.blocked ? ` / 障壁が${info.blocked.toLocaleString()}肩代わり（残${(info.left ?? info.barrier ?? 0).toLocaleString()}）` : '';
+    }
+    /** Keep passive/付与 upkeep independent so an unaffordable grant is cancelled. */
+    applyUpkeep(u, key) {
+        const isHp = key === 'dot', resource = isHp ? 'hp' : 'ap';
+        const label = isHp ? 'ダメージ' : 'ロスト';
+        const spend = amount => {
+            if (isHp) this.hurt(u, amount, null, 0, 0, null, true, true);
+            else u.ap = Math.max(0, u.ap - amount);
+        };
+        const innate = u.passivesSuppressed ? 0 : Math.max(0, Math.floor(Number(u.effects?.[key]) || 0));
+        if (innate) {
+            if (u[resource] < innate) {
+                u.passivesSuppressed = true;
+                u.baseBarrierLeft = 0;
+                this.log('effect', `${u.name}：${label}${innate}を支払えず、パッシブ効果を抑止`, '', u);
+            } else spend(innate);
+        }
+        if (!u.alive || this.statuses(u).has('無策')) return;
+        // 付与Xは同種の最大値だけが有効。足りなければその付与を解除する。
+        const active = [...u.buffs].filter(b => Number(b.effects?.[key]) > 0);
+        if (!active.length) return;
+        const buff = active.reduce((a,b) => Number(a.effects[key]) >= Number(b.effects[key]) ? a : b);
+        const amount = Math.max(0, Math.floor(Number(buff.effects[key])));
+        if (u[resource] < amount) {
+            u.buffs = u.buffs.filter(b => b !== buff);
+            this.log('buff', `${u.name}：${label}${amount}を支払えず、付与を解除`, '', u);
+        } else spend(amount);
     }
     suddenRound() {
         return Math.max(0, Math.min(5, this.turn - 20));
@@ -303,6 +376,7 @@ export class Battle {
             maxHp: this.stat(u, 'maxHp'),
             ap: u.ap,
             maxAp: this.stat(u, 'maxAp'),
+            barrier: this.barrierValue(u),
             av: u.av,
             alive: u.alive,
             bs: u.bs.map(b => ({ ...b })),
@@ -359,14 +433,16 @@ export class Battle {
             source.healing += gain;
         return gain;
     }
-    hurt(u, value, source = null, dramaPenalty = 0, lethal = 0, onDamageResolved = null, suddenExempt = false) {
-        if (!u.alive)
-            return 0;
-        const n = this.damageAmount(value, suddenExempt), actual = Math.min(Math.max(0, u.hp), n);
-        u.hp -= n;
+    hurt(u, value, source = null, dramaPenalty = 0, lethal = 0, onDamageResolved = null, suddenExempt = false, bypassBarrier = false) {
+        if (!u.alive) return 0;
+        const n = this.damageAmount(value, suddenExempt);
+        const shield = bypassBarrier ? { blocked: 0, left: this.barrierValue(u) } : this.absorbBarrier(u, n);
+        const hpDamage = n - shield.blocked;
+        const actual = Math.min(Math.max(0, u.hp), hpDamage);
+        u.hp -= hpDamage;
         if (source && source.team !== u.team) {
             source.damageDealt += n;
-            u.damageTaken += n;
+            u.damageTaken += hpDamage;
         }
         let outcome = null;
         if (u.hp <= 0) {
@@ -399,7 +475,7 @@ export class Battle {
         // Record the damage first, then the resulting drama/down event in the battle log.
         // The snapshot for each log already reflects the resolved HP/alive state.
         if (onDamageResolved)
-            onDamageResolved(n);
+            onDamageResolved(hpDamage, { incoming: n, blocked: shield.blocked, left: shield.left });
         if (outcome)
             this.log(outcome.type, outcome.message, outcome.detail, outcome.actor, outcome.target);
         return actual;
@@ -860,18 +936,23 @@ export class Battle {
         this.turn++;
         const sudden = this.suddenRound();
         if (sudden) {
-            // Simultaneous opening HP tax; no individual spam entries.
-            // Damage amplification deliberately does NOT apply to this tax.
-            const entries = [];
+            // Sudden-death HP loss is an environmental effect: it has no attacker,
+            // is not amplified by the sudden-death damage bonus and NEVER contributes
+            // to either side's damageDealt (used for display and tie-breaking).
+            // Keep the phase modifiers in one compact log and report HP loss once
+            // per unit, separately from offensive damage and without duplicate totals.
+            this.log('sudden', `第${this.turn}ターン｜サドンデス ${sudden}/5｜CT/FB +${sudden * 5}・被ダメージ +${sudden * 30}%`);
             for (const u of this.units) {
                 if (!u.alive) continue;
                 const before = u.hp;
                 const tax = Math.ceil(before * .20);
-                this.hurt(u, tax, null, 0, 0, null, true);
-                entries.push(`${u.name} HP ${before.toLocaleString()}→${u.hp.toLocaleString()}（−${tax.toLocaleString()}）`);
+                this.hurt(u, tax, null, 0, 0, (_applied, shield) => {
+                    const lost = Math.max(0, before - u.hp);
+                    const detail = `HP ${before.toLocaleString()} → ${u.hp.toLocaleString()}${this.barrierNote(shield)}`;
+                    this.log('suddenDamage', `サドンデスにより${u.name}に${lost.toLocaleString()}ダメージ`, detail, null, u);
+                }, true);
             }
-            this.log('sudden', `第${this.turn}ターン｜サドンデス ${sudden}/5｜現在HP −20%・CT/FB +${sudden * 5}・被ダメージ +${sudden * 30}%`, entries.join(' / '));
-            // If the opening HP tax ends the battle, no one may act this turn.
+            // If the opening HP loss ends the battle, no one may act this turn.
             if (this.checkEnd()) return false;
         } else {
             this.log('turn', `第${this.turn}ターン`);
@@ -912,12 +993,12 @@ export class Battle {
                     ap += 120 * (Math.max(0, suff - ease) + 1);
                 if (dmg > 0) {
                     dmg = Math.max(0, dmg - res * 2 - this.effectRaw(u, 'bsArmor'));
-                    this.hurt(u, dmg, null, 0, 0, applied => this.log('bs', `${u.name}：${name}でHP −${applied}`));
+                    this.hurt(u, dmg, null, 0, 0, (applied, info) => this.log('bs', `${u.name}：${name}でHP −${applied}${this.barrierNote(info)}`));
                 }
                 if (ap > 0) {
                     ap = Math.max(0, ap - res * 2 - this.effectRaw(u, 'bsArmor'));
-                    u.ap = Math.max(0, u.ap - ap);
-                    this.log('bs', `${u.name}：${name}でAP −${ap}`);
+                    const apResult = this.apDamage(u, ap);
+                    this.log('bs', `${u.name}：${name}でAP −${apResult.applied}${this.barrierNote(apResult)}`);
                 }
                 const par = BS_GROUPS[12].indexOf(name);
                 if (par >= 0 && this.d() <= 20 + Math.max(0, par - ease) * 5)
@@ -938,8 +1019,8 @@ export class Battle {
                 this.log('heal', `${u.name}：再生でHP +${this.heal(u, regen, 'hp')}`);
             if (charge)
                 this.log('heal', `${u.name}：充填でAP +${this.heal(u, charge, 'ap')}`);
-            this.hurt(u, this.effectRaw(u, 'dot'));
-            u.ap = Math.max(0, u.ap - this.effectRaw(u, 'lost'));
+            this.applyUpkeep(u, 'dot');
+            if (u.alive) this.applyUpkeep(u, 'lost');
             if (!u.alive)
                 continue;
             const d1 = this.d(), d2 = this.d();
@@ -1185,12 +1266,10 @@ export class Battle {
     addBuff(u, s, modifiers, effects, source) {
         if (!Object.keys(modifiers || {}).length && !Object.keys(effects || {}).length)
             return;
-        const before = this.stat(u, 'maxHp'), id = s.id + '-' + source.id;
+        const id = s.id + '-' + source.id;
         u.buffs = u.buffs.filter(b => b.id !== id);
-        u.buffs.push({ id, remaining: s.buffTurns || 8, modifiers: clone(modifiers || {}), effects: clone(effects || {}) });
-        const delta = this.stat(u, 'maxHp') - before;
-        if (delta > 0)
-            u.hp += delta;
+        u.buffs.push({ id, remaining: s.buffTurns || 8, modifiers: clone(modifiers || {}), effects: clone(effects || {}),
+            ...(Number(effects?.barrier) > 0 ? { barrierLeft: Math.max(0, Math.floor(Number(effects.barrier))) } : {}) });
         const entries = [...Object.entries(modifiers || {}).map(([key, val]) => `${STAT_LABELS[key] || key} ${Number(val) >= 0 ? '+' : ''}${val}`),
             ...Object.entries(effects || {}).map(([key, val]) => `${EFFECTS[key] || key}${Number(val) === 1 ? '' : ` ${Number(val) >= 0 ? '+' : ''}${val}`}`)];
         const tags = entries.map(label => ({ kind: 'buff', label }));
@@ -1429,8 +1508,8 @@ export class Battle {
             25,
             50,
             100
-        ][rank], this.effect(u, s, 'lethal'), () => {
-            this.log('damage', `${t.name}に${scaledBase.toLocaleString()}ダメージ`, `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})`, u, t, processTags);
+        ][rank], this.effect(u, s, 'lethal'), (applied, shield) => {
+            this.log('damage', `${t.name}に${scaledBase.toLocaleString()}ダメージ${this.barrierNote(shield)}`, `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})`, u, t, processTags);
             if (scaledPursuit > 0)
                 this.log('pursuit', `追撃により追加で${scaledPursuit.toLocaleString()}ダメージ！`, `対象：${t.name} / この命中の合計 ${scaledTotal.toLocaleString()}ダメージ`, u, t);
         });
@@ -1441,12 +1520,16 @@ export class Battle {
             u.cleanHits++;
         const erosion = Math.max(0, this.effect(u, s, 'erosion') - this.effectRaw(t, 'apArmor'));
         if (erosion) {
-            const overflow = Math.max(0, erosion - t.ap);
-            t.ap = Math.max(0, t.ap - erosion);
-            if (overflow)
-                this.hurt(t, Math.max(0, overflow - this.effectRaw(t, 'hpArmor')), u, 0, 0, applied => this.log('damage', `${t.name}のAP −${erosion}`, `AP不足分でHPに追加${applied}ダメージ`, u, t));
-            else
-                this.log('damage', `${t.name}のAP −${erosion}`, '摩耗', u, t);
+            const apResult = this.apDamage(t, erosion);
+            const note = this.barrierNote(apResult);
+            if (apResult.overflow) {
+                // The sudden-death increase is applied once to the original AP damage.
+                // Spillover into HP does not multiply the same damage a second time.
+                this.hurt(t, Math.max(0, apResult.overflow - this.effectRaw(t, 'hpArmor')), u, 0, 0,
+                    (hpApplied, shield) => this.log('damage', `${t.name}のAP −${apResult.applied}${note}`, `摩耗：AP不足でHPに追加${hpApplied}ダメージ${this.barrierNote(shield)}`, u, t), true);
+            } else {
+                this.log('damage', `${t.name}のAP −${apResult.applied}${note}`, '摩耗', u, t);
+            }
         }
         if (amount > 0) {
             const hpDrain = this.effect(u, s, 'hpDrain') + this.effect(u, s, 'haDrain'), apDrain = this.effect(u, s, 'apDrain') + this.effect(u, s, 'haDrain');

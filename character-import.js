@@ -1,5 +1,6 @@
 import { STAT_LABELS, EFFECTS, BS_NAMES, freshSkill, freshUnit, freshRule, clone, uid } from './model.js';
 import { findReusableImportedSkill } from './skill-dedup.js';
+import { normalizeLegacyBarrierSkill } from './barrier-rules.js';
 const statNames = {
     HP: 'maxHp',
     AP: 'maxAp',
@@ -183,10 +184,11 @@ export function parseActiveSkill(raw, index = 0) {
     // An unfamiliar category must not silently become an attack.
     if (active?.category && !['ATTACK', 'HEAL', 'SUPPORT', 'BUFF'].includes(active.category))
         issues.push(`未対応の分類 ${active.category}`);
+    normalizeLegacyBarrierSkill(s);
     s.unmodeled = [...new Set(issues)];
     return {
         name,
-        original,
+        original: s.original,
         baseName: s.baseName,
         originSkillId: s.originSkillId,
         issues: s.unmodeled,

@@ -1,5 +1,6 @@
 import { CATALOG } from './catalog.js';
 import { clone, uid } from './model.js';
+import { normalizeLegacyBarrierConfig, normalizeLegacyBarrierSkill } from './barrier-rules.js';
 // WIKI originals are protected. The nine historical demo skills are removed on migration.
 const WIKI_IDS = new Set(CATALOG.map(skill => skill.id));
 const LEGACY_DEMO_MAP = new Map([
@@ -19,6 +20,10 @@ export function migrateLegacyDemoSkills(config) {
     if (!config || !Array.isArray(config.skills) || !Array.isArray(config.units))
         return config;
     const existing = new Set(config.skills.map(skill => skill.id));
+    normalizeLegacyBarrierConfig(config);
+    // Official WIKI entries are read-only and must track revised official values.
+    const byId = new Map(CATALOG.map(skill => [skill.id, skill]));
+    config.skills = config.skills.map(skill => byId.has(skill.id) ? clone(byId.get(skill.id)) : skill);
     config.skills = config.skills.filter(skill => !LEGACY_DEMO_MAP.has(skill.id));
     // Imported/older configs may contain only a subset of the official WIKI catalog.
     for (const skill of CATALOG)
@@ -66,7 +71,7 @@ export function saveSkillDraft(config, draft, unitId, equip = true) {
     if (isReadOnlySkill(existing) || (existingIndex < 0 && BUILTIN_IDS.has(draft.id))) {
         throw Error('既存の公式スキルは変更できません。複製して編集してください。');
     }
-    const saved = clone(draft);
+    const saved = normalizeLegacyBarrierSkill(clone(draft));
     if (existingIndex >= 0)
         config.skills[existingIndex] = saved;
     else

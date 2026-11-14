@@ -1,3 +1,4 @@
+import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
 // Keep historical saved settings usable after removing deprecated Web-only controls.
 export function cleanWebConfiguration(config) {
     if (!config || typeof config !== 'object')
@@ -6,6 +7,7 @@ export function cleanWebConfiguration(config) {
         config.settings.combatMode = 'official';
     if (!Array.isArray(config.skills) || !Array.isArray(config.units))
         return config;
+    normalizeLegacyBarrierConfig(config);
     // The baseline duration of every skill-inflicted BS is fixed at three turns.
     for (const skill of config.skills) skill.bsTurns = 3;
     const retired = new Set(config.skills.filter(skill => skill?.kind === 'passive').map(skill => skill.id));

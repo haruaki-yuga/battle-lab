@@ -33,7 +33,8 @@ const ACCEL_ATTACK_EFFECTS = Object.fromEntries(Object.entries(EFFECTS).filter((
     'extraHP',
     'bsHeal',
     'regen',
-    'charge'
+    'charge',
+    'barrier'
 ].includes(key)));
 const isAccelHeal = kind => ['hp', 'ap', 'ha', 'cleanse'].includes(kind);
 const accelCategory = kind => isAccelHeal(kind) ? 'heal' : kind === 'attack' ? 'attack' : 'buff';
@@ -66,6 +67,7 @@ function adaptAccelDraft(draft) {
 }
 const KEY = 'arcadia-battle-lab-v1';
 const FLAG_EFFECTS = new Set(BOOL_EFFECTS);
+const GRANT_STAT_LABELS = Object.fromEntries(Object.entries(STAT_LABELS).filter(([key]) => !['maxHp', 'maxAp'].includes(key)));
 function makeSample() {
     const c = sampleConfig();
     c.name = '新しい対戦';
@@ -529,7 +531,7 @@ function simPage() {
     const stale = sim && JSON.stringify(config) !== JSON.stringify(sim.config);
     const a = config.units.filter(u => u.team === 'A').length, b = config.units.filter(u => u.team === 'B').length;
     return heading('BATTLE SIMULATION', 'シミュレーション', '実行ごとに乱数を自動で更新します。', btn('編成を編集', 'page:setup')) + `<div class="panel" style="margin-bottom:20px">\
-<div class="panel-body"><div class="sim-settings" style="margin:0">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('ターン制限', '<div class="fixed-turns">通常20T ＋ サドンデス5T（固定）</div>')}<div class="btnrow">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div>\
+<div class="panel-body"><div class="sim-settings" style="margin:0">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('ターン制限', '<div class="fixed-turns">サドンデス込 25T</div>')}<div class="btnrow">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div>\
 </div></div></div>${stale ? '<div class="notice">設定が変更されています。表示中の結果は変更前のものです。次の実行時に初期状態から再計算します。</div>' : ''}${batchPanel()}${!sim ? `<div class="result-grid">\
 <section class="panel"><div class="panel-head"><h2>対戦プレビュー</h2>${pill(`${a} vs ${b}`, 'green')}</div>\
 <div class="panel-body">${map(config.units, true)}</div>\
@@ -586,13 +588,14 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
 </section></div>`;
 }
 function visibleLogs() {
-    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && ['pursuit', 'sudden'].includes(l.type)) && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
+    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && ['pursuit', 'suddenDamage'].includes(l.type)) && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
 }
 function logEntries() {
     const logs = visibleLogs(), types = {
         action: '行動',
         turn: 'ターン',
         sudden: 'サドンデス',
+        suddenDamage: 'サドンデス',
         damage: 'ダメージ',
         pursuit: '追撃',
         heal: '回復',
@@ -613,7 +616,7 @@ function logEntries() {
         result: '結果'
     };
     return logs.slice(-700).map(l => `<div class="log ${l.type}${selectedLogId === l.id ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="${l.id}" data-act="select-log:${l.id}" aria-pressed="${selectedLogId === l.id}">\
-<span class="time">T${String(l.turn).padStart(2, '0')}<span class="time-gauge">${['speed', 'sudden'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}</span></span>\
+<span class="time">T${String(l.turn).padStart(2, '0')}<span class="time-gauge">${['speed', 'sudden', 'suddenDamage'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}</span></span>\
 <span class="type">${combatLogTypeLabel(l.type, l.message) || types[l.type] || l.type}</span>\
 <div>${esc(l.message)}${l.tags?.length ? `<div class="log-tags">${l.tags.map(tag => `<span class="log-tag tag-${[
         'buff',
@@ -632,7 +635,7 @@ function replayUnits(units) {
 <span class="avatar ${team === 'B' ? 'enemy' : ''}">${team}${index + 1}</span>\
 <div><div class="name">${esc(u.name)} ${u.alive ? '' : pill('戦闘不能', 'red')}</div>\
 <div class="numbers"><span>HP ${nf(u.hp)} / ${nf(u.maxHp)}</span>\
-<span>AP ${nf(u.ap)}</span>\
+<span>AP ${nf(u.ap)}</span>${u.barrier > 0 ? `<span class="replay-barrier">障壁 ${nf(u.barrier)}</span>` : ''}\
 </div><div class="hpbar"><i style="width:${clamp(u.hp / u.maxHp * 100, 0, 100)}%">\
 </i></div><div class="apbar"><i style="width:${u.maxAp ? clamp(u.ap / u.maxAp * 100, 0, 100) : 0}%">\
 </i></div><p class="subtle">座標 (${u.x.toFixed(1)}, ${u.y.toFixed(1)}) m</p>${u.bs.length ? `<div class="skill-tags">${u.bs.filter(b => b.remaining > 0).map(b => pill(bsStatusLabel(b), 'gold')).join('')}</div>` : ''}</div>\
@@ -647,7 +650,7 @@ function paintReplay() {
     $('#replay-map').innerHTML = map(f.units, true);
     repaintExpandedMap();
     $('#replay-units').innerHTML = replayUnits(f.units);
-    $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / ${['speed', 'sudden'].includes(log.type) ? '開始時' : `残行動値 ${Math.floor(log.gauge)}`}｜${log.message}` : f.label;
+    $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(log.type) ? '開始時' : `残行動値 ${Math.floor(log.gauge)}`}｜${log.message}` : f.label;
     $('#frame-range').value = frame;
     $('#log-entries')?.querySelectorAll('[data-log-id]').forEach(el => {
         const active = Number(el.dataset.logId) === selectedLogId;
@@ -777,9 +780,9 @@ function renderModal() {
   </details>
   <details class="accordion"><summary>能力補正・付与・自分付与</summary>
    ${effectEditor('castMods', { critical: 'クリティカル', fumble: 'ファンブル' }, '使用時のみ加算')}
-   ${effectEditor('modifiers', STAT_LABELS, '対象への能力付与')}
+   ${effectEditor('modifiers', GRANT_STAT_LABELS, '対象への能力付与')}
    ${effectEditor('grantedEffects', buffing ? ACCEL_BUFF_EFFECTS : effectsList, '対象へ付与する特殊効果')}
-   ${effectEditor('selfModifiers', STAT_LABELS, '使用後の自身への能力付与')}
+   ${effectEditor('selfModifiers', GRANT_STAT_LABELS, '使用後の自身への能力付与')}
    ${effectEditor('selfEffects', effectsList, '使用後の自身への特殊効果')}
    ${namedField('付与の持続ターン', 'buffTurns', s.buffTurns)}
   </details>
@@ -961,7 +964,7 @@ async function onAction(act) {
     }
     if (a === 'add-effect') {
         syncDraft();
-        const labels = ['modifiers', 'selfModifiers'].includes(arg) ? STAT_LABELS : arg === 'castMods' ? { critical: 'CT', fumble: 'FB' } : modalMode === 'unit' ? EFFECTS : arg === 'grantedEffects' && accelCategory(modalDraft.kind) === 'buff' ? ACCEL_BUFF_EFFECTS : accelEffects(modalDraft.kind);
+        const labels = ['modifiers', 'selfModifiers'].includes(arg) ? GRANT_STAT_LABELS : arg === 'castMods' ? { critical: 'CT', fumble: 'FB' } : modalMode === 'unit' ? EFFECTS : arg === 'grantedEffects' && accelCategory(modalDraft.kind) === 'buff' ? ACCEL_BUFF_EFFECTS : accelEffects(modalDraft.kind);
         modalDraft[arg] ??= {};
         const k = Object.keys(labels).find(k => !(k in modalDraft[arg]));
         if (k)
@@ -1181,7 +1184,7 @@ async function onAction(act) {
         return;
     }
     else if (a === 'export-log') {
-        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${['speed', 'sudden'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}`).join('\n'), 'text/plain');
+        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}`).join('\n'), 'text/plain');
         return;
     }
     else if (a === 'reset-config') {

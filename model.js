@@ -174,6 +174,7 @@ export const EFFECTS = {
     efficiency: '能率',
     dot: 'ダメージ',
     lost: 'ロスト',
+    barrier: '障壁',
     erosion: '摩耗',
     hpDrain: 'HP吸収',
     apDrain: 'AP吸収',

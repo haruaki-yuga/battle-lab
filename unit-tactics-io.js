@@ -1,4 +1,5 @@
 import { CATALOG } from './catalog.js';
+import { normalizeLegacyBarrierSkill } from './barrier-rules.js';
 import { clone, uid, validateConfig } from './model.js';
 export const UNIT_TACTICS_FORMAT = 'rosuaka-unit-tactics';
 export const UNIT_TACTICS_VERSION = 1;
@@ -69,7 +70,7 @@ export function importUnitTactics(config, targetId, data) {
         if (!owned.has(definition.id) || customIds.has(definition.id))
             throw Error('自作スキルの参照またはIDが重複しています。');
         customIds.add(definition.id);
-        const original = clone(definition);
+        const original = normalizeLegacyBarrierSkill(clone(definition));
         if (original.source === '公開キャラクターページ') {
             delete original.source;
             original.importedFromCharacter ??= { originalId: original.originSkillId || null };

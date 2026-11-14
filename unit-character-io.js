@@ -1,6 +1,7 @@
 /** One character per JSON file. Unit identity, team and map position belong to the destination slot. */
 import { clone, STAT_LABELS, RANGES, BS_NAMES, validateConfig } from './model.js';
 import { exportUnitTactics, importUnitTactics, UNIT_TACTICS_FORMAT } from './unit-tactics-io.js';
+import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
 
 export const CHARACTER_FORMAT = 'rosuaka-unit-character';
 export const CHARACTER_FORMAT_VERSION = 1;
@@ -62,6 +63,7 @@ export function importUnitCharacter(config, targetId, data) {
     for (const field of characterFields) {
         if (field in data.character) destination[field] = clone(data.character[field]);
     }
+    normalizeLegacyBarrierConfig(next);
     const errors = validateConfig(next);
     if (errors.length) throw Error('読み込み後の設定が不正です：' + errors.join(' / '));
     return {
