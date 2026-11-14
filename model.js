@@ -26,8 +26,8 @@ export const SUBJECTS = {
 export const METRICS = {
     alive: ['が戦闘続行中', '行動', 'bool'],
     actions: ['の現在行動回数が', '行動', '回'],
-    av: ['の行動値が', '行動', ''],
-    avDiff: ['の行動値が自分より', '行動', '低い'],
+    av: ['の残行動値が', '行動', ''],
+    avDiff: ['の残行動値が自分より', '行動', '低い'],
     active: ['が行動中', '行動', 'bool'],
     waiting: ['が待機中', '行動', 'bool'],
     carrying: ['が行動値持ち越し中', '行動', 'bool'],

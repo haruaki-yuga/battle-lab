@@ -1113,7 +1113,7 @@ h3 {
 
 .log {
   display: grid;
-  grid-template-columns: 52px 65px 1fr;
+  grid-template-columns: 91px 65px minmax(0, 1fr);
   gap: 12px;
   border-bottom: 1px solid #edf1e9;
   padding: 12px 0;
@@ -1125,6 +1125,13 @@ h3 {
   font-size: 9px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+.log .time-gauge {
+  display: block;
+  margin-top: 3px;
+  white-space: nowrap;
+  font-size: 9px;
 }
 
 .log .type {
@@ -2121,7 +2128,7 @@ h1 {
   }
 
   .replay-log-panel .log {
-    grid-template-columns: 30px 44px minmax(0,1fr);
+    grid-template-columns: 80px 44px minmax(0,1fr);
     gap: 7px;
   }
 

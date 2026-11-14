@@ -915,7 +915,7 @@ export class Battle {
                 continue;
             const d1 = this.d(), d2 = this.d();
             u.av = Math.max(0, Math.floor(this.stat(u, 'speed') + d1 + d2 + u.carry));
-            this.log('speed', `${u.name}の行動値 ${u.av}`, `速度 ${this.stat(u, 'speed')} + 2d100 (${d1}+${d2}) + 持ち越し ${u.carry}`, u);
+            this.log('speed', `${u.name}の残行動値 ${u.av}`, `速度 ${this.stat(u, 'speed')} + 2d100 (${d1}+${d2}) + 持ち越し ${u.carry}`, u);
             u.carry = 0;
             if (u.blocked) {
                 this.log('bs', `${u.name}はBSによりこのターン行動できない`);
@@ -1101,7 +1101,7 @@ export class Battle {
         u.totalActions++;
         const side = ['focusAttack', 'focusDefense'].includes(a) || (p.s && this.effect(u, p.s, 'side'));
         u.av = Math.max(0, Math.floor(u.av / (side ? 1 : 2)));
-        this.log('actionEnd', `${u.name}の残り行動値 ${u.av}`, side ? '【副】により半減なし' : '行動後に残りを半減', u);
+        this.log('actionEnd', `${u.name}の残行動値 ${u.av}`, side ? '【副】により半減なし' : '行動後に残りを半減', u);
         if (u.alive && u.av > 0)
             this.enqueue(u, 'decide', Math.min(u.av, this.gauge));
         else

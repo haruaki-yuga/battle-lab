@@ -346,7 +346,7 @@ function setupPage() {
 <div class="btnrow" style="margin-top:15px">${btn('固有の特殊効果を編集', 'unit-effects', 'small')}</div>\
 </details>${importedProfileDetails(u)}<p class="footnote">\
 追加・削除・陣営変更時には、両陣営を20m離して各チーム5m間隔に自動整列します。X・Y座標は個別変更も可能です。</p></div></section><aside class="aside-grid"><section class="panel"><div class="panel-head">\
-<h2>初期配置</h2>${pill('150m ARENA')}</div>\
+<h2>初期配置</h2></div>\
 <div class="panel-body"><div id="setup-map">${map()}</div>\
 <div class="aside-stat"><div><span>装備スキル</span><strong>${u.skills.length}<small style="font-size:11px;margin-left:4px">\
 種</small></strong></div><div><span>キャラAI設定（β版）</span><strong>${u.rules.filter(r => r.enabled).length}<small style="font-size:11px;margin-left:4px">\
@@ -379,7 +379,7 @@ function skillsPage() {
     else
         skillPage = Math.min(skillPage, Math.max(0, Math.ceil(filtered.length / 18) - 1));
     const start = showAll ? 0 : skillPage * 18, end = showAll ? filtered.length : (skillPage + 1) * 18;
-    return heading('SKILL LIBRARY', 'スキルライブラリ', 'Aスキル220種類を収録', btn('+ アクセルカレイド', 'new-skill', 'primary')) + `<div class="toolbar-secondary">\
+    return heading('SKILL LIBRARY', 'スキルライブラリ', '2026/11/14までに実装のスキルを実装', btn('+ アクセルカレイド', 'new-skill', 'primary')) + `<div class="toolbar-secondary">\
 <div>${unitSelect()} <span class="subtle" style="margin-left:10px">\
 に装備するスキルを選択</span></div>${unitTacticsControls()}${pill(`${u.skills.length} スキルをセット中`, 'green')}</div>\
 <div class="equipped-list">${u.skills.map(id => {
@@ -504,7 +504,7 @@ function ruleCard(r, i, u) {
         previous: '条件該当者'
     }, r.target, attr('target')))}
  </div><div class="target-extra-conditions"><div class="move-conditions-title">対象の条件・優先順位（同じプルダウンから選択）</div>${targetCriteriaForRule(r).map((c, j) => targetConditionRow(c, i, j)).join('')}${btn('+ 対象条件を追加', `add-target-condition:${i}`, 'small ghost')}<p class="rule-help">\
-追加条件は全てANDで候補を絞り、優先条件は上から順に比較します。数値のある条件だけXの入力欄を表示します。BSはチェックボックスで選択できます。</p></div>
+追加条件は全てANDで候補を絞り、優先条件は上から順に比較します。</p></div>
  ${movementSettings(r, i, u)}
  ${!['wait', 'carry'].includes(r.action) ? `<div class="move-options">${field('自動位置取り', select({ true: 'する', false: 'しない' }, String(r.autoMove), attr('autoMove')))}
  ${r.autoMove || r.action === 'move' ? `${field('移動方法', select({ approach: '対象に近付く', away: '対象から離れる', fixed: '固定移動指定' }, r.moveMode, attr('moveMode')))}
@@ -528,7 +528,7 @@ function simPage() {
 }
 function batchPanel() {
     return `<details class="panel" style="margin-bottom:20px" ${batch || worker ? 'open' : ''}><summary style="cursor:pointer;padding:15px 20px;font-size:12px;font-weight:600">\
-連続実行の結果を一括表示</summary><div class="panel-body" style="padding-top:0"><div class="btnrow">${field('試行回数', select({ 10: '10回', 50: '50回', 100: '100回', 500: '500回' }, batchCount, 'id="batch-count" aria-label="試行回数"'))}${btn(worker ? '計算中…' : '一括シミュレーション', 'batch', 'primary small', worker ? 'disabled' : '')}${worker ? btn('中止', 'cancel-batch', 'small') : ''}<span class="subtle" id="batch-progress">${worker ? '計算中' : ''}</span>\
+連続実行の結果を一括表示（勝率算出用）</summary><div class="panel-body" style="padding-top:0"><div class="btnrow">${field('試行回数', select({ 10: '10回', 50: '50回', 100: '100回', 500: '500回' }, batchCount, 'id="batch-count" aria-label="試行回数"'))}${btn(worker ? '計算中…' : '一括シミュレーション', 'batch', 'primary small', worker ? 'disabled' : '')}${worker ? btn('中止', 'cancel-batch', 'small') : ''}<span class="subtle" id="batch-progress">${worker ? '計算中' : ''}</span>\
 </div>${batch ? `<div class="batch-summary">\
 <div class="batch-bar"><i class="a" style="width:${batch.A / batch.n * 100}%">\
 </i><i class="draw" style="width:${batch.draw / batch.n * 100}%">\
@@ -556,11 +556,11 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
  / ${sim.config.settings.turns}</span>\
 </strong><span>${r.done ? 'シミュレーション終了' : '次のターンへ進行可能'}</span>\
 </div><div class="kpi"><small>与ダメージ</small><div class="kpi-team-stats">${teamRows('damage')}</div>\
-<span class="kpi-hint">敵チームへ与えたダメージ（過剰ダメージ含む）</span></div><div class="kpi"><small>クリーンヒット以上</small><div class="kpi-team-stats">${teamRows('cleanHits')}</div>\
+<span class="kpi-hint">敵チームへ与えたダメージ</span></div><div class="kpi"><small>クリーンヒット以上</small><div class="kpi-team-stats">${teamRows('cleanHits')}</div>\
 <span class="kpi-hint">クリーン・ハード・スマッシュの合計</span></div></div>${tiePanel}${r.warnings.length ? `<div class="notice">${r.warnings.map(esc).join('<br>')}</div>` : ''}<div class="result-grid replay-layout">\
 <aside class="replay-sidebar"><section class="panel"><div class="panel-head"><h2>対戦プレビュー</h2></div><div class="panel-body"><p id="replay-label" class="replay-label">\
 </p><div id="replay-map"></div><div class="btnrow" style="margin-top:13px"><span class="subtle">初期</span><input id="frame-range" type="range" min="0" max="${r.frames.length - 1}" value="${frame}" aria-label="リプレイ時点" style="flex:1;width:150px">\
-<span class="subtle">最新</span></div><p class="footnote">ログをクリック、またはスクロールすると、その時点の座標・HP/APを表示します。</p></div></section><section class="panel">\
+<span class="subtle">最新</span></div></div></section><section class="panel">\
 <div class="panel-head"><h2>ユニットの状態</h2>${btn('結果JSON', 'export-result', 'small ghost')}</div>\
 <div id="replay-units" class="panel-body"></div></section></aside><section class="panel replay-log-panel"><div class="panel-head"><h2>\
 戦闘ログ</h2>${btn('ログを書き出す', 'export-log', 'small')}</div>\
@@ -602,7 +602,7 @@ function logEntries() {
         result: '結果'
     };
     return logs.slice(-700).map(l => `<div class="log ${l.type}${selectedLogId === l.id ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="${l.id}" data-act="select-log:${l.id}" aria-pressed="${selectedLogId === l.id}">\
-<span class="time">T${String(l.turn).padStart(2, '0')}<br>${Math.floor(l.gauge)}</span>\
+<span class="time">T${String(l.turn).padStart(2, '0')}<span class="time-gauge">残行動値 ${Math.floor(l.gauge)}</span></span>\
 <span class="type">${combatLogTypeLabel(l.type, l.message) || types[l.type] || l.type}</span>\
 <div>${esc(l.message)}${l.tags?.length ? `<div class="log-tags">${l.tags.map(tag => `<span class="log-tag tag-${[
         'buff',
@@ -636,7 +636,7 @@ function paintReplay() {
     $('#replay-map').innerHTML = map(f.units, true);
     repaintExpandedMap();
     $('#replay-units').innerHTML = replayUnits(f.units);
-    $('#replay-label').textContent = log ? `T${log.turn}｜${log.message}` : f.label;
+    $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / 残行動値 ${Math.floor(log.gauge)}｜${log.message}` : f.label;
     $('#frame-range').value = frame;
     $('#log-entries')?.querySelectorAll('[data-log-id]').forEach(el => {
         const active = Number(el.dataset.logId) === selectedLogId;
@@ -1170,7 +1170,7 @@ async function onAction(act) {
         return;
     }
     else if (a === 'export-log') {
-        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + sim.logs.map(l => `[T${l.turn} / ${Math.floor(l.gauge)}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}`).join('\n'), 'text/plain');
+        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / 残行動値 ${Math.floor(l.gauge)}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}`).join('\n'), 'text/plain');
         return;
     }
     else if (a === 'reset-config') {
