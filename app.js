@@ -453,13 +453,13 @@ function targetConditionRow(c, ri, ci) {
 }
 function rulesPage() {
     const u = current();
-    return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '上から順に判定。条件・対象・行動・位置取りをプルダウンで設定できます。', btn('+ AIルール', 'add-rule', 'primary')) + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
+    return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '上から順に判定。条件・対象・行動・位置取りをプルダウンで設定できます。', btn('AI追加', 'add-rule', 'primary')) + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
 <strong>公式アリーナHTMLの戦術を読み込みました：${arenaImportReport.ruleCount}ルール</strong>\
 <p>未対応スキルは使用できないAIルールとして残しています。対応スキルを装備した後、ルールを有効にしてください。</p>${arenaImportReport.warnings.length ? `<details>\
 <summary>変換時の注意（${arenaImportReport.warnings.length}件）</summary>\
 <ul>${arenaImportReport.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>\
 </details>` : ''}</section>` : '') + `<div class="toolbar-secondary tactics-toolbar">${unitSelect()}<span class="subtle">${u.rules.length} ルール · ↑↓ で優先順位を変更</span>${unitTacticsControls()}</div>\
-<div class="rule-layout"><div>${u.rules.map((r, i) => ruleCard(r, i, u)).join('')}${btn('+ AIルールを追加', 'add-rule', '', 'style="width:100%"')}</div>\
+<div class="rule-layout"><div>${u.rules.map((r, i) => ruleCard(r, i, u)).join('')}${btn('AI追加', 'add-rule', '', 'style="width:100%"')}</div>\
 </div>`;
 }
 function movementSettings(r, i, u) {
