@@ -170,7 +170,9 @@ const icons = {
     download: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>',
     arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
     search: '<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/>',
-    check: '<path d="m5 12 4 4L19 6"/>'
+    check: '<path d="m5 12 4 4L19 6"/>',
+    moon: '<path d="M20.7 13.2A9 9 0 0 1 10.8 3.3 9 9 0 1 0 20.7 13.2Z"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>'
 };
 const icon = (name, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name] || icons.setup}</svg>`;
 const btn = (text, act, cls = '', attrs = '') => `<button class="${cls}" data-act="${act}" ${attrs}>${text}</button>`;
@@ -184,7 +186,7 @@ function render() {
     const titles = { setup: '編成・ステータス', skills: 'スキルライブラリ', rules: 'キャラAI設定（β版）', sim: 'シミュレーション' };
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer"><div class="version">Web版 1.6.24</div></div></aside><main class="main"><header class="topbar"><div class="breadcrumb">\
+<div class="sidebar-footer"><button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><div class="version">Web版 1.6.24</div></div></aside><main class="main"><header class="topbar"><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>\
 </header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
@@ -386,7 +388,7 @@ function skillsPage() {
         const s = config.skills.find(s => s.id === id);
         return s ? btn(`${esc(displayedSkillName(u, s))} ×`, `equip:${id}`, '', 'aria-label="' + esc(displayedSkillName(u, s)) + 'を外す"') : '';
     }).join('')}</div><div class="searchbar"><input id="skill-search" type="search" placeholder="スキル名・効果で検索（例：炎、BS回復、迎撃）" value="${esc(skillSearch)}" aria-label="スキルを検索">${select({ all: 'すべての分類', ...SKILL_KINDS }, kindFilter, 'id="kind-filter" aria-label="スキル分類"')}${select({ all: 'すべて', equipped: 'セット中', custom: 'アクセルカレイド' }, skillFilter, 'id="skill-filter" aria-label="スキルの表示対象"')}</div>\
-<div class="skill-results-bar"><strong>検索結果 ${nf(filtered.length)} 件</strong><span class="subtle">${filtered.length ? `${start + 1}～${end}件を表示` : '表示するスキルはありません'} · 詳しい効果は「詳細」で確認</span></div>\
+<div class="skill-results-bar"><strong>検索結果 ${nf(filtered.length)} 件</strong><span class="subtle">${filtered.length ? `${start + 1}～${end}件を表示` : '表示するスキルはありません'} · 効果全文は一覧で確認できます · その他の設定は「詳細」</span></div>\
 <div class="skill-list" role="list" aria-label="スキル検索結果"><div class="skill-list-head" aria-hidden="true"><span>スキル</span><span>射程・対象</span><span>消費AP</span><span>消費行動値</span><span>効果</span><span>操作</span></div>${filtered.slice(start, end).map(s => skillCard(s, u)).join('')}</div>${!filtered.length ? '<div class="empty">条件に一致するスキルがありません。</div>' : ''}${showAll ? '' : `<div class="pagination">${btn('← 前へ', 'skill-prev', 'small', skillPage === 0 ? 'disabled' : '')}<span>${skillPage + 1} / ${Math.max(1, Math.ceil(filtered.length / 18))}</span>${btn('次へ →', 'skill-next', 'small', (skillPage + 1) * 18 >= filtered.length ? 'disabled' : '')}</div>`}`;
 }
 function skillCard(s, u) {
@@ -401,6 +403,7 @@ function skillCard(s, u) {
     ];
     const shownEffects = effects.slice(0, 3);
     const charge = Number(s.effects?.chargeTime) || 0;
+    const originalEffect = String(s.original || '').trim();
     return `<article class="skill-entry ${equipped ? 'equipped' : ''}" role="listitem">\
 <div class="skill-primary"><div class="skill-title-line"><span class="skill-kind-label ${esc(s.kind)}">${esc(SKILL_KINDS[s.kind] || s.kind)}</span><h3 title="${esc(name)}">${esc(name)}</h3>${equipped ? '<span class="skill-equipped-label">セット中</span>' : ''}</div>${s.note ? `<p class="skill-summary" title="${esc(s.note)}">${esc(s.note)}</p>` : ''}</div>\
 <div class="skill-range-col"><span class="skill-mobile-label">射程・対象</span><strong>${esc(range)}</strong><small>${esc(scope)}</small></div>\
@@ -408,6 +411,7 @@ function skillCard(s, u) {
 <div class="skill-value-col"><span class="skill-mobile-label">消費行動値</span><strong>${nf(s.cost)}</strong>${charge ? `<small>溜 ${nf(charge)}</small>` : ''}</div>\
 <div class="skill-effects-col" title="${esc(effects.join('／'))}">${shownEffects.length ? shownEffects.map(value => `<span class="skill-effect-chip">${esc(value)}</span>`).join('') : '<span class="skill-no-effects">―</span>'}${effects.length > 3 ? `<span class="skill-more-effects">+${effects.length - 3}</span>` : ''}</div>\
 <div class="skill-row-actions">${btn(equipped ? '解除' : '＋ セット', `equip:${s.id}`, `small ${equipped ? 'skill-unequip' : 'primary'}`, `aria-label="${esc(name)}を${equipped ? 'セットから外す' : 'セットする'}"`)}${btn('詳細', `skill-detail:${s.id}`, 'small ghost', `aria-label="${esc(name)}の詳細"`)}</div>\
+${originalEffect ? `<div class="skill-original-effect" aria-label="スキルの効果全文">${esc(originalEffect)}</div>` : ''}\
 </article>`;
 }
 function metricSelect(value, attrs) {
@@ -453,13 +457,13 @@ function targetConditionRow(c, ri, ci) {
 }
 function rulesPage() {
     const u = current();
-    return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '上から順に判定。条件・対象・行動・位置取りをプルダウンで設定できます。', btn('AI追加', 'add-rule', 'primary')) + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
+    return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '上から順に判定。条件・対象・行動・位置取りをプルダウンで設定できます。', btn('AI設定追加', 'add-rule', 'primary')) + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
 <strong>公式アリーナHTMLの戦術を読み込みました：${arenaImportReport.ruleCount}ルール</strong>\
 <p>未対応スキルは使用できないAIルールとして残しています。対応スキルを装備した後、ルールを有効にしてください。</p>${arenaImportReport.warnings.length ? `<details>\
 <summary>変換時の注意（${arenaImportReport.warnings.length}件）</summary>\
 <ul>${arenaImportReport.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>\
 </details>` : ''}</section>` : '') + `<div class="toolbar-secondary tactics-toolbar">${unitSelect()}<span class="subtle">${u.rules.length} ルール · ↑↓ で優先順位を変更</span>${unitTacticsControls()}</div>\
-<div class="rule-layout"><div>${u.rules.map((r, i) => ruleCard(r, i, u)).join('')}${btn('AI追加', 'add-rule', '', 'style="width:100%"')}</div>\
+<div class="rule-layout"><div>${u.rules.map((r, i) => ruleCard(r, i, u)).join('')}${btn('AI設定追加', 'add-rule', '', 'style="width:100%"')}</div>\
 </div>`;
 }
 function movementSettings(r, i, u) {
@@ -1201,6 +1205,14 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('click', e => {
     const b = e.target.closest('[data-act]');
+    if (b && !b.disabled && b.dataset.act === 'toggle-theme') {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('battle-lab-theme', next); } catch { /* private mode: current session only */ }
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#151c24' : '#f1f3f4');
+        render();
+        return;
+    }
     if (b && !b.disabled)
         onAction(b.dataset.act);
 });

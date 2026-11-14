@@ -768,6 +768,23 @@ dialog {
 .skill-row-actions button { font-size: 11px; padding: 6px 10px; white-space: nowrap; }
 .skill-row-actions .skill-unequip { color: #496579; border-color: #c9d9e2; background: #f0f6f8; }
 .skill-row-actions button:focus-visible { outline: 2px solid #618aa4; outline-offset: 2px; }
+/* Show the complete official WIKI effect text without truncation. */
+.skill-original-effect {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  padding: 7px 0 0;
+  border-top: 1px solid #e7ecf0;
+  color: #435560;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  font-variant-numeric: tabular-nums;
+}
 .skill-mobile-label { display: none; }
 @media (max-width: 1250px) {
   .skill-list-head,.skill-entry {
@@ -783,7 +800,7 @@ dialog {
   .skill-list-head { display: none; }
   .skill-entry {
     grid-template-columns: minmax(0,2fr) minmax(80px,.65fr) minmax(80px,.7fr) minmax(92px,.75fr);
-    grid-template-areas: 'name range ap cost' 'effects effects actions actions';
+    grid-template-areas: 'name range ap cost' 'effects effects actions actions' 'source source source source';
     gap: 7px 10px;
     padding: 11px 13px;
   }
@@ -793,13 +810,14 @@ dialog {
   .skill-entry > .skill-value-col:nth-child(4) { grid-area: cost; }
   .skill-effects-col { grid-area: effects; }
   .skill-row-actions { grid-area: actions; }
+  .skill-original-effect { grid-area: source; grid-row: auto; }
   .skill-mobile-label { display: block; color: #859098; font-size: 9px; line-height: 1.3; }
   .skill-entry .skill-range-col strong,.skill-entry .skill-value-col strong { margin-top: 2px; }
 }
 @media (max-width: 600px) {
   .skill-entry {
     grid-template-columns: repeat(3,minmax(0,1fr));
-    grid-template-areas: 'name name name' 'range ap cost' 'effects effects effects' 'actions actions actions';
+    grid-template-areas: 'name name name' 'range ap cost' 'effects effects effects' 'source source source' 'actions actions actions';
     gap: 8px 12px;
     padding: 12px;
   }

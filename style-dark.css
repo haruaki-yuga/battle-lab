@@ -1,0 +1,297 @@
+/* Dark palette – isolated from the light theme. No combat or AI logic changes. */
+html[data-theme="dark"] { color-scheme:dark; --ink:#e4ebf1; --muted:#a7b7c5; --line:#3a4856; --green:#94bdd7; --green-light:#283b4b; --paper:#151c24; --red:#efa998; --red-light:#3a292d; --white:#202933; }
+html[data-theme="dark"] body {background:var(--paper);color:var(--ink)}
+
+html[data-theme="dark"] button{background: #202933;}
+html[data-theme="dark"] button:hover{background: #26313c;}
+html[data-theme="dark"] button:focus-visible,html[data-theme="dark"] input:focus-visible,html[data-theme="dark"] select:focus-visible,html[data-theme="dark"] textarea:focus-visible{outline: 3px solid #3d4b58;}
+html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{border: 1px solid #3d4b58;background: #202933;}
+html[data-theme="dark"] .sidebar{background: #19222c;color: #f1f6fa;}
+html[data-theme="dark"] .brand-mark{border: 1px solid #4b5c69;color: #f1f6fa;}
+html[data-theme="dark"] .brand strong{color: #f1f6fa;}
+html[data-theme="dark"] .brand small{color: #afc0b6;}
+html[data-theme="dark"] .nav-label{color: #b0bfca;}
+html[data-theme="dark"] .nav button{color: #adc2b7;}
+html[data-theme="dark"] .nav button:hover{background: #19222c;}
+html[data-theme="dark"] .nav button.active{background: #2b3743;color: #9cd3c1;}
+html[data-theme="dark"] .sidebar-footer{border-top: 1px solid #4b5c69;color: #b0bfca;}
+html[data-theme="dark"] .sidebar-footer b{color: #b0bfca;}
+html[data-theme="dark"] .dot{background: #303d49;}
+html[data-theme="dark"] .topbar{background: #202933;}
+html[data-theme="dark"] .primary{color: #f1f6fa;}
+html[data-theme="dark"] .primary:hover{background: #338e75;}
+html[data-theme="dark"] .danger{color: #d6a199;}
+html[data-theme="dark"] .steps{background: #202933;}
+html[data-theme="dark"] .step span{color: #b0bfca;}
+html[data-theme="dark"] .panel{background: #202933;}
+html[data-theme="dark"] .pill{background: #26313c;}
+html[data-theme="dark"] .pill.gold{background: #26313c;color: #d5c29a;}
+html[data-theme="dark"] .team-strip{background: #202933;}
+html[data-theme="dark"] .unit-chip.selected{background: #26313c;}
+html[data-theme="dark"] .enemy .unit-chip.selected{background: #26313c;}
+html[data-theme="dark"] .avatar{background: #26313c;color: #a6c9b2;}
+html[data-theme="dark"] .avatar.enemy{background: #26313c;color: #d0a99f;}
+html[data-theme="dark"] .meter-field{background: #202933;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .meter-field .bar{background: #2b3743;}
+html[data-theme="dark"] .meter-field.ap .bar{background: #2b3743;}
+html[data-theme="dark"] .mini-rule{border-bottom: 1px solid #3d4b58;}
+html[data-theme="dark"] .mini-rule .num{color: #b0bfca;}
+html[data-theme="dark"] .hint{color: #b0bfca;background: #26313c;}
+html[data-theme="dark"] .notice{color: #d1bd9f;background: #26313c;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .battle-map{background: #26313c;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .map-caption{color: #b0bfca;}
+html[data-theme="dark"] .skill-card{background: #202933;}
+html[data-theme="dark"] .skill-card.equipped{border-color: #3d4b58;background: #202933;}
+html[data-theme="dark"] .empty{background: #202933;}
+html[data-theme="dark"] .rule-card{background: #202933;}
+html[data-theme="dark"] .rule-head{background: #202933;}
+html[data-theme="dark"] .rule-head .num{background: #26313c;}
+html[data-theme="dark"] .condition-row{background: #202933;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .condition-row .join{color: #b0bfca;}
+html[data-theme="dark"] .move-options{background: #26313c;}
+html[data-theme="dark"] .summary-card{background: #19222c;color: #f1f6fa;}
+html[data-theme="dark"] .summary-card .eyebrow{color: #aec2b1;}
+html[data-theme="dark"] .summary-card p{color: #b0bfca;}
+html[data-theme="dark"] .kpi{background: #202933;}
+html[data-theme="dark"] .hpbar,html[data-theme="dark"] .apbar{background: #26313c;}
+html[data-theme="dark"] .hpbar i{background: #4c755a;}
+html[data-theme="dark"] .apbar i{background: #303d49;}
+html[data-theme="dark"] .log{border-bottom: 1px solid #3d4b58;}
+html[data-theme="dark"] .log .type{background: #26313c;color: #b0bfca;}
+html[data-theme="dark"] .log.damage .type{background: #26313c;color: #d1aa9f;}
+html[data-theme="dark"] .log.pursuit .type{background: #26313c;color: #e8c187;}
+html[data-theme="dark"] .log.skill .type{background: #26313c;}
+html[data-theme="dark"] .log.turn{background: #26313c;}
+html[data-theme="dark"] .settings-table th{background: #26313c;}
+html[data-theme="dark"] .empty-state{background: #202933;}
+html[data-theme="dark"] .empty-state .big-icon{background: #26313c;}
+html[data-theme="dark"] .batch-bar{background: #26313c;}
+html[data-theme="dark"] .batch-bar .a{background: #303d49;}
+html[data-theme="dark"] .batch-bar .b{background: #303d49;}
+html[data-theme="dark"] .batch-bar .draw{background: #2b3743;}
+html[data-theme="dark"] .warning-text{color: #dbb594;}
+html[data-theme="dark"] .error-box{background: #26313c;color: #d6a499;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .modal-header{background: #202933;}
+html[data-theme="dark"] .modal-footer{background: #202933;}
+html[data-theme="dark"] .source-quote{background: #26313c;}
+html[data-theme="dark"] dialog::backdrop{background: #19222c66;}
+html[data-theme="dark"] #toast{background: #19222c;color: #f1f6fa;}
+html[data-theme="dark"] .footnote{color: #b0bfca;}
+html[data-theme="dark"] .equipped-list button{background: #26313c;border-color: #3d4b58;}
+html[data-theme="dark"] .rule-count{color: #afc1b3;}
+html[data-theme="dark"] .import-preview{border-top: 1px solid var(--line,#3d4b58);}
+html[data-theme="dark"] .import-profile-heading a{color: #adc2b2;}
+html[data-theme="dark"] .import-stat-grid{background: #2b3743;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .import-stat-grid>div{background: #202933;}
+html[data-theme="dark"] .import-stat-grid span{color: #b0bfca;}
+html[data-theme="dark"] .import-stat-grid strong{color: #a5cbba;}
+html[data-theme="dark"] .import-skill{border-bottom: 1px solid #3d4b58;}
+html[data-theme="dark"] .import-skill summary>span:first-child:before{color: #b0bfca;}
+html[data-theme="dark"] .import-skill small{color: #b0bfca;}
+html[data-theme="dark"] .import-reference{border-bottom: 1px solid #3d4b58;}
+html[data-theme="dark"] .import-reference small{color: #b0bfca;}
+html[data-theme="dark"] .import-reference p{color: #b0bfca;}
+html[data-theme="dark"] .import-warning{color: #d4b19b;}
+html[data-theme="dark"] .import-warning-box{background: #26313c;border: 1px solid #3d4b58;color: #d6b799;}
+html[data-theme="dark"] .import-destination{border-top: 1px solid #3d4b58;}
+html[data-theme="dark"] .replay-log-panel .log:hover{background: #26313c;}
+html[data-theme="dark"] .replay-log-panel .selected-log{background: #26313c;}
+html[data-theme="dark"] .replay-log-panel .log:focus-visible{outline: 2px solid #3d4b58;}
+html[data-theme="dark"] .movement-split{border: 1px solid #3d4b58;background: #202933;}
+html[data-theme="dark"] .movement-split>.checkbox-label{color: #95dbc8;}
+html[data-theme="dark"] .movement-split-body{border-top: 1px solid #3d4b58;}
+html[data-theme="dark"] .movement-extra-conditions{background: #202933;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .move-conditions-title{color: #a5cabe;}
+html[data-theme="dark"] .kpi-team-row{border-bottom: 1px solid #3d4b58;}
+html[data-theme="dark"] .kpi .kpi-team-label{color: #a0cfbe;}
+html[data-theme="dark"] .kpi .kpi-team-label.enemy{color: #d0ad9f;}
+html[data-theme="dark"] .log-tag.tag-buff{background: #26313c;border-color: #3d4b58;color: #97d8bf;}
+html[data-theme="dark"] .log-tag.tag-status{background: #26313c;border-color: #3d4b58;color: #d699b7;}
+html[data-theme="dark"] .log-tag.tag-splash{background: #26313c;border-color: #3d4b58;color: #97b0d9;}
+html[data-theme="dark"] .log-tag.tag-weak{background: #26313c;border-color: #3d4b58;color: #e8b987;}
+html[data-theme="dark"] .log-tag.tag-result{background: #26313c;border-color: #3d4b58;color: #9bd4b9;}
+html[data-theme="dark"] .log.effect .type{background: #26313c;color: #97b0d9;}
+html[data-theme="dark"] .log.buff .type{background: #26313c;color: #97d8bf;}
+html[data-theme="dark"] .log.bs .type{background: #26313c;color: #d699b7;}
+html[data-theme="dark"] .tiebreak-total{color: #9bd4bf;}
+html[data-theme="dark"] .tiebreak-grid{border: 1px solid #3d4b58;}
+html[data-theme="dark"] .tiebreak-grid>div{border-bottom: 1px solid #3d4b58;}
+html[data-theme="dark"] .tiebreak-caption{background: #26313c;color: #b0bfca;}
+html[data-theme="dark"] .tiebreak-value.point-awarded{background: #26313c;color: #93dcb0;}
+html[data-theme="dark"] .tiebreak-value b{background: #2b3743;}
+html[data-theme="dark"] .unit-tactics-management{background: #202933;}
+html[data-theme="dark"] .condition-row .bs-condition-chooser{background: #202933;}
+html[data-theme="dark"] .bs-condition-item{border: 1px solid #3d4b58;background: #202933;}
+html[data-theme="dark"] .bs-condition-item:has(input:checked){background: #26313c;border-color: #3d4b58;color: #8fe0bb;}
+html[data-theme="dark"] .map-zoom-controls output{color: #a7c8b2;}
+html[data-theme="dark"] .map-surface{border: 1px solid #3d4b58;background: #202933;}
+html[data-theme="dark"] .map-distance-list{border: 1px solid #3d4b58;background: #202933;}
+html[data-theme="dark"] .map-distance-row{border-bottom: 1px solid #3d4b58;}
+html[data-theme="dark"] .map-distance-row b{color: #b0bfca;}
+html[data-theme="dark"] .map-distance-row strong{color: #a3ccb6;}
+html[data-theme="dark"] .map-distance-row small{color: #b0bfca;}
+html[data-theme="dark"] .map-dialog::backdrop{background: #19222cbd;}
+html[data-theme="dark"] .map-dialog-note{color: #b0bfca;}
+html[data-theme="dark"] .replay-team{border: 1px solid #3d4b58;background: #202933;}
+html[data-theme="dark"] .replay-team.enemy{border-color: #3d4b58;}
+html[data-theme="dark"] .replay-team-head{background: #26313c;color: #9bd5bb;border-bottom: 1px solid #3d4b58;}
+html[data-theme="dark"] .replay-team.enemy .replay-team-head{background: #26313c;color: #cdada2;border-bottom-color: #3d4b58;}
+html[data-theme="dark"] .replay-team-members .combatant+.combatant{border-top: 1px solid #3d4b58;}
+html[data-theme="dark"] .log.speed .type{background: #26313c;color: #a4bacb;}
+html[data-theme="dark"] .log.speed .time-gauge{color: #aab8c5;}
+html[data-theme="dark"] button{border-color: #3d4b58;background: #202933;}
+html[data-theme="dark"] button:hover{background: #26313c;}
+html[data-theme="dark"] button:focus-visible,html[data-theme="dark"] input:focus-visible,html[data-theme="dark"] select:focus-visible,html[data-theme="dark"] textarea:focus-visible{outline: 2px solid #3d4b58;}
+html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{border-color: #3d4b58;background: #202933;}
+html[data-theme="dark"] .sidebar{background: #26313c;border-right: 1px solid #3d4b58;}
+html[data-theme="dark"] .brand{border-bottom: 1px solid #3d4b58;}
+html[data-theme="dark"] .brand strong{color: #adb9c3;}
+html[data-theme="dark"] .brand small{color: #b0bfca;}
+html[data-theme="dark"] .brand-mark{border-color: #3d4b58;}
+html[data-theme="dark"] .nav-label{color: #b0bfca;}
+html[data-theme="dark"] .nav button{color: #aeb9c1;}
+html[data-theme="dark"] .nav button:hover{background: #26313c;color: #a8bac7;}
+html[data-theme="dark"] .nav button.active{background: #202933;color: #9cbdd3;}
+html[data-theme="dark"] .nav .count{background: #26313c;color: #b0bfca;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .sidebar-footer{color: #b0bfca;border-top: 1px solid #3d4b58;}
+html[data-theme="dark"] .dot{background: #303d49;}
+html[data-theme="dark"] .topbar{background: #202933;border-color: #3d4b58;}
+html[data-theme="dark"] .breadcrumb{color: #b0bfca;}
+html[data-theme="dark"] .primary{background: #406682;border-color: #4b5c69;color: #f1f6fa;}
+html[data-theme="dark"] .primary:hover{background: #396889;}
+html[data-theme="dark"] .ghost{color: #afb9c0;}
+html[data-theme="dark"] .danger{color: #d0a29f;}
+html[data-theme="dark"] .panel,html[data-theme="dark"] .team-strip,html[data-theme="dark"] .skill-card,html[data-theme="dark"] .rule-card,html[data-theme="dark"] .kpi,html[data-theme="dark"] .replay-team{border-color: #3d4b58;background: #202933;}
+html[data-theme="dark"] .panel-head{background: #202933;}
+html[data-theme="dark"] .team-title b,html[data-theme="dark"] .team-strip.enemy .team-title b{color: #acb9c3;}
+html[data-theme="dark"] .unit-chip.selected{background: #26313c;border-color: #3d4b58;}
+html[data-theme="dark"] .enemy .unit-chip.selected{background: #202933;border-color: #3d4b58;}
+html[data-theme="dark"] .avatar{background: #26313c;color: #a1bdce;}
+html[data-theme="dark"] .avatar.enemy{background: #26313c;color: #cda9a3;}
+html[data-theme="dark"] .step span{color: #b0bfca;}
+html[data-theme="dark"] .step.active{background: #26313c;color: #9cbdd3;}
+html[data-theme="dark"] .pill{background: #26313c;color: #b0bfca;}
+html[data-theme="dark"] .pill.green{background: #26313c;color: #a0becf;}
+html[data-theme="dark"] .pill.red{background: #26313c;color: #cfa8a1;}
+html[data-theme="dark"] .pill.gold{background: #26313c;color: #cdbea2;}
+html[data-theme="dark"] .field-section{color: #afb8c0;}
+html[data-theme="dark"] .meter-field{background: #202933;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .meter-field .bar{background: #2b3743;}
+html[data-theme="dark"] .meter-field.ap .bar{background: #2b3743;}
+html[data-theme="dark"] .hint{background: #26313c;color: #b0bfca;}
+html[data-theme="dark"] .notice{background: #202933;color: #c7bfa8;border-color: #3d4b58;}
+html[data-theme="dark"] .mini-rule{border-color: #3d4b58;}
+html[data-theme="dark"] .tabs button.active{color: #9fbcd1;border-bottom-color: #4b5c69;}
+html[data-theme="dark"] .skill-card.equipped{background: #202933;border-color: #3d4b58;}
+html[data-theme="dark"] .skill-card .description{color: #b0bfca;}
+html[data-theme="dark"] .rule-head{background: #26313c;}
+html[data-theme="dark"] .equipped-list button{background: #26313c;border-color: #3d4b58;}
+html[data-theme="dark"] .rule-count{color: #b0bfca;}
+html[data-theme="dark"] .unit-tactics-management,html[data-theme="dark"] .condition-row .bs-condition-chooser{background: #202933;border-color: #3d4b58;}
+html[data-theme="dark"] .bs-condition-chooser>summary{color: #a6bbc9;}
+html[data-theme="dark"] .bs-condition-item:has(input:checked){background: #26313c;border-color: #3d4b58;color: #9fbdd0;}
+html[data-theme="dark"] .battle-map{background: #202933;border-color: #3d4b58;}
+html[data-theme="dark"] .map-surface,html[data-theme="dark"] .map-distance-list{background: #202933;border-color: #3d4b58;}
+html[data-theme="dark"] .map-zoom-controls output,html[data-theme="dark"] .map-distance-row strong{color: #a6bbc9;}
+html[data-theme="dark"] .map-dialog::backdrop,html[data-theme="dark"] dialog::backdrop{background: #19222c70;}
+html[data-theme="dark"] .replay-team{border-color: #3d4b58;}
+html[data-theme="dark"] .replay-team-head{background: #26313c;color: #a6bbc9;border-color: #3d4b58;}
+html[data-theme="dark"] .replay-team.enemy{border-color: #3d4b58;}
+html[data-theme="dark"] .replay-team.enemy .replay-team-head{background: #26313c;color: #c9afa6;border-color: #3d4b58;}
+html[data-theme="dark"] .replay-log-panel .log:hover{background: #26313c;}
+html[data-theme="dark"] .replay-log-panel .selected-log{background: #26313c;border-left-color: #4b5c69;}
+html[data-theme="dark"] .log.turn{background: #26313c;}
+html[data-theme="dark"] .tiebreak-total{color: #a1bdce;}
+html[data-theme="dark"] .tiebreak-caption{background: #26313c;color: #afb8c0;}
+html[data-theme="dark"] .tiebreak-value.point-awarded{background: #26313c;color: #9fd0ce;}
+html[data-theme="dark"] .tiebreak-value b{background: #2b3743;}
+html[data-theme="dark"] #toast{background: #19222c;}
+html[data-theme="dark"] .modal-header{background: #26313c;}
+@media  (max-width:700px) {html[data-theme="dark"] .sidebar{border-bottom: 1px solid #3d4b58;}}
+html[data-theme="dark"] .skill-results-bar strong{color: #a8bbc7;}
+html[data-theme="dark"] .skill-list{background: #202933;border: 1px solid #3d4b58;}
+html[data-theme="dark"] .skill-list-head{background: #26313c;border-bottom: 1px solid #3d4b58;color: #b0bfca;}
+html[data-theme="dark"] .skill-entry{border-bottom: 1px solid #3d4b58;background: #202933;}
+html[data-theme="dark"] .skill-entry:hover{background: #202933;}
+html[data-theme="dark"] .skill-entry.equipped{background: #202933;}
+html[data-theme="dark"] .skill-entry.equipped:hover{background: #26313c;}
+html[data-theme="dark"] .skill-kind-label{border: 1px solid #3d4b58;color: #acbac3;background: #26313c;}
+html[data-theme="dark"] .skill-kind-label.attack{color: #ceada1;background: #26313c;border-color: #3d4b58;}
+html[data-theme="dark"] .skill-kind-label.hp,html[data-theme="dark"] .skill-kind-label.ap,html[data-theme="dark"] .skill-kind-label.ha,html[data-theme="dark"] .skill-kind-label.cleanse{color: #abc4b6;background: #26313c;border-color: #3d4b58;}
+html[data-theme="dark"] .skill-equipped-label{color: #9bc2d4;}
+html[data-theme="dark"] .skill-summary{color: #b0bfca;}
+html[data-theme="dark"] .skill-range-col strong,html[data-theme="dark"] .skill-value-col strong{color: #a9bbc6;}
+html[data-theme="dark"] .skill-range-col small,html[data-theme="dark"] .skill-value-col small{color: #b0bfca;}
+html[data-theme="dark"] .skill-effect-chip{border: 1px solid #3d4b58;color: #adbac3;background: #202933;}
+html[data-theme="dark"] .skill-more-effects,html[data-theme="dark"] .skill-no-effects{color: #b0bfca;}
+html[data-theme="dark"] .skill-row-actions .skill-unequip{color: #a7bac9;border-color: #3d4b58;background: #26313c;}
+html[data-theme="dark"] .skill-row-actions button:focus-visible{outline: 2px solid #3d4b58;}
+@media  (max-width: 1030px) {html[data-theme="dark"] .skill-mobile-label{color: #b0bfca;}}
+@media  (max-width: 600px) {html[data-theme="dark"] .skill-row-actions{border-top: 1px solid #3d4b58;}}
+
+/* Distinct hierarchy: sidebar, content panels, controls and focus states. */
+html[data-theme="dark"] .sidebar { background:#19232e; color:#d0deea; border-color:#334554; }
+html[data-theme="dark"] .brand {border-color:#344452}
+html[data-theme="dark"] .brand strong {color:#f2f6fa}
+html[data-theme="dark"] .brand small,html[data-theme="dark"] .nav-label {color:#94aabc}
+html[data-theme="dark"] .nav button {color:#bbcbd7;background:transparent}
+html[data-theme="dark"] .nav button:hover {background:#293847}
+html[data-theme="dark"] .nav button.active {background:#2c4152; color:#e9f5ff;box-shadow:inset 3px 0 0 #80b4d5}
+html[data-theme="dark"] .nav .count {background:#344757;color:#c1d3e0;border-color:#435565}
+html[data-theme="dark"] .sidebar-footer {border-color:#334554;color:#9fb1c0}
+html[data-theme="dark"] .topbar {background:#1c2530;border-color:#354553}
+html[data-theme="dark"] .breadcrumb {color:#aab9c6}
+html[data-theme="dark"] .content {color:var(--ink)}
+html[data-theme="dark"] button,html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea {background:#263440;color:#e8f0f6;border-color:#46596a}
+html[data-theme="dark"] button:hover {background:#324655}
+html[data-theme="dark"] button:disabled {opacity:.5}
+html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder {color:#91a1af}
+html[data-theme="dark"] .primary {background:#406d8b;color:#fff;border-color:#5d89a5}
+html[data-theme="dark"] .primary:hover {background:#527d9c}
+html[data-theme="dark"] .panel,html[data-theme="dark"] .team-strip,html[data-theme="dark"] .kpi,html[data-theme="dark"] .rule-card,html[data-theme="dark"] .skill-table,html[data-theme="dark"] .skill-result-row,html[data-theme="dark"] .skill-list,html[data-theme="dark"] dialog {background:#202a35;color:#e4edf4;border-color:#384858}
+html[data-theme="dark"] .panel-head,html[data-theme="dark"] .modal-header,html[data-theme="dark"] .modal-footer {background:#253340;color:#e4ebf1;border-color:#394b5c}
+html[data-theme="dark"] .skill-row:hover,html[data-theme="dark"] .skill-list-row:hover,html[data-theme="dark"] .skill-result-row:hover,html[data-theme="dark"] .replay-log-panel .log:hover {background:#2e4050}
+html[data-theme="dark"] .skill-row.is-equipped,html[data-theme="dark"] .skill-row.equipped,html[data-theme="dark"] .selected-log,html[data-theme="dark"] .replay-log-panel .selected-log {background:#293e50}
+html[data-theme="dark"] .log.turn {background:#25323e}
+html[data-theme="dark"] .log {border-bottom-color:#394854}
+html[data-theme="dark"] .battle-map {background:#24313b;border-color:#445465}
+html[data-theme="dark"] svg.battle-map > rect {fill:#24313b}
+html[data-theme="dark"] svg.battle-map > path {stroke:#394b56}
+html[data-theme="dark"] svg.battle-map pattern circle {fill:#455a66}
+html[data-theme="dark"] svg.battle-map .map-relation rect {fill:#293b48;stroke:#536575}
+html[data-theme="dark"] svg.battle-map .map-relation text {fill:#e2ecf1}
+html[data-theme="dark"] .hpbar,html[data-theme="dark"] .apbar {background:#3c4a55}
+html[data-theme="dark"] .hpbar i {background:#68a48a}
+html[data-theme="dark"] .apbar i {background:#7fa5cc}
+html[data-theme="dark"] .pill,html[data-theme="dark"] .log-tag {border-color:#435665}
+html[data-theme="dark"] a {color:#9bc6e4}
+html[data-theme="dark"] :focus-visible {outline-color:#87b8d4}
+html[data-theme="dark"] ::selection {background:#456e8c;color:#fff}
+/* Theme toggle: anchored to the lower-left sidebar on desktop. */
+.sidebar-footer .theme-toggle {display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-height:35px;text-align:left;background:transparent;border:1px solid #cbd5dc;color:#3f5262;padding:7px 9px;border-radius:4px;line-height:1.35;font-size:11px;white-space:normal}
+.sidebar-footer .theme-toggle svg {width:16px;height:16px;flex:0 0 16px}
+.sidebar-footer .theme-toggle:hover {background:#e4eaee}
+html[data-theme="dark"] .sidebar-footer .theme-toggle {background:#243443;color:#d9e5ef;border-color:#475b6c}
+html[data-theme="dark"] .sidebar-footer .theme-toggle:hover {background:#334b5e}
+.sidebar-footer .version {margin-top:10px}
+@media (max-width:700px) {
+  .sidebar-footer {display:flex;align-items:center;justify-content:flex-start;gap:10px;margin:3px 0 9px;padding:4px 7px 0;border-top:0}
+  .sidebar-footer .theme-toggle {width:auto;min-height:31px;padding:5px 9px;font-size:11px}
+  .sidebar-footer .version {margin-top:0}
+  html[data-theme="dark"] .nav button.active {box-shadow:inset 0 -2px 0 #80b4d5}
+}
+
+/* Skill library state colors and control hierarchy */
+html[data-theme="dark"] .skill-entry:hover {background:#2a3946}
+html[data-theme="dark"] .skill-entry.equipped {background:#263e4c;border-left-color:#6baccd}
+html[data-theme="dark"] .skill-entry.equipped:hover {background:#304959}
+html[data-theme="dark"] .skill-entry .skill-row-actions button {background:#293b49;color:#e2edf4;border-color:#455c6d}
+html[data-theme="dark"] .skill-entry .skill-row-actions button:hover {background:#385062}
+html[data-theme="dark"] .skill-entry .skill-row-actions .skill-unequip {background:#2e4959;color:#bbdff0}
+html[data-theme="dark"] .rule-card.disabled {opacity:.75}
+html[data-theme="dark"] .map-dialog {background:#202a35;color:#e4edf4;border:1px solid #425366}
+html[data-theme="dark"] #modal {background:#202a35;color:#e4edf4;border:1px solid #425366}
+html[data-theme="dark"] .tiebreak-value b {background:#31515b;color:#eef7fa}
+
+/* Official skill effect text, dark theme. */
+html[data-theme="dark"] .skill-original-effect {color: #d2e0eb; border-top-color: #415363;}

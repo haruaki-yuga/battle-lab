@@ -6,8 +6,15 @@
     <meta name="theme-color" content="#f1f3f4">
     <meta name="description" content="ステータス、2026年11月14日までに実装されたスキル、条件付き行動を組み合わせるLost Arcadia戦闘検証ツール。">
     <title>ロスアカ Battle Lab Web v1.6.24｜闘技趣味レーター</title>
+    <script>
+      // Apply saved appearance before styles render to avoid a light-mode flash.
+      try { document.documentElement.dataset.theme = localStorage.getItem('battle-lab-theme') === 'dark' ? 'dark' : 'light'; }
+      catch { document.documentElement.dataset.theme = 'light'; }
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'dark' ? '#151c24' : '#f1f3f4');
+    </script>
     <link rel="stylesheet" href="style.css?v=skill-list-20261114">
     <link rel="stylesheet" href="style-simple.css?v=skill-list-20261114">
+    <link rel="stylesheet" href="style-dark.css?v=dark-mode-20261114">
   </head>
   <body>
     <div id="app"></div>
