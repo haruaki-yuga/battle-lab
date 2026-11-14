@@ -301,3 +301,30 @@ html[data-theme="dark"] .log.sudden,html[data-theme="dark"] .log.suddenDamage{ba
 html[data-theme="dark"] .log.sudden .type,html[data-theme="dark"] .log.suddenDamage .type{background:#443326;color:#f1c48f}
 
 :root[data-theme="dark"] .replay-barrier { color: #a7d6f2; }
+
+/* Skill library — clearer card separation, full effect column in dark mode. */
+html[data-theme="dark"] .skill-list { background: transparent; border: 0; }
+html[data-theme="dark"] .skill-list-head { background: #273541; color: #b9cbd7; border: 1px solid #43586a; }
+html[data-theme="dark"] .skill-entry {
+  background: #202d38;
+  border: 1px solid #4a5e6e;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 18%);
+}
+html[data-theme="dark"] .skill-entry:last-child { border-bottom: 1px solid #4a5e6e; }
+html[data-theme="dark"] .skill-entry:hover { background: #283947; border-color: #698296; }
+html[data-theme="dark"] .skill-entry.equipped {
+  background: #263c4b;
+  border-color: #5b8199;
+  box-shadow: inset 3px 0 0 #80b4d5, 0 1px 2px rgb(0 0 0 / 18%);
+}
+html[data-theme="dark"] .skill-entry.equipped:hover { background: #2c4352; }
+html[data-theme="dark"] .skill-effect-fulltext { color: #e0eaf0; }
+html[data-theme="dark"] .skill-effect-chip { border-color: #506574; color: #d1e1eb; background: #2a3a47; }
+html[data-theme="dark"] .skill-summary { color: #acc0ce; }
+@media (max-width: 1200px) {
+  html[data-theme="dark"] .skill-effects-col { border-top-color: #425666; }
+  html[data-theme="dark"] .skill-mobile-label { color: #a7bbc9; }
+}
+@media (max-width: 700px) {
+  html[data-theme="dark"] .skill-row-actions { border-top-color: #425666; }
+}

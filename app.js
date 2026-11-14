@@ -393,27 +393,41 @@ function skillsPage() {
 <div class="skill-results-bar"><strong>検索結果 ${nf(filtered.length)} 件</strong><span class="subtle">${filtered.length ? `${start + 1}～${end}件を表示` : '表示するスキルはありません'} · 効果全文は一覧で確認できます · その他の設定は「詳細」</span></div>\
 <div class="skill-list" role="list" aria-label="スキル検索結果"><div class="skill-list-head" aria-hidden="true"><span>スキル</span><span>射程・対象</span><span>消費AP</span><span>消費行動値</span><span>効果</span><span>操作</span></div>${filtered.slice(start, end).map(s => skillCard(s, u)).join('')}</div>${!filtered.length ? '<div class="empty">条件に一致するスキルがありません。</div>' : ''}${showAll ? '' : `<div class="pagination">${btn('← 前へ', 'skill-prev', 'small', skillPage === 0 ? 'disabled' : '')}<span>${skillPage + 1} / ${Math.max(1, Math.ceil(filtered.length / 18))}</span>${btn('次へ →', 'skill-next', 'small', (skillPage + 1) * 18 >= filtered.length ? 'disabled' : '')}</div>`}`;
 }
+// 表示専用の短縮表記。射程距離や実際の対象判定には影響しない。
+const SKILL_RANGE_SHORT = {
+    touch: '至', near: '近', mid: '中', far: '遠', super: '超', special: '特'
+};
+const SKILL_SCOPE_SHORT = {
+    single: '単', random: '乱', self: '自', area: '範', wide: '域',
+    selfArea: '自範', selfWide: '自域', pierce: '貫', cone: '扇', line: '列', special: '特'
+};
 function skillCard(s, u) {
     const equipped = u.skills.includes(s.id);
     const name = displayedSkillName(u, s);
-    const range = RANGES[s.range]?.split(' / ')[0] || '―';
-    const scope = SCOPES[s.scope]?.split(' / ')[0] || '―';
+    const range = SKILL_RANGE_SHORT[s.range] || '―';
+    const scope = SKILL_SCOPE_SHORT[s.scope] || '―';
+    const fullRange = `${RANGES[s.range] || '未指定'}／${SCOPES[s.scope] || '未指定'}`;
     const effects = [
         ...(s.bs || []),
         ...Object.entries(s.effects || {}).filter(([key, value]) => !!value && key !== 'chargeTime').map(([key, value]) =>
             `${EFFECTS[key] || key}${FLAG_EFFECTS.has(key) ? '' : value}`)
     ];
-    const shownEffects = effects.slice(0, 3);
     const charge = Number(s.effects?.chargeTime) || 0;
     const originalEffect = String(s.original || '').trim();
+    // 公式スキルは原文の効果を省略せず表示する。独自スキルは全効果タグを表示する。
+    // 詳細欄の原文を別行に重複させず、必ず消費行動値の右側の効果列に収める。
+    const effectContent = originalEffect
+        ? `<span class="skill-effect-fulltext">${esc(originalEffect)}</span>`
+        : (effects.length
+            ? effects.map(value => `<span class="skill-effect-chip">${esc(value)}</span>`).join('')
+            : '<span class="skill-no-effects">―</span>');
     return `<article class="skill-entry ${equipped ? 'equipped' : ''}" role="listitem">\
 <div class="skill-primary"><div class="skill-title-line"><span class="skill-kind-label ${esc(s.kind)}">${esc(SKILL_KINDS[s.kind] || s.kind)}</span><h3 title="${esc(name)}">${esc(name)}</h3>${equipped ? '<span class="skill-equipped-label">セット中</span>' : ''}</div>${s.note ? `<p class="skill-summary" title="${esc(s.note)}">${esc(s.note)}</p>` : ''}</div>\
-<div class="skill-range-col"><span class="skill-mobile-label">射程・対象</span><strong>${esc(range)}</strong><small>${esc(scope)}</small></div>\
+<div class="skill-range-col" title="${esc(fullRange)}" aria-label="射程・対象：${esc(fullRange)}"><span class="skill-mobile-label">射程・対象</span><strong>${esc(range)}・${esc(scope)}</strong></div>\
 <div class="skill-value-col"><span class="skill-mobile-label">消費AP</span><strong>${nf(s.ap)}</strong></div>\
 <div class="skill-value-col"><span class="skill-mobile-label">消費行動値</span><strong>${nf(s.cost)}</strong>${charge ? `<small>溜 ${nf(charge)}</small>` : ''}</div>\
-<div class="skill-effects-col" title="${esc(effects.join('／'))}">${shownEffects.length ? shownEffects.map(value => `<span class="skill-effect-chip">${esc(value)}</span>`).join('') : '<span class="skill-no-effects">―</span>'}${effects.length > 3 ? `<span class="skill-more-effects">+${effects.length - 3}</span>` : ''}</div>\
+<div class="skill-effects-col" aria-label="スキル効果"><span class="skill-mobile-label">効果</span>${effectContent}</div>\
 <div class="skill-row-actions">${btn(equipped ? '解除' : '＋ セット', `equip:${s.id}`, `small ${equipped ? 'skill-unequip' : 'primary'}`, `aria-label="${esc(name)}を${equipped ? 'セットから外す' : 'セットする'}"`)}${btn('詳細', `skill-detail:${s.id}`, 'small ghost', `aria-label="${esc(name)}の詳細"`)}</div>\
-${originalEffect ? `<div class="skill-original-effect" aria-label="スキルの効果全文">${esc(originalEffect)}</div>` : ''}\
 </article>`;
 }
 function metricSelect(value, attrs) {
