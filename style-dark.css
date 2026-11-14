@@ -295,3 +295,7 @@ html[data-theme="dark"] .tiebreak-value b {background:#31515b;color:#eef7fa}
 
 /* Official skill effect text, dark theme. */
 html[data-theme="dark"] .skill-original-effect {color: #d2e0eb; border-top-color: #415363;}
+
+html[data-theme="dark"] .fixed-turns{background:#26313c;border-color:#435665;color:#e6edf5}
+html[data-theme="dark"] .log.sudden{background:#302923;border-left-color:#d3a268}
+html[data-theme="dark"] .log.sudden .type{background:#443326;color:#f1c48f}

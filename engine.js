@@ -228,6 +228,9 @@ export class Battle {
             if (key === 'fumble' && j >= 0)
                 n += [5, 8, 10, 13][Math.max(0, j - ease)];
         }
+        // Each sudden-death round adds five CT and five FB points cumulatively.
+        if (key === 'critical' || key === 'fumble')
+            n += this.suddenRound() * 5;
         if (key === 'critical')
             n -= Math.min(Math.max(0, n / 2), u.ctLoss);
         if (key === 'evade')
@@ -244,6 +247,15 @@ export class Battle {
     }
     effect(u, skill, key) {
         return this.effectRaw(u, key) + Number(skill?.effects?.[key] || 0);
+    }
+    suddenRound() {
+        return Math.max(0, Math.min(5, this.turn - 20));
+    }
+    damageAmount(value, exempt = false) {
+        const base = Math.max(0, Math.floor(value));
+        // The five sudden-death rounds increase incoming damage additively:
+        // +30%, +60%, +90%, +120%, +150%. The opening HP tax is exempt.
+        return exempt ? base : Math.floor(base * (1 + this.suddenRound() * .3) + 1e-8);
     }
     roll(u, mods = {}, commit = true) {
         const die = this.d(), fb = Math.max(0, this.stat(u, 'fumble') + Number(mods.fumble || 0));
@@ -347,10 +359,10 @@ export class Battle {
             source.healing += gain;
         return gain;
     }
-    hurt(u, value, source = null, dramaPenalty = 0, lethal = 0, onDamageResolved = null) {
+    hurt(u, value, source = null, dramaPenalty = 0, lethal = 0, onDamageResolved = null, suddenExempt = false) {
         if (!u.alive)
             return 0;
-        const n = Math.max(0, Math.floor(value)), actual = Math.min(Math.max(0, u.hp), n);
+        const n = this.damageAmount(value, suddenExempt), actual = Math.min(Math.max(0, u.hp), n);
         u.hp -= n;
         if (source && source.team !== u.team) {
             source.damageDealt += n;
@@ -387,7 +399,7 @@ export class Battle {
         // Record the damage first, then the resulting drama/down event in the battle log.
         // The snapshot for each log already reflects the resolved HP/alive state.
         if (onDamageResolved)
-            onDamageResolved();
+            onDamageResolved(n);
         if (outcome)
             this.log(outcome.type, outcome.message, outcome.detail, outcome.actor, outcome.target);
         return actual;
@@ -846,7 +858,24 @@ export class Battle {
     startTurn() {
         this.gauge = 0;
         this.turn++;
-        this.log('turn', `第${this.turn}ターン`);
+        const sudden = this.suddenRound();
+        if (sudden) {
+            // Simultaneous opening HP tax; no individual spam entries.
+            // Damage amplification deliberately does NOT apply to this tax.
+            const entries = [];
+            for (const u of this.units) {
+                if (!u.alive) continue;
+                const before = u.hp;
+                const tax = Math.ceil(before * .20);
+                this.hurt(u, tax, null, 0, 0, null, true);
+                entries.push(`${u.name} HP ${before.toLocaleString()}→${u.hp.toLocaleString()}（−${tax.toLocaleString()}）`);
+            }
+            this.log('sudden', `第${this.turn}ターン｜サドンデス ${sudden}/5｜現在HP −20%・CT/FB +${sudden * 5}・被ダメージ +${sudden * 30}%`, entries.join(' / '));
+            // If the opening HP tax ends the battle, no one may act this turn.
+            if (this.checkEnd()) return false;
+        } else {
+            this.log('turn', `第${this.turn}ターン`);
+        }
         for (const u of this.units) {
             if (!u.alive)
                 continue;
@@ -883,7 +912,7 @@ export class Battle {
                     ap += 120 * (Math.max(0, suff - ease) + 1);
                 if (dmg > 0) {
                     dmg = Math.max(0, dmg - res * 2 - this.effectRaw(u, 'bsArmor'));
-                    this.hurt(u, dmg, null, 0, 0, () => this.log('bs', `${u.name}：${name}でHP −${dmg}`));
+                    this.hurt(u, dmg, null, 0, 0, applied => this.log('bs', `${u.name}：${name}でHP −${applied}`));
                 }
                 if (ap > 0) {
                     ap = Math.max(0, ap - res * 2 - this.effectRaw(u, 'bsArmor'));
@@ -996,7 +1025,7 @@ export class Battle {
         }
         this.snapshot(`第${this.turn}ターン 終了`);
         if (this.turn >= this.config.settings.turns && !this.done)
-            this.resolveDraw(`最大${this.turn}ターンで終了`);
+            this.resolveDraw(`通常20ターン＋サドンデス5ターンで終了`);
     }
     stepTurn() {
         if (this.done)
@@ -1242,7 +1271,7 @@ export class Battle {
         this.addBuff(u, { ...s, id: s.id + '-self' }, s.selfModifiers, s.selfEffects, u);
         const recoil = this.effect(u, s, 'recoil');
         if (recoil && u.alive) {
-            this.hurt(u, recoil, null, 0, 0, () => this.log('damage', `${u.name}は反動でHP −${recoil}`, '', u));
+            this.hurt(u, recoil, null, 0, 0, applied => this.log('damage', `${u.name}は反動でHP −${applied}`, '', u));
         }
     }
     cleanse(t, chance, u) {
@@ -1391,6 +1420,9 @@ export class Battle {
         const weaknessReduction = defended ? Math.max(0, Math.round((reductionWithoutWeakness - reduction) * 1000) / 10) : 0;
         const processTags = [...(split > 1 ? [{ kind: 'splash', label: `スプラッシュ ${hitIndex + 1}/${split}` }] : []),
             ...(weakness > 0 && weaknessReduction > 0 ? [{ kind: 'weak', label: `弱点：防御軽減 −${weaknessReduction}pt` }] : [])];
+        const scaledTotal = this.damageAmount(total);
+        const scaledBase = this.damageAmount(baseDamage);
+        const scaledPursuit = Math.max(0, scaledTotal - scaledBase);
         const amount = this.hurt(t, total, u, [
             0,
             0,
@@ -1398,9 +1430,9 @@ export class Battle {
             50,
             100
         ][rank], this.effect(u, s, 'lethal'), () => {
-            this.log('damage', `${t.name}に${baseDamage.toLocaleString()}ダメージ`, `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})`, u, t, processTags);
-            if (pursuitDamage > 0)
-                this.log('pursuit', `追撃により追加で${pursuitDamage.toLocaleString()}ダメージ！`, `対象：${t.name} / この命中の合計 ${total.toLocaleString()}ダメージ`, u, t);
+            this.log('damage', `${t.name}に${scaledBase.toLocaleString()}ダメージ`, `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})`, u, t, processTags);
+            if (scaledPursuit > 0)
+                this.log('pursuit', `追撃により追加で${scaledPursuit.toLocaleString()}ダメージ！`, `対象：${t.name} / この命中の合計 ${scaledTotal.toLocaleString()}ダメージ`, u, t);
         });
         if (amount > 0 && u.team !== t.team)
             t.incomingHits++;
@@ -1412,7 +1444,7 @@ export class Battle {
             const overflow = Math.max(0, erosion - t.ap);
             t.ap = Math.max(0, t.ap - erosion);
             if (overflow)
-                this.hurt(t, Math.max(0, overflow - this.effectRaw(t, 'hpArmor')), u, 0, 0, () => this.log('damage', `${t.name}のAP −${erosion}`, `AP不足分でHPに追加${overflow}ダメージ`, u, t));
+                this.hurt(t, Math.max(0, overflow - this.effectRaw(t, 'hpArmor')), u, 0, 0, applied => this.log('damage', `${t.name}のAP −${erosion}`, `AP不足分でHPに追加${applied}ダメージ`, u, t));
             else
                 this.log('damage', `${t.name}のAP −${erosion}`, '摩耗', u, t);
         }

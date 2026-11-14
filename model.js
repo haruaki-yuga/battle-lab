@@ -449,7 +449,7 @@ export function sampleConfig() {
         initialLayoutVersion: 2,
         name: 'チーム戦・初期編成',
         settings: {
-            turns: 20,
+            turns: 25,
             seed: 'ARCADIA-01',
             seedMode: 'auto',
             rangePolicy: 'text',

@@ -529,7 +529,7 @@ function simPage() {
     const stale = sim && JSON.stringify(config) !== JSON.stringify(sim.config);
     const a = config.units.filter(u => u.team === 'A').length, b = config.units.filter(u => u.team === 'B').length;
     return heading('BATTLE SIMULATION', 'シミュレーション', '実行ごとに乱数を自動で更新します。', btn('編成を編集', 'page:setup')) + `<div class="panel" style="margin-bottom:20px">\
-<div class="panel-body"><div class="sim-settings" style="margin:0">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('最大ターン数', `<input data-settings="turns" type="number" min="1" max="200" value="${config.settings.turns}">`)}<div class="btnrow">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div>\
+<div class="panel-body"><div class="sim-settings" style="margin:0">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('ターン制限', '<div class="fixed-turns">通常20T ＋ サドンデス5T（固定）</div>')}<div class="btnrow">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div>\
 </div></div></div>${stale ? '<div class="notice">設定が変更されています。表示中の結果は変更前のものです。次の実行時に初期状態から再計算します。</div>' : ''}${batchPanel()}${!sim ? `<div class="result-grid">\
 <section class="panel"><div class="panel-head"><h2>対戦プレビュー</h2>${pill(`${a} vs ${b}`, 'green')}</div>\
 <div class="panel-body">${map(config.units, true)}</div>\
@@ -544,7 +544,7 @@ function batchPanel() {
 </i><i class="draw" style="width:${batch.draw / batch.n * 100}%">\
 </i><i class="b" style="width:${batch.B / batch.n * 100}%">\
 </i></div><div class="btnrow">${pill(`A勝利 ${(batch.A / batch.n * 100).toFixed(1)}% (${batch.A})`, 'green')}${pill(`B勝利 ${(batch.B / batch.n * 100).toFixed(1)}% (${batch.B})`, 'red')}${pill(`引き分け ${batch.draw}`)}<span class="subtle">${batch.n}回 / 平均 ${batch.meanTurns.toFixed(1)}ターン</span>\
-</div><p class="footnote">各試行には「シード:#連番」を使用。最大ターン到達・相打ちは、与ダメージ・クリーンヒット以上・残HP割合で判定します。</p></div>` : ''}</div>\
+</div><p class="footnote">各試行には「シード:#連番」を使用。通常20ターン＋サドンデス5ターン終了時の決着・相打ちは、与ダメージ・クリーンヒット以上・残HP割合で判定します。</p></div>` : ''}</div>\
 </details>`;
 }
 function resultView(r) {
@@ -586,12 +586,13 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
 </section></div>`;
 }
 function visibleLogs() {
-    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && l.type === 'pursuit') && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
+    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && ['pursuit', 'sudden'].includes(l.type)) && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
 }
 function logEntries() {
     const logs = visibleLogs(), types = {
         action: '行動',
         turn: 'ターン',
+        sudden: 'サドンデス',
         damage: 'ダメージ',
         pursuit: '追撃',
         heal: '回復',
@@ -612,7 +613,7 @@ function logEntries() {
         result: '結果'
     };
     return logs.slice(-700).map(l => `<div class="log ${l.type}${selectedLogId === l.id ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="${l.id}" data-act="select-log:${l.id}" aria-pressed="${selectedLogId === l.id}">\
-<span class="time">T${String(l.turn).padStart(2, '0')}<span class="time-gauge">${l.type === 'speed' ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}</span></span>\
+<span class="time">T${String(l.turn).padStart(2, '0')}<span class="time-gauge">${['speed', 'sudden'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}</span></span>\
 <span class="type">${combatLogTypeLabel(l.type, l.message) || types[l.type] || l.type}</span>\
 <div>${esc(l.message)}${l.tags?.length ? `<div class="log-tags">${l.tags.map(tag => `<span class="log-tag tag-${[
         'buff',
@@ -646,7 +647,7 @@ function paintReplay() {
     $('#replay-map').innerHTML = map(f.units, true);
     repaintExpandedMap();
     $('#replay-units').innerHTML = replayUnits(f.units);
-    $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / ${log.type === 'speed' ? '開始時' : `残行動値 ${Math.floor(log.gauge)}`}｜${log.message}` : f.label;
+    $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / ${['speed', 'sudden'].includes(log.type) ? '開始時' : `残行動値 ${Math.floor(log.gauge)}`}｜${log.message}` : f.label;
     $('#frame-range').value = frame;
     $('#log-entries')?.querySelectorAll('[data-log-id]').forEach(el => {
         const active = Number(el.dataset.logId) === selectedLogId;
@@ -1180,7 +1181,7 @@ async function onAction(act) {
         return;
     }
     else if (a === 'export-log') {
-        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${l.type === 'speed' ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}`).join('\n'), 'text/plain');
+        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${['speed', 'sudden'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}`).join('\n'), 'text/plain');
         return;
     }
     else if (a === 'reset-config') {

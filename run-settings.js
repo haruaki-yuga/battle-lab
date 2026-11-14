@@ -6,6 +6,8 @@ export function newRunSeed() {
 export function normalizeSettings(config) {
     config.settings.rangePolicy = 'text';
     config.settings.combatMode = 'official';
+    // Arena duration is fixed, even for old saved/loaded configurations.
+    config.settings.turns = 25;
     config.settings.seedMode = config.settings.seedMode === 'fixed' ? 'fixed' : 'auto';
     config.settings.seed = String(config.settings.seed || 'ARCADIA-01');
     return config;

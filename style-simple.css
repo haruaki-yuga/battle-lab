@@ -828,3 +828,8 @@ dialog {
   .skill-title-line { flex-wrap: wrap; }
   .skill-title-line h3 { max-width: 100%; }
 }
+
+/* Fixed 20+5 format and compact sudden-death phase markers. */
+.fixed-turns{display:flex;align-items:center;min-height:36px;padding:7px 10px;border:1px solid var(--line);background:var(--paper);border-radius:3px;font-weight:600;font-variant-numeric:tabular-nums}
+.log.sudden{background:#fff5ea;border-left:3px solid #ba7745}
+.log.sudden .type{color:#8c522c;background:#f8e7d5}
