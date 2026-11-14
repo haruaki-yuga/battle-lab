@@ -643,7 +643,7 @@ dialog {
 .skill-list {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 6px;
   border: 0;
   background: transparent;
   overflow: visible;
@@ -652,11 +652,11 @@ dialog {
 .skill-entry {
   display: grid;
   grid-template-columns: minmax(160px,1.45fr) 64px 64px 95px minmax(230px,3fr) 128px;
-  column-gap: 10px;
-  align-items: start;
+  column-gap: 9px;
+  align-items: center;
 }
 .skill-list-head {
-  padding: 9px 14px;
+  padding: 7px 12px;
   background: #e9eef1;
   border: 1px solid #d1dbe1;
   border-radius: 4px;
@@ -665,7 +665,7 @@ dialog {
   color: #5e6c77;
 }
 .skill-entry {
-  padding: 13px 14px;
+  padding: 8px 12px;
   border: 1px solid #cbd5dc;
   border-radius: 4px;
   background: #fff;
@@ -683,7 +683,7 @@ dialog {
 .skill-title-line { display: flex; align-items: flex-start; min-width: 0; gap: 6px; flex-wrap: wrap; }
 .skill-title-line h3 {
   font-size: 12.5px;
-  line-height: 1.45;
+  line-height: 1.35;
   font-weight: 650;
   letter-spacing: 0;
   overflow: visible;
@@ -695,7 +695,7 @@ dialog {
   display: inline-flex;
   flex: none;
   align-items: center;
-  padding: 2px 5px;
+  padding: 1px 4px;
   border-radius: 2px;
   border: 1px solid #dce3e8;
   color: #526673;
@@ -709,18 +709,10 @@ dialog {
   color: #486956; background: #f3f8f4; border-color: #dce8df;
 }
 .skill-equipped-label { flex: none; color: #397089; font-size: 10px; font-weight: 650; }
-.skill-summary {
-  margin-top: 6px;
-  color: #667783;
-  font-size: 10.5px;
-  line-height: 1.5;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
 .skill-range-col strong,.skill-value-col strong {
   display: block;
   font-size: 12px;
-  line-height: 1.45;
+  line-height: 1.35;
   font-weight: 650;
   color: #28353d;
   font-variant-numeric: tabular-nums;
@@ -730,17 +722,17 @@ dialog {
   display: block;
   font-size: 10px;
   color: #75808a;
-  margin-top: 2px;
-  line-height: 1.4;
+  margin-top: 1px;
+  line-height: 1.3;
 }
 .skill-effects-col {
   display: flex;
   align-items: flex-start;
   align-content: flex-start;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
   font-size: 11.5px;
-  line-height: 1.65;
+  line-height: 1.45;
   color: #344a58;
 }
 .skill-effect-fulltext {
@@ -764,8 +756,8 @@ dialog {
   overflow-wrap: anywhere;
 }
 .skill-no-effects { font-size: 11px; color: #79858d; }
-.skill-row-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
-.skill-row-actions button { font-size: 11px; padding: 6px 9px; white-space: nowrap; }
+.skill-row-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 5px; }
+.skill-row-actions button { font-size: 11px; padding: 4px 8px; line-height: 1.4; white-space: nowrap; }
 .skill-row-actions .skill-unequip { color: #496579; border-color: #c9d9e2; background: #f0f6f8; }
 .skill-row-actions button:focus-visible { outline: 2px solid #618aa4; outline-offset: 2px; }
 .skill-mobile-label { display: none; }
@@ -774,13 +766,13 @@ dialog {
   .skill-entry {
     grid-template-columns: minmax(0,2fr) minmax(63px,.6fr) minmax(70px,.6fr) minmax(90px,.7fr);
     grid-template-areas: 'name range ap cost' 'effects effects effects actions';
-    gap: 10px 14px;
+    gap: 7px 12px;
   }
   .skill-primary { grid-area: name; }
   .skill-range-col { grid-area: range; }
   .skill-entry > .skill-value-col:nth-child(3) { grid-area: ap; }
   .skill-entry > .skill-value-col:nth-child(4) { grid-area: cost; }
-  .skill-effects-col { grid-area: effects; padding-top: 9px; border-top: 1px solid #e3e9ed; }
+  .skill-effects-col { grid-area: effects; padding-top: 7px; border-top: 1px solid #e3e9ed; }
   .skill-row-actions { grid-area: actions; align-self: end; }
   .skill-mobile-label { display: block; color: #778994; font-size: 10px; line-height: 1.35; margin-bottom: 3px; }
 }
@@ -788,13 +780,12 @@ dialog {
   .skill-entry {
     grid-template-columns: repeat(3,minmax(0,1fr));
     grid-template-areas: 'name name name' 'range ap cost' 'effects effects effects' 'actions actions actions';
-    gap: 10px 12px;
-    padding: 12px;
+    gap: 7px 10px;
+    padding: 9px 10px;
   }
-  .skill-summary { max-width: 100%; }
-  .skill-effects-col { padding-top: 10px; min-height: 20px; }
-  .skill-row-actions { justify-content: flex-end; border-top: 1px solid #e3e9ed; padding-top: 10px; }
-  .skill-row-actions button { padding: 7px 12px; }
+  .skill-effects-col { padding-top: 7px; min-height: 20px; }
+  .skill-row-actions { justify-content: flex-end; border-top: 1px solid #e3e9ed; padding-top: 7px; }
+  .skill-row-actions button { padding: 5px 9px; }
 }
 
 /* Fixed 20+5 format and compact sudden-death phase markers. */

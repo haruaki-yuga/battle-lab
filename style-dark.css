@@ -219,7 +219,6 @@ html[data-theme="dark"] .skill-kind-label{border: 1px solid #3d4b58;color: #acba
 html[data-theme="dark"] .skill-kind-label.attack{color: #ceada1;background: #26313c;border-color: #3d4b58;}
 html[data-theme="dark"] .skill-kind-label.hp,html[data-theme="dark"] .skill-kind-label.ap,html[data-theme="dark"] .skill-kind-label.ha,html[data-theme="dark"] .skill-kind-label.cleanse{color: #abc4b6;background: #26313c;border-color: #3d4b58;}
 html[data-theme="dark"] .skill-equipped-label{color: #9bc2d4;}
-html[data-theme="dark"] .skill-summary{color: #b0bfca;}
 html[data-theme="dark"] .skill-range-col strong,html[data-theme="dark"] .skill-value-col strong{color: #a9bbc6;}
 html[data-theme="dark"] .skill-range-col small,html[data-theme="dark"] .skill-value-col small{color: #b0bfca;}
 html[data-theme="dark"] .skill-effect-chip{border: 1px solid #3d4b58;color: #adbac3;background: #202933;}
@@ -320,7 +319,6 @@ html[data-theme="dark"] .skill-entry.equipped {
 html[data-theme="dark"] .skill-entry.equipped:hover { background: #2c4352; }
 html[data-theme="dark"] .skill-effect-fulltext { color: #e0eaf0; }
 html[data-theme="dark"] .skill-effect-chip { border-color: #506574; color: #d1e1eb; background: #2a3a47; }
-html[data-theme="dark"] .skill-summary { color: #acc0ce; }
 @media (max-width: 1200px) {
   html[data-theme="dark"] .skill-effects-col { border-top-color: #425666; }
   html[data-theme="dark"] .skill-mobile-label { color: #a7bbc9; }

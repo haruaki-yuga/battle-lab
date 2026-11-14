@@ -422,7 +422,7 @@ function skillCard(s, u) {
             ? effects.map(value => `<span class="skill-effect-chip">${esc(value)}</span>`).join('')
             : '<span class="skill-no-effects">―</span>');
     return `<article class="skill-entry ${equipped ? 'equipped' : ''}" role="listitem">\
-<div class="skill-primary"><div class="skill-title-line"><span class="skill-kind-label ${esc(s.kind)}">${esc(SKILL_KINDS[s.kind] || s.kind)}</span><h3 title="${esc(name)}">${esc(name)}</h3>${equipped ? '<span class="skill-equipped-label">セット中</span>' : ''}</div>${s.note ? `<p class="skill-summary" title="${esc(s.note)}">${esc(s.note)}</p>` : ''}</div>\
+<div class="skill-primary"><div class="skill-title-line"><span class="skill-kind-label ${esc(s.kind)}">${esc(SKILL_KINDS[s.kind] || s.kind)}</span><h3 title="${esc(name)}">${esc(name)}</h3>${equipped ? '<span class="skill-equipped-label">セット中</span>' : ''}</div></div>\
 <div class="skill-range-col" title="${esc(fullRange)}" aria-label="射程・対象：${esc(fullRange)}"><span class="skill-mobile-label">射程・対象</span><strong>${esc(range)}・${esc(scope)}</strong></div>\
 <div class="skill-value-col"><span class="skill-mobile-label">消費AP</span><strong>${nf(s.ap)}</strong></div>\
 <div class="skill-value-col"><span class="skill-mobile-label">消費行動値</span><strong>${nf(s.cost)}</strong>${charge ? `<small>溜 ${nf(charge)}</small>` : ''}</div>\
