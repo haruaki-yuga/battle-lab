@@ -1082,9 +1082,19 @@ async function onAction(act) {
         return;
     }
     if (a === 'skill-next' || a === 'skill-prev') {
+        // ページ送りでは画面全体を作り直さない。現在のスクロール位置を維持する。
         skillPage += a === 'skill-next' ? 1 : -1;
-        render();
-        window.scrollTo(0, 0);
+        const nextContent = document.createElement('template');
+        nextContent.innerHTML = skillsPage();
+        for (const selector of ['.skill-results-bar', '.skill-list', '.pagination']) {
+            const existing = $(selector);
+            const updated = nextContent.content.querySelector(selector);
+            if (existing && updated)
+                existing.replaceWith(updated);
+        }
+        // フォーカス移動によるブラウザの自動スクロールも防ぐ。
+        const direction = a === 'skill-next' ? 'skill-next' : 'skill-prev';
+        document.querySelector(`[data-act="${direction}"]`)?.focus({ preventScroll: true });
         return;
     }
     if (a === 'add-unit') {
