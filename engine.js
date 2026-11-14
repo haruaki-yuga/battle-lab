@@ -914,8 +914,10 @@ export class Battle {
             if (!u.alive)
                 continue;
             const d1 = this.d(), d2 = this.d();
-            u.av = Math.max(0, Math.floor(this.stat(u, 'speed') + d1 + d2 + u.carry));
-            this.log('speed', `${u.name}の残行動値 ${u.av}`, `速度 ${this.stat(u, 'speed')} + 2d100 (${d1}+${d2}) + 持ち越し ${u.carry}`, u);
+            const speed = this.stat(u, 'speed'), carried = u.carry;
+            u.av = Math.max(0, Math.floor(speed + d1 + d2 + carried));
+            // One self-contained entry: each die, their sum, speed, carry, and final AV.
+            this.log('speed', `${u.name}：速度 ${speed} ＋ 2d100（${d1}＋${d2}＝${d1 + d2}）＋ 持ち越し ${carried} ＝ 残行動値 ${u.av}`, '', u);
             u.carry = 0;
             if (u.blocked) {
                 this.log('bs', `${u.name}はBSによりこのターン行動できない`);

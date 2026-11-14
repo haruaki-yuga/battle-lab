@@ -378,7 +378,7 @@ function skillsPage() {
         skillPage = 0;
     else
         skillPage = Math.min(skillPage, Math.max(0, Math.ceil(filtered.length / 18) - 1));
-    const start = showAll ? 0 : skillPage * 18, end = showAll ? filtered.length : (skillPage + 1) * 18;
+    const start = showAll ? 0 : skillPage * 18, end = showAll ? filtered.length : Math.min((skillPage + 1) * 18, filtered.length);
     return heading('SKILL LIBRARY', 'スキルライブラリ', '2026/11/14までに実装のスキルを実装', btn('+ アクセルカレイド', 'new-skill', 'primary')) + `<div class="toolbar-secondary">\
 <div>${unitSelect()} <span class="subtle" style="margin-left:10px">\
 に装備するスキルを選択</span></div>${unitTacticsControls()}${pill(`${u.skills.length} スキルをセット中`, 'green')}</div>\
@@ -386,22 +386,28 @@ function skillsPage() {
         const s = config.skills.find(s => s.id === id);
         return s ? btn(`${esc(displayedSkillName(u, s))} ×`, `equip:${id}`, '', 'aria-label="' + esc(displayedSkillName(u, s)) + 'を外す"') : '';
     }).join('')}</div><div class="searchbar"><input id="skill-search" type="search" placeholder="スキル名・効果で検索（例：炎、BS回復、迎撃）" value="${esc(skillSearch)}" aria-label="スキルを検索">${select({ all: 'すべての分類', ...SKILL_KINDS }, kindFilter, 'id="kind-filter" aria-label="スキル分類"')}${select({ all: 'すべて', equipped: 'セット中', custom: 'アクセルカレイド' }, skillFilter, 'id="skill-filter" aria-label="スキルの表示対象"')}</div>\
-<div class="toolbar-secondary"><span class="subtle">${filtered.length} SKILLS · ${filtered.length ? start + 1 : 0}–${end}</span>\
-<span class="subtle">元の効果文は「詳細」で確認</span></div><div class="skill-grid">${filtered.slice(start, end).map(s => skillCard(s, u)).join('')}</div>${!filtered.length ? '<div class="empty">条件に一致するスキルがありません。</div>' : ''}${showAll ? '' : `<div class="pagination">${btn('← 前へ', 'skill-prev', 'small', skillPage === 0 ? 'disabled' : '')}<span>${skillPage + 1} / ${Math.max(1, Math.ceil(filtered.length / 18))}</span>${btn('次へ →', 'skill-next', 'small', (skillPage + 1) * 18 >= filtered.length ? 'disabled' : '')}</div>`}`;
+<div class="skill-results-bar"><strong>検索結果 ${nf(filtered.length)} 件</strong><span class="subtle">${filtered.length ? `${start + 1}～${end}件を表示` : '表示するスキルはありません'} · 詳しい効果は「詳細」で確認</span></div>\
+<div class="skill-list" role="list" aria-label="スキル検索結果"><div class="skill-list-head" aria-hidden="true"><span>スキル</span><span>射程・対象</span><span>消費AP</span><span>消費行動値</span><span>効果</span><span>操作</span></div>${filtered.slice(start, end).map(s => skillCard(s, u)).join('')}</div>${!filtered.length ? '<div class="empty">条件に一致するスキルがありません。</div>' : ''}${showAll ? '' : `<div class="pagination">${btn('← 前へ', 'skill-prev', 'small', skillPage === 0 ? 'disabled' : '')}<span>${skillPage + 1} / ${Math.max(1, Math.ceil(filtered.length / 18))}</span>${btn('次へ →', 'skill-next', 'small', (skillPage + 1) * 18 >= filtered.length ? 'disabled' : '')}</div>`}`;
 }
 function skillCard(s, u) {
     const equipped = u.skills.includes(s.id);
-    const tags = [
-        RANGES[s.range]?.split(' / ')[0],
-        SCOPES[s.scope]?.split(' / ')[0],
-        ...(s.bs || []).slice(0, 2),
-        ...Object.keys(s.effects || {}).filter(k => s.effects[k] && k !== 'identify').slice(0, 2).map(k => EFFECTS[k] || k)
+    const name = displayedSkillName(u, s);
+    const range = RANGES[s.range]?.split(' / ')[0] || '―';
+    const scope = SCOPES[s.scope]?.split(' / ')[0] || '―';
+    const effects = [
+        ...(s.bs || []),
+        ...Object.entries(s.effects || {}).filter(([key, value]) => !!value && key !== 'chargeTime').map(([key, value]) =>
+            `${EFFECTS[key] || key}${FLAG_EFFECTS.has(key) ? '' : value}`)
     ];
-    return `<article class="skill-card ${equipped ? 'equipped' : ''}"><div class="skill-top"><h3>${esc(displayedSkillName(u, s))}</h3>${pill(SKILL_KINDS[s.kind], s.kind === 'attack' ? 'red' : 'green')}</div>${s.note ? `<div class="description">${esc(s.note)}</div>` : ''}<div class="skill-numbers">\
-<span>AP <b>${s.ap}</b>\
-</span><span>行動値 <b>${s.cost}${s.effects?.chargeTime ? `＋溜${s.effects.chargeTime}` : ''}</b>\
-</span></div><div class="skill-tags">${tags.filter(Boolean).map(t => pill(t)).join('')}</div>\
-<div class="btnrow">${btn(equipped ? '✓ セット中' : '+ セット', `equip:${s.id}`, `small ${equipped ? '' : 'primary'}`)}${btn('詳細', `skill-detail:${s.id}`, 'small ghost')}</div>\
+    const shownEffects = effects.slice(0, 3);
+    const charge = Number(s.effects?.chargeTime) || 0;
+    return `<article class="skill-entry ${equipped ? 'equipped' : ''}" role="listitem">\
+<div class="skill-primary"><div class="skill-title-line"><span class="skill-kind-label ${esc(s.kind)}">${esc(SKILL_KINDS[s.kind] || s.kind)}</span><h3 title="${esc(name)}">${esc(name)}</h3>${equipped ? '<span class="skill-equipped-label">セット中</span>' : ''}</div>${s.note ? `<p class="skill-summary" title="${esc(s.note)}">${esc(s.note)}</p>` : ''}</div>\
+<div class="skill-range-col"><span class="skill-mobile-label">射程・対象</span><strong>${esc(range)}</strong><small>${esc(scope)}</small></div>\
+<div class="skill-value-col"><span class="skill-mobile-label">消費AP</span><strong>${nf(s.ap)}</strong></div>\
+<div class="skill-value-col"><span class="skill-mobile-label">消費行動値</span><strong>${nf(s.cost)}</strong>${charge ? `<small>溜 ${nf(charge)}</small>` : ''}</div>\
+<div class="skill-effects-col" title="${esc(effects.join('／'))}">${shownEffects.length ? shownEffects.map(value => `<span class="skill-effect-chip">${esc(value)}</span>`).join('') : '<span class="skill-no-effects">―</span>'}${effects.length > 3 ? `<span class="skill-more-effects">+${effects.length - 3}</span>` : ''}</div>\
+<div class="skill-row-actions">${btn(equipped ? '解除' : '＋ セット', `equip:${s.id}`, `small ${equipped ? 'skill-unequip' : 'primary'}`, `aria-label="${esc(name)}を${equipped ? 'セットから外す' : 'セットする'}"`)}${btn('詳細', `skill-detail:${s.id}`, 'small ghost', `aria-label="${esc(name)}の詳細"`)}</div>\
 </article>`;
 }
 function metricSelect(value, attrs) {
@@ -576,7 +582,7 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
 </section></div>`;
 }
 function visibleLogs() {
-    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'speed', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && l.type === 'pursuit') && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
+    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && l.type === 'pursuit') && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
 }
 function logEntries() {
     const logs = visibleLogs(), types = {
@@ -589,7 +595,7 @@ function logEntries() {
         condition: '条件',
         reserve: '行動予約',
         actionEnd: '残行動値',
-        speed: '速度',
+        speed: 'ターン開始時',
         carry: '持ち越し',
         miss: '回避',
         bs: 'BS',
@@ -602,7 +608,7 @@ function logEntries() {
         result: '結果'
     };
     return logs.slice(-700).map(l => `<div class="log ${l.type}${selectedLogId === l.id ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="${l.id}" data-act="select-log:${l.id}" aria-pressed="${selectedLogId === l.id}">\
-<span class="time">T${String(l.turn).padStart(2, '0')}<span class="time-gauge">残行動値 ${Math.floor(l.gauge)}</span></span>\
+<span class="time">T${String(l.turn).padStart(2, '0')}<span class="time-gauge">${l.type === 'speed' ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}</span></span>\
 <span class="type">${combatLogTypeLabel(l.type, l.message) || types[l.type] || l.type}</span>\
 <div>${esc(l.message)}${l.tags?.length ? `<div class="log-tags">${l.tags.map(tag => `<span class="log-tag tag-${[
         'buff',
@@ -636,7 +642,7 @@ function paintReplay() {
     $('#replay-map').innerHTML = map(f.units, true);
     repaintExpandedMap();
     $('#replay-units').innerHTML = replayUnits(f.units);
-    $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / 残行動値 ${Math.floor(log.gauge)}｜${log.message}` : f.label;
+    $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / ${log.type === 'speed' ? '開始時' : `残行動値 ${Math.floor(log.gauge)}`}｜${log.message}` : f.label;
     $('#frame-range').value = frame;
     $('#log-entries')?.querySelectorAll('[data-log-id]').forEach(el => {
         const active = Number(el.dataset.logId) === selectedLogId;
@@ -1170,7 +1176,7 @@ async function onAction(act) {
         return;
     }
     else if (a === 'export-log') {
-        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / 残行動値 ${Math.floor(l.gauge)}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}`).join('\n'), 'text/plain');
+        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${l.type === 'speed' ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}`).join('\n'), 'text/plain');
         return;
     }
     else if (a === 'reset-config') {

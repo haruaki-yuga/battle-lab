@@ -2953,3 +2953,10 @@ h1 {
   color: var(--muted);
   font-size: 11px;
 }
+
+/* Turn-start AV roll is a single readable row, visible in major actions. */
+.log.speed .type {
+  background: #eaf0f5;
+  color: #44637a;
+}
+.log.speed .time-gauge { color: #506578; }
