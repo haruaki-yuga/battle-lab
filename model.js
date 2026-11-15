@@ -345,6 +345,8 @@ export function freshUnit(overrides = {}) {
         initialBS: [],
         immunities: [],
         skills: ['wiki-001', 'wiki-041'],
+        skillAliases: {},
+        specializedSkills: {},
         rules: [freshRule({ action: 'effectiveAttack' }), freshRule({ conditions: [], action: 'carry', autoMove: false, target: 'self' })],
         ...overrides
     };
@@ -521,6 +523,17 @@ export function validateConfig(c) {
         }
         if (u.skills.some(id => !ids.has(id)))
             errors.push(`${u.name}: 存在しないスキルが装備されています。`);
+        if (u.specializedSkills !== undefined) {
+            if (!u.specializedSkills || typeof u.specializedSkills !== 'object' || Array.isArray(u.specializedSkills))
+                errors.push(`${u.name}: 特殊化スキル情報が不正です。`);
+            else for (const [id, detail] of Object.entries(u.specializedSkills)) {
+                if (!ids.has(id) || !detail || typeof detail !== 'object' || Array.isArray(detail) ||
+                    typeof detail.name !== 'string' || !detail.name.trim() || detail.name.length > 200 ||
+                    ['baseName', 'note', 'original'].some(k => detail[k] !== undefined &&
+                        (typeof detail[k] !== 'string' || detail[k].length > 20000)))
+                    errors.push(`${u.name}: 特殊化スキル「${id}」の情報が不正です。`);
+            }
+        }
         for (const r of u.rules) {
             if (!Array.isArray(r.conditions) || !ACTIONS[r.action]) {
                 errors.push(`${u.name}: 行動設定が不正です。`);
@@ -528,7 +541,7 @@ export function validateConfig(c) {
             }
             if (r.enabled && r.action === 'skill' && !u.skills.includes(r.skillId))
                 errors.push(`${u.name}: 指定スキルを装備するか、行動を変更してください。`);
-            if (r.minDist > r.maxDist)
+            if (r.minDist != null && r.maxDist != null && r.minDist > r.maxDist)
                 errors.push(`${u.name}: 移動距離の下限が上限を超えています。`);
             if (!['fixed', 'approach', 'away'].includes(r.moveMode))
                 errors.push(`${u.name}: 自動位置取りの方法は固定移動指定・近付く・離れるの3種類から選んでください。`);

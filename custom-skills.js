@@ -94,6 +94,9 @@ export function deleteCustomSkill(config, skillId) {
     let changedRules = 0;
     for (const unit of config.units) {
         unit.skills = unit.skills.filter(id => id !== skillId);
+        // Remove character-specific presentation when its definition is deleted.
+        if (unit.specializedSkills) delete unit.specializedSkills[skillId];
+        if (unit.skillAliases) delete unit.skillAliases[skillId];
         for (const rule of unit.rules) {
             if (rule.action === 'skill' && rule.skillId === skillId) {
                 rule.action = 'attack';

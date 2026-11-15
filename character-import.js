@@ -276,12 +276,18 @@ export function parseCharacterData(data, sourceURL, at = new Date().toISOString(
 export function createImportedUnit(profile, { team = 'A', normalRange = 'near', replace = null, count = 0, existingSkills = [] } = {}) {
     if (profile.missing.length)
         throw Error('必要な能力値を取得できなかったため、取り込みを中止しました。');
-    const skills = [], equipment = [], skillAliases = {};
+    const skills = [], equipment = [], skillAliases = {}, specializedSkills = {};
     let reused = 0;
     for (const entry of profile.skills.filter(r => r.supported)) {
-        const existing = findReusableImportedSkill([...existingSkills, ...skills], entry.skill);
+        let existing = findReusableImportedSkill([...existingSkills, ...skills], entry.skill);
+        // Different names within the same character must not silently share one slot.
+        if (existing && equipment.includes(existing.id) &&
+            (skillAliases[existing.id] || existing.name) !== entry.name)
+            existing = null;
+        let skillId;
         if (existing) {
             equipment.push(existing.id);
+            skillId = existing.id;
             reused++;
             if (entry.name !== existing.name)
                 skillAliases[existing.id] = entry.name;
@@ -293,6 +299,17 @@ export function createImportedUnit(profile, { team = 'A', normalRange = 'near', 
             created.importedFromCharacter = { characterId: profile.characterId, skillId: entry.originSkillId || null, url: profile.sourceURL };
             skills.push(created);
             equipment.push(created.id);
+            skillId = created.id;
+        }
+        const baseName = entry.skill.baseName;
+        if ((baseName && baseName !== entry.name) || (existing && entry.name !== existing.name)) {
+            specializedSkills[skillId] = {
+                name: entry.name,
+                baseName: baseName || existing?.name || entry.name,
+                note: entry.skill.note || '',
+                original: entry.skill.original || '',
+                originSkillId: entry.originSkillId || null
+            };
         }
     }
     // A partially parsed skill cannot be simulated safely. Preserve it as a
@@ -320,6 +337,7 @@ export function createImportedUnit(profile, { team = 'A', normalRange = 'near', 
         y: replace?.y ?? 0,
         skills: [...new Set(equipment)],
         skillAliases,
+        specializedSkills,
         effects: clone(profile.effects),
         immunities: clone(profile.immunities),
         rules: [freshRule({ action: 'effectiveAttack', moveMode: 'approach' }), freshRule({ conditions: [], action: 'carry', autoMove: false, target: 'self' })],

@@ -185,3 +185,41 @@
  .rule-card.mobile-collapsed .mobile-rule-summary{display:block;flex-basis:100%;padding:5px 0 0 3px;font-size:11px;line-height:1.35;color:var(--muted);overflow-wrap:anywhere}
  .rule-card.mobile-collapsed .rule-head{border-bottom:0}
 }
+
+@media (max-width: 760px) {
+  .specialized-skill-section { padding: 9px; margin: 9px 0 17px; }
+  .specialized-skill-header h2 { font-size: 12px; }
+  .specialized-skill-header p { font-size: 10px; }
+  .specialized-base { font-size: 10px; }
+}
+
+/* v1.6.24 — Mobile replay map stays accessible while reading long combat logs. */
+.mobile-replay-map{display:none}
+@media (max-width:700px){
+  .mobile-replay-map:not([hidden]){
+    display:block;position:fixed;z-index:17;
+    top:calc(50px + 8px);right:10px;width:138px;
+    max-width:calc(100vw - 24px);
+  }
+  .mobile-replay-map-button{
+    display:block;width:100%;padding:5px;margin:0;text-align:left;
+    background:var(--white);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;
+    box-shadow:0 5px 20px #11233338;
+    cursor:pointer;min-height:0;
+  }
+  .mobile-replay-map-button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  .mobile-replay-map-view,.mobile-replay-map-view .map-view-compact{margin:0;padding:0;min-width:0}
+  .mobile-replay-map-view .map-surface{border-radius:5px;overflow:hidden}
+  .mobile-replay-map-view svg.battle-map{
+    width:100%;height:auto;max-height:none;aspect-ratio:300/205;
+    display:block;pointer-events:none;
+  }
+  .mobile-replay-map-caption{display:flex;justify-content:space-between;align-items:center;gap:3px;padding:4px 2px 1px;color:var(--muted);font-size:9px;white-space:nowrap}
+  .mobile-replay-map-caption span:first-child{color:var(--ink);font-weight:650}
+  .mobile-replay-map-caption span:last-child{font-size:8.5px}
+}
+@media (max-width:350px){
+  .mobile-replay-map:not([hidden]){width:120px;right:8px}
+  .mobile-replay-map-caption span:last-child{font-size:8px}
+}

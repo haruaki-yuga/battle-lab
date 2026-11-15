@@ -22,7 +22,7 @@ export function exportUnitTactics(config, unitId) {
     const unit = config.units.find(u => u.id === unitId);
     if (!unit)
         throw Error('書き出し対象のキャラクターが見つかりません。');
-    const ids = [...new Set(unit.skills)];
+    const ids = [...new Set([...unit.skills, ...Object.keys(unit.specializedSkills || {})])];
     const definitions = [];
     for (const id of ids) {
         const s = config.skills.find(item => item.id === id);
@@ -35,10 +35,11 @@ export function exportUnitTactics(config, unitId) {
         format: UNIT_TACTICS_FORMAT,
         version: UNIT_TACTICS_VERSION,
         sourceUnit: { id: unit.id, name: unit.name },
-        skills: clone(ids),
+        skills: clone(unit.skills),
         rules: clone(unit.rules),
         customSkills: definitions,
-        skillAliases: clone(unit.skillAliases || {})
+        skillAliases: clone(unit.skillAliases || {}),
+        specializedSkills: clone(unit.specializedSkills || {})
     };
 }
 /** Import without touching stats, team, position, or any other unit's equipment/AI. */
@@ -54,13 +55,21 @@ export function importUnitTactics(config, targetId, data) {
         throw Error('装備スキルIDが不正、または重複しています。');
     if (data.skillAliases !== undefined && (!data.skillAliases || typeof data.skillAliases !== 'object' || Array.isArray(data.skillAliases) || Object.entries(data.skillAliases).some(([id, name]) => !data.skills.includes(id) || typeof name !== 'string' || !name.trim() || name.length > 200)))
         throw Error('スキルの個別名称データが不正です。');
+    if (data.specializedSkills !== undefined && (!data.specializedSkills ||
+        typeof data.specializedSkills !== 'object' || Array.isArray(data.specializedSkills) ||
+        Object.entries(data.specializedSkills).some(([id, detail]) => !isStringId(id) ||
+            !detail || typeof detail !== 'object' || Array.isArray(detail) ||
+            typeof detail.name !== 'string' || !detail.name.trim() || detail.name.length > 200 ||
+            ['baseName', 'note', 'original'].some(k => detail[k] !== undefined &&
+                (typeof detail[k] !== 'string' || detail[k].length > 20000)))))
+        throw Error('キャラクター別の特殊化スキル情報が不正です。');
     if (data.rules.some(r => !r || typeof r !== 'object' || Array.isArray(r)))
         throw Error('キャラAIルールの形式が不正です。');
     const target = config.units.find(u => u.id === targetId);
     if (!target)
         throw Error('読込先のキャラクターが見つかりません。');
     const result = clone(config), dst = result.units.find(u => u.id === targetId);
-    const owned = new Set(data.skills);
+    const owned = new Set([...data.skills, ...Object.keys(data.specializedSkills || {})]);
     const idMap = new Map(), usedIds = new Set(result.skills.map(s => s.id));
     const customIds = new Set();
     let added = 0;
@@ -93,7 +102,7 @@ export function importUnitTactics(config, targetId, data) {
             added++;
         }
     }
-    for (const id of data.skills) {
+    for (const id of owned) {
         if (!WIKI_IDS.has(id) && !customIds.has(id))
             throw Error(`自作スキル「${id}」の定義がファイルにありません。`);
         if (!result.skills.some(s => s.id === (idMap.get(id) || id)))
@@ -101,6 +110,13 @@ export function importUnitTactics(config, targetId, data) {
     }
     dst.skills = data.skills.map(id => idMap.get(id) || id);
     dst.skillAliases = Object.fromEntries(Object.entries(data.skillAliases || {}).map(([id, name]) => [idMap.get(id) || id, name]));
+    dst.specializedSkills = Object.fromEntries(Object.entries(data.specializedSkills || {}).map(([id, detail]) => [idMap.get(id) || id, clone(detail)]));
+    // Old tactic exports only had aliases; preserve those as per-unit records.
+    for (const [id, name] of Object.entries(dst.skillAliases)) {
+        const s = result.skills.find(s => s.id === id);
+        if (s && name !== s.name && !dst.specializedSkills[id])
+            dst.specializedSkills[id] = { name, baseName: s.baseName || s.name };
+    }
     const warnings = [];
     dst.rules = clone(data.rules).map(r => {
         r.id = uid('r');

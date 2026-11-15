@@ -7,7 +7,7 @@ import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
 import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
 import { normalizeSettings } from './run-settings.js';
-import { deduplicateImportedSkills, displayedSkillName } from './skill-dedup.js';
+import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
 import { createCharacterImporter } from './character-ui.js';
@@ -198,7 +198,7 @@ function render() {
 <div class="sidebar-footer"><button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><div class="version">Web版 1.6.24</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.6.24</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
-</main>${mobileNav}</div>`;
+</main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
     if (page === 'sim' && sim)
         bindReplay();
 }
@@ -223,10 +223,11 @@ function teams() {
     });
     return `<div class="teams">${strips.join('')}</div>`;
 }
-function map(units = config.units, large = false, expanded = false) {
+function map(units = config.units, large = false, expanded = false, compact = false) {
     const size = config.settings.mapSize || 150, half = size / 2, w = expanded ? 1050 : large ? 540 : 300, h = expanded ? 680 : large ? 340 : 205;
     const scale = Math.min((w - 40) / size, (h - 24) / size), cx = w / 2, cy = h / 2;
-    const viewport = mapViewport(w, h, scale, mapZoom, mapPan, size);
+    // The floating thumbnail is always an overview, independent of the dialog zoom/pan.
+    const viewport = mapViewport(w, h, scale, compact ? 1 : mapZoom, compact ? { x: 0, y: 0 } : mapPan, size);
     let grid = '';
     for (let v = -half; v <= half; v += 10) {
         const x = cx + v * scale, y = cy + v * scale;
@@ -235,7 +236,7 @@ function map(units = config.units, large = false, expanded = false) {
     const inReplay = page === 'sim';
     const actionActorId = inReplay && sim ? replayActorId(sim.logs, sim.frames, frame, selectedLogId) : null;
     const focusId = mapFocus === 'selected' ? (inReplay ? actionActorId : selected) : mapFocus;
-    const links = mapRelations ? mapRelationPairs(units, focusId) : [];
+    const links = !compact && mapRelations ? mapRelationPairs(units, focusId) : [];
     const connections = links.map(({ from, to, distance, direction }, index) => {
         const x1 = cx + from.x * scale, y1 = cy - from.y * scale, x2 = cx + to.x * scale, y2 = cy - to.y * scale;
         const mx = (x1 + x2) / 2 + (index % 2 ? 5 : -5), my = (y1 + y2) / 2 + ((index % 3) - 1) * 13;
@@ -255,8 +256,8 @@ function map(units = config.units, large = false, expanded = false) {
     const movementUnit = units.find(u => u.id === (inReplay ? actionActorId : selected));
     const baseMobility = Math.max(0, Number(config.units.find(u => u.id === movementUnit?.id)?.mobility) || 0);
     const moveRadius = baseMobility * 10;
-    const maskId = 'move-bounds-' + (expanded ? 'dialog' : large ? 'replay' : 'setup');
-    const movementDisk = mapMoveCircle && movementUnit && moveRadius > 0 ? `<g class="map-movement-disk" clip-path="url(#${maskId})" data-map-move-unit="${esc(movementUnit.id)}" data-map-move-radius="${moveRadius}">\
+    const maskId = 'move-bounds-' + (compact ? 'thumbnail' : expanded ? 'dialog' : large ? 'replay' : 'setup');
+    const movementDisk = !compact && mapMoveCircle && movementUnit && moveRadius > 0 ? `<g class="map-movement-disk" clip-path="url(#${maskId})" data-map-move-unit="${esc(movementUnit.id)}" data-map-move-radius="${moveRadius}">\
 <title>${esc(movementUnit.name)}：基礎機動力${baseMobility}、通常移動で最大${moveRadius}m</title>\
 <circle cx="${cx + movementUnit.x * scale}" cy="${cy - movementUnit.y * scale}" r="${moveRadius * scale}" fill="#5b91af" fill-opacity=".095" stroke="#3b7da2" stroke-width="1.5" stroke-dasharray="5 3"/>\
 </g>` : '';
@@ -265,7 +266,7 @@ function map(units = config.units, large = false, expanded = false) {
         all: '全キャラ同士',
         ...Object.fromEntries(units.map(u => [u.id, `${u.team}｜${u.name}`]))
     };
-    const controls = `<div class="map-tools"><label class="checkbox-label"><input type="checkbox" data-map-relations ${mapRelations ? 'checked' : ''}>\
+    const controls = compact ? '' : `<div class="map-tools"><label class="checkbox-label"><input type="checkbox" data-map-relations ${mapRelations ? 'checked' : ''}>\
 位置関係・距離を表示</label><label class="checkbox-label"><input type="checkbox" data-map-movement ${mapMoveCircle ? 'checked' : ''}>\
 移動可能範囲を表示</label><div class="map-zoom-controls"><button type="button" class="small" data-act="map-zoom-out" ${mapZoom === 1 ? 'disabled' : ''} aria-label="マップを縮小">\
 －</button><output aria-label="マップの倍率">${Math.round(mapZoom * 100)}%</output>\
@@ -275,28 +276,61 @@ function map(units = config.units, large = false, expanded = false) {
 </div>${mapRelations ? `<div class="map-focus-row">\
 <label>線を表示する組み合わせ ${select(positionOptions, mapFocus, 'data-map-focus aria-label="位置関係の比較対象"')}</label>\
 <span class="subtle">実線：敵味方間／点線：同チーム</span></div>` : ''}`;
-    const movementLegend = mapMoveCircle ? `<div class="map-focus-row"><span class="subtle">${movementUnit ? `${esc(movementUnit.name)}：基礎機動力 ${baseMobility} × 10m ＝ 移動半径 ${moveRadius}m` : 'この時点では行動中のキャラがいません'}（戦闘中の機動力補正は別途適用）</span>\
+    const movementLegend = !compact && mapMoveCircle ? `<div class="map-focus-row"><span class="subtle">${movementUnit ? `${esc(movementUnit.name)}：基礎機動力 ${baseMobility} × 10m ＝ 移動半径 ${moveRadius}m` : 'この時点では行動中のキャラがいません'}（戦闘中の機動力補正は別途適用）</span>\
 </div>` : '';
-    const distanceList = mapRelations ? `<div class="map-distance-list" aria-label="キャラ同士の距離一覧">${links.map(({ from, to, distance, direction }) => `<div class="map-distance-row">\
+    const distanceList = !compact && mapRelations ? `<div class="map-distance-list" aria-label="キャラ同士の距離一覧">${links.map(({ from, to, distance, direction }) => `<div class="map-distance-row">\
 <span>${esc(from.name)} <b>\
 →</b> ${esc(to.name)}</span>\
 <strong>${distance.toFixed(1)}m</strong>\
 <small>${direction}</small>\
 </div>`).join('') || (inReplay && mapFocus === 'selected' && !actionActorId ? '<p class="subtle">この時点では行動中のキャラはいません。ログの行動を選ぶと距離を表示します。</p>' : '<p class="subtle">表示するキャラの組み合わせがありません。</p>')}</div>` : '';
-    return `<div class="map-view">${controls}${movementLegend}<div class="map-surface"><svg class="battle-map" viewBox="${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}" data-base-width="${w}" data-base-height="${h}" data-base-scale="${scale}" role="img" aria-label="両チームの現在位置を表示する戦闘マップ。倍率${Math.round(mapZoom * 100)}%" style="touch-action:${mapZoom > 1 ? 'none' : 'auto'}">\
-<defs><pattern id="mapdots" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r=".5" fill="#ccd7c6"/></pattern>\
+    return `<div class="map-view${compact ? ' map-view-compact' : ''}">${controls}${movementLegend}<div class="map-surface"><svg class="battle-map" viewBox="${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}" data-base-width="${w}" data-base-height="${h}" data-base-scale="${scale}" role="img" aria-label="両チームの現在位置を表示する戦闘マップ。倍率${Math.round((compact ? 1 : mapZoom) * 100)}%" style="touch-action:${!compact && mapZoom > 1 ? 'none' : 'auto'}">\
+<defs><pattern id="${compact ? 'mapdots-thumbnail' : expanded ? 'mapdots-dialog' : large ? 'mapdots-replay' : 'mapdots-setup'}" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r=".5" fill="#ccd7c6"/></pattern>\
 <clipPath id="${maskId}">\
 <rect x="${cx - half * scale}" y="${cy - half * scale}" width="${size * scale}" height="${size * scale}"/>\
 </clipPath></defs><rect width="${w}" height="${h}" fill="#f7f9f5"/>\
-<rect width="${w}" height="${h}" fill="url(#mapdots)"/>${grid}<path d="M${cx} 10v${h - 20}M10 ${cy}h${w - 20}" stroke="#c3d2bb" stroke-width="1" stroke-dasharray="3 4"/>\
+<rect width="${w}" height="${h}" fill="url(#${compact ? 'mapdots-thumbnail' : expanded ? 'mapdots-dialog' : large ? 'mapdots-replay' : 'mapdots-setup'})"/>${grid}<path d="M${cx} 10v${h - 20}M10 ${cy}h${w - 20}" stroke="#c3d2bb" stroke-width="1" stroke-dasharray="3 4"/>\
 <text x="12" y="19" fill="#8c9c83" font-size="8">TACTICAL FIELD</text>${movementDisk}${connections}${markers}<text x="${w - 12}" y="${h - 10}" text-anchor="end" fill="#899880" font-size="8">\
-1 GRID = 10m</text></svg></div><div class="map-caption"><span><i class="dot"></i> TEAM A　 <i class="dot" style="background:#b47961">\
+1 GRID = 10m</text></svg></div>${compact ? '' : `<div class="map-caption"><span><i class="dot"></i> TEAM A　 <i class="dot" style="background:#b47961">\
 </i> TEAM B</span><span>${size} × ${size}m</span>\
-</div>${distanceList}</div>`;
+</div>${distanceList}`}</div>`;
 }
 function currentMapUnits() {
     return page === 'sim' && sim ? sim.frames[frame]?.units || sim.frames.at(-1)?.units || config.units : config.units;
 }
+function refreshMobileReplayMap(units = currentMapUnits()) {
+    const thumbnail = $('#mobile-replay-map-view');
+    if (!thumbnail || !sim) return;
+    thumbnail.innerHTML = map(units, false, false, true);
+    const label = $('#mobile-replay-map-turn');
+    const log = sim.logs.find(entry => entry.id === selectedLogId);
+    if (label) label.textContent = log ? `T${String(log.turn).padStart(2, '0')} マップ` : 'マップ';
+}
+function updateMobileReplayMapVisibility() {
+    const floating = $('#mobile-replay-map');
+    if (!floating) return;
+    const logs = $('#log-entries'), original = $('#replay-map');
+    if (!logs || !original || !window.matchMedia('(max-width: 700px)').matches) {
+        floating.hidden = true;
+        return;
+    }
+    const visibleHeight = window.visualViewport?.height || window.innerHeight;
+    const logRect = logs.getBoundingClientRect(), mapRect = original.getBoundingClientRect();
+    // Only show it when the actual replay log is visible and the regular map is off screen.
+    floating.hidden = !(logRect.top < visibleHeight - 64 && logRect.bottom > 60 && mapRect.bottom <= 60);
+}
+let floatingMapFrame = 0;
+function scheduleMobileReplayMapVisibility() {
+    if (floatingMapFrame) return;
+    floatingMapFrame = requestAnimationFrame(() => {
+        floatingMapFrame = 0;
+        updateMobileReplayMapVisibility();
+    });
+}
+window.addEventListener('scroll', scheduleMobileReplayMapVisibility, { passive: true });
+window.addEventListener('resize', scheduleMobileReplayMapVisibility, { passive: true });
+window.visualViewport?.addEventListener('resize', scheduleMobileReplayMapVisibility, { passive: true });
+
 function repaintMaps() {
     const setup = $('#setup-map');
     if (setup)
@@ -304,6 +338,7 @@ function repaintMaps() {
     const replay = $('#replay-map');
     if (replay && sim)
         replay.innerHTML = map(currentMapUnits(), true);
+    if (replay && sim) refreshMobileReplayMap();
     repaintExpandedMap();
 }
 function repaintExpandedMap() {
@@ -382,7 +417,18 @@ function conditionSummary(c) {
 }
 function skillsPage() {
     const u = current();
-    const filtered = config.skills.filter(s => skillMatchesKind(s, kindFilter) && (skillFilter === 'all' || skillFilter === 'equipped' && u.skills.includes(s.id) || skillFilter === 'custom' && isCustomSkill(s)) && (displayedSkillName(u, s) + s.name + s.note + (s.original || '')).toLowerCase().includes(skillSearch.toLowerCase()));
+    const specialIds = new Set(Object.keys(u.specializedSkills || {}));
+    const characterSpecialIds = new Set(config.units.flatMap(unit => Object.keys(unit.specializedSkills || {})));
+    const matches = s => {
+        const displayed = displayedSkillText(u, s);
+        return skillMatchesKind(s, kindFilter) &&
+            (displayed.name + s.name + displayed.baseName + displayed.note + displayed.original).toLowerCase().includes(skillSearch.toLowerCase());
+    };
+    const specials = config.skills.filter(s => specialIds.has(s.id) && matches(s) && skillFilter !== 'custom' &&
+        (skillFilter !== 'equipped' || u.skills.includes(s.id)));
+    const filtered = config.skills.filter(s => !specialIds.has(s.id) &&
+        !(characterSpecialIds.has(s.id) && !isWikiSkill(s) && !u.skills.includes(s.id)) && matches(s) &&
+        (skillFilter === 'all' || skillFilter === 'equipped' && u.skills.includes(s.id) || skillFilter === 'custom' && isCustomSkill(s)));
     const showAll = ['hp', 'ap', 'cleanse'].includes(kindFilter);
     if (showAll)
         skillPage = 0;
@@ -396,7 +442,7 @@ function skillsPage() {
         const s = config.skills.find(s => s.id === id);
         return s ? btn(`${esc(displayedSkillName(u, s))} ×`, `equip:${id}`, '', 'aria-label="' + esc(displayedSkillName(u, s)) + 'を外す"') : '';
     }).join('')}</div><div class="searchbar"><input id="skill-search" type="search" placeholder="スキル名・効果で検索（例：炎、BS回復、迎撃）" value="${esc(skillSearch)}" aria-label="スキルを検索">${select({ all: 'すべての分類', ...SKILL_KINDS }, kindFilter, 'id="kind-filter" aria-label="スキル分類"')}${select({ all: 'すべて', equipped: 'セット中', custom: 'アクセルカレイド' }, skillFilter, 'id="skill-filter" aria-label="スキルの表示対象"')}</div>\
-<div id="skill-result-area"><div class="skill-results-bar"><strong>検索結果 ${nf(filtered.length)} 件</strong><span class="subtle">${filtered.length ? `${start + 1}～${end}件を表示` : '表示するスキルはありません'} · 効果全文は一覧で確認できます · その他の設定は「詳細」</span></div>\
+<div id="skill-result-area">${specials.length ? `<section class="specialized-skill-section" aria-label="このキャラの特殊化スキル"><div class="specialized-skill-header"><div><h2>このキャラの特殊化スキル <span>${nf(specials.length)}件</span></h2><p>名称・説明・効果原文はキャラクターごとに保存。戦闘性能は共通のスキル定義を参照します。</p></div></div><div class="skill-list" role="list"><div class="skill-list-head" aria-hidden="true"><span>特殊化名・元スキル</span><span>射程・対象</span><span>消費AP</span><span>消費行動値</span><span>効果</span><span>操作</span></div>${specials.map(s => skillCard(s, u, true)).join('')}</div></section>` : ''}<div class="skill-results-bar"><strong>共通ライブラリ ${nf(filtered.length)} 件</strong><span class="subtle">${filtered.length ? `${start + 1}～${end}件を表示` : '表示するスキルはありません'} · 効果全文は一覧で確認できます · その他の設定は「詳細」</span></div>\
 <div class="skill-list" role="list" aria-label="スキル検索結果"><div class="skill-list-head" aria-hidden="true"><span>スキル</span><span>射程・対象</span><span>消費AP</span><span>消費行動値</span><span>効果</span><span>操作</span></div>${filtered.slice(start, end).map(s => skillCard(s, u)).join('')}</div>${!filtered.length ? '<div class="empty">条件に一致するスキルがありません。</div>' : ''}${showAll ? '' : `<div class="pagination">${btn('← 前へ', 'skill-prev', 'small', skillPage === 0 ? 'disabled' : '')}<span>${skillPage + 1} / ${Math.max(1, Math.ceil(filtered.length / 18))}</span>${btn('次へ →', 'skill-next', 'small', (skillPage + 1) * 18 >= filtered.length ? 'disabled' : '')}</div>`}</div>`;
 }
 // 表示専用の短縮表記。射程距離や実際の対象判定には影響しない。
@@ -407,9 +453,10 @@ const SKILL_SCOPE_SHORT = {
     single: '単', random: '乱', self: '自', area: '範', wide: '域',
     selfArea: '自範', selfWide: '自域', pierce: '貫', cone: '扇', line: '列', special: '特'
 };
-function skillCard(s, u) {
+function skillCard(s, u, specialized = false) {
     const equipped = u.skills.includes(s.id);
-    const name = displayedSkillName(u, s);
+    const displayed = displayedSkillText(u, s);
+    const name = displayed.name;
     const range = SKILL_RANGE_SHORT[s.range] || '―';
     const scope = SKILL_SCOPE_SHORT[s.scope] || '―';
     const fullRange = `${RANGES[s.range] || '未指定'}／${SCOPES[s.scope] || '未指定'}`;
@@ -419,7 +466,7 @@ function skillCard(s, u) {
             `${EFFECTS[key] || key}${FLAG_EFFECTS.has(key) ? '' : value}`)
     ];
     const charge = Number(s.effects?.chargeTime) || 0;
-    const originalEffect = String(s.original || '').trim();
+    const originalEffect = String(displayed.original || '').trim();
     // 公式スキルは原文の効果を省略せず表示する。独自スキルは全効果タグを表示する。
     // 詳細欄の原文を別行に重複させず、必ず消費行動値の右側の効果列に収める。
     const effectContent = originalEffect
@@ -428,7 +475,7 @@ function skillCard(s, u) {
             ? effects.map(value => `<span class="skill-effect-chip">${esc(value)}</span>`).join('')
             : '<span class="skill-no-effects">―</span>');
     return `<article class="skill-entry ${equipped ? 'equipped' : ''}" role="listitem">\
-<div class="skill-primary"><div class="skill-title-line"><span class="skill-kind-label ${esc(s.kind)}">${esc(SKILL_KINDS[s.kind] || s.kind)}</span><h3 title="${esc(name)}">${esc(name)}</h3>${equipped ? '<span class="skill-equipped-label">セット中</span>' : ''}</div></div>\
+<div class="skill-primary"><div class="skill-title-line"><span class="skill-kind-label ${esc(s.kind)}">${esc(SKILL_KINDS[s.kind] || s.kind)}</span><h3 title="${esc(name)}">${esc(name)}</h3>${equipped ? '<span class="skill-equipped-label">セット中</span>' : ''}</div>${specialized ? `<div class="specialized-base">元：${esc(displayed.baseName)}</div>` : ''}</div>\
 <div class="skill-range-col" title="${esc(fullRange)}" aria-label="射程・対象：${esc(fullRange)}"><span class="skill-mobile-label">射程・対象</span><strong>${esc(range)}・${esc(scope)}</strong></div>\
 <div class="skill-value-col"><span class="skill-mobile-label">消費AP</span><strong>${nf(s.ap)}</strong></div>\
 <div class="skill-value-col"><span class="skill-mobile-label">消費行動値</span><strong>${nf(s.cost)}</strong>${charge ? `<small>溜 ${nf(charge)}</small>` : ''}</div>\
@@ -490,7 +537,7 @@ function rulesPage() {
 }
 function movementSettings(r, i, u) {
     const attr = k => `data-rule="${i}:${k}"`;
-    if (['wait', 'carry', 'focusAttack', 'focusDefense'].includes(r.action))
+    if (['wait', 'carry'].includes(r.action))
         return '';
     const split = !!r.splitMovement;
     const mode = r.moveTargetMode || 'same';
@@ -519,6 +566,7 @@ function movementSettings(r, i, u) {
 }
 function ruleCard(r, i, u) {
     const attr = k => `data-rule="${i}:${k}"`;
+    const focusAction = ['focusAttack', 'focusDefense'].includes(r.action);
     return `<article class="rule-card ${r.enabled ? '' : 'disabled'} ${mobileExpandedRules.has(i) ? '' : 'mobile-collapsed'}" data-mobile-rule="${i}"><div class="rule-head"><div class="rule-title"><span class="num">${String(i + 1).padStart(2, '0')}</span>\
 <label class="checkbox-label"><input type="checkbox" ${r.enabled ? 'checked' : ''} ${attr('enabled')}>\
 適用</label></div><div class="btnrow">${btn('↑', `up-rule:${i}`, 'small ghost', i === 0 ? 'disabled aria-label="優先順位を上げる"' : 'aria-label="優先順位を上げる"')}${btn('↓', `down-rule:${i}`, 'small ghost', i === u.rules.length - 1 ? 'disabled aria-label="優先順位を下げる"' : 'aria-label="優先順位を下げる"')}${btn('複製', `clone-rule:${i}`, 'small ghost')}${btn('削除', `delete-rule:${i}`, 'small ghost danger')}</div>${btn(mobileExpandedRules.has(i) ? '閉じる' : '開く', `toggle-mobile-rule:${i}`, 'small mobile-rule-toggle', `aria-expanded="${mobileExpandedRules.has(i)}" aria-label="ルール${i + 1}の編集欄を${mobileExpandedRules.has(i) ? '閉じる' : '開く'}"`)}<div class="mobile-rule-summary">${esc(ACTIONS[r.action] || r.action)} ／ ${r.conditions.length ? `条件${r.conditions.length}件` : '無条件'} ／ ${esc(({enemies:'敵',allies:'味方',self:'自身',all:'全員',previous:'条件該当者'})[r.target] || r.target)}</div></div>
@@ -526,7 +574,7 @@ function ruleCard(r, i, u) {
  ${btn('+ 条件を追加', `add-condition:${i}`, 'small ghost')}
  <div class="rule-action">${field('THEN / 行動', select(ACTIONS, r.action, attr('action')))}
  ${r.action === 'skill' ? field('使用スキル', select({ '': 'スキルを選択', ...Object.fromEntries(u.skills.map(id => config.skills.find(s => s.id === id)).filter(s => s && s.kind !== 'passive').map(s => [s.id, displayedSkillName(u, s)])) }, r.skillId, attr('skillId'))) : ''}
- ${field(r.splitMovement ? '行動対象' : '対象', select({
+ ${focusAction ? field('行動対象', '<select disabled aria-label="行動対象（自身に固定）"><option>自身（集中）</option></select>') : field(r.splitMovement ? '行動対象' : '対象', select({
         enemies: '敵',
         allies: '自陣営',
         companions: '同行者',
@@ -534,15 +582,15 @@ function ruleCard(r, i, u) {
         all: '敵味方',
         previous: '条件該当者'
     }, r.target, attr('target')))}
- </div><div class="target-extra-conditions"><div class="move-conditions-title">対象の条件・優先順位（同じプルダウンから選択）</div>${targetCriteriaForRule(r).map((c, j) => targetConditionRow(c, i, j)).join('')}${btn('+ 対象条件を追加', `add-target-condition:${i}`, 'small ghost')}<p class="rule-help">\
-追加条件は全てANDで候補を絞り、優先条件は上から順に比較します。</p></div>
+ </div>${focusAction ? '' : `<div class="target-extra-conditions"><div class="move-conditions-title">対象の条件・優先順位（同じプルダウンから選択）</div>${targetCriteriaForRule(r).map((c, j) => targetConditionRow(c, i, j)).join('')}${btn('+ 対象条件を追加', `add-target-condition:${i}`, 'small ghost')}<p class="rule-help">\
+追加条件は全てANDで候補を絞り、優先条件は上から順に比較します。</p></div>`}
  ${movementSettings(r, i, u)}
- ${!['wait', 'carry'].includes(r.action) ? `<div class="move-options">${field('自動位置取り', select({ true: 'する', false: 'しない' }, String(r.autoMove), attr('autoMove')))}
+ ${!['wait', 'carry'].includes(r.action) && (!focusAction || r.splitMovement) ? `<div class="move-options">${field('自動位置取り', select({ true: 'する', false: 'しない' }, String(r.autoMove), attr('autoMove')))}
  ${r.autoMove || r.action === 'move' ? `${field('移動方法', select({ approach: '対象に近付く', away: '対象から離れる', fixed: '固定移動指定' }, r.moveMode, attr('moveMode')))}
- ${r.moveMode === 'fixed' ? field('対象からの距離 (m)', `<div class="btnrow"><input type="number" min="0" value="${r.minDist}" ${attr('minDist')} aria-label="移動距離の下限">\
-<span>～</span><input type="number" min="0" value="${r.maxDist}" ${attr('maxDist')} aria-label="移動距離の上限">\
-</div>`) : ''}` : ''}</div>` : ''}
- <p class="rule-help">${r.autoMove || r.action === 'move' ? '通常移動は機動力×10m（行動値＋40）。射程外なら追加で最大30m、10mごとに行動値＋10・＋15・＋20を累積加算。なお射程に届かない場合は移動のみ。' : '現在位置で実行します。'}${r.splitMovement && r.moveTargetMode === 'individual' ? ' 行使優先は現在位置で行動できる場合に移動を省略します。移動優先は移動基準への位置取りを先に試みます。' : ''}${r.action === 'effectiveAttack' ? ' 実行可能な攻撃の概算威力を比較します。' : ''}</p>
+ ${r.moveMode === 'fixed' ? field('対象からの距離 (m)', `<div class="btnrow"><input type="number" min="0" value="${r.minDist ?? ''}" ${attr('minDist')} aria-label="移動距離の下限">\
+<span>～</span><input type="number" min="0" value="${r.maxDist ?? ''}" ${attr('maxDist')} aria-label="移動距離の上限">\
+</div><span class="subtle">${focusAction ? '両方空欄：移動基準から3m以内を目標（集中にスキル射程はありません）' : '両方空欄：スキルの有効射程へ自動移動'}</span>`) : ''}` : ''}</div>` : ''}
+ <p class="rule-help">${focusAction ? (r.splitMovement ? '集中は自身に適用します。移動基準を「個別に指定」、優先を「移動優先」、自動位置取りを「する」にすると、対象への位置取り後に集中します（通常移動は機動力×10m、行動値＋40）。' : '集中は自身に適用し、位置取りを行いません。') : (r.autoMove || r.action === 'move' ? '通常移動は機動力×10m（行動値＋40）。射程外なら追加で最大30m、10mごとに行動値＋10・＋15・＋20を累積加算。なお射程に届かない場合は移動のみ。' : '現在位置で実行します。')}${!focusAction && r.splitMovement && r.moveTargetMode === 'individual' ? ' 行使優先は現在位置で行動できる場合に移動を省略します。移動優先は移動基準への位置取りを先に試みます。' : ''}${r.action === 'effectiveAttack' ? ' 実行可能な攻撃の概算威力を比較します。' : ''}</p>
  </div></article>`;
 }
 function simPage() {
@@ -667,6 +715,7 @@ function paintReplay() {
         return;
     const f = sim.frames[frame] || sim.frames.at(-1), log = sim.logs.find(l => l.id === selectedLogId);
     $('#replay-map').innerHTML = map(f.units, true);
+    refreshMobileReplayMap(f.units);
     repaintExpandedMap();
     $('#replay-units').innerHTML = replayUnits(f.units);
     $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(log.type) ? '開始時' : `残行動値 ${Math.floor(log.gauge)}`}｜${log.message}` : f.label;
@@ -710,6 +759,7 @@ function bindReplay() {
     box.scrollTop = logScrollTop === null ? box.scrollHeight : logScrollTop;
     syncMapToVisibleLog();
     paintReplay();
+    scheduleMobileReplayMapVisibility();
     box.addEventListener('scroll', () => {
         logScrollTop = box.scrollTop;
         cancelAnimationFrame(logScrollFrame);
@@ -744,17 +794,19 @@ function openSkill(id, copy = false) {
     const s = config.skills.find(s => s.id === id);
     modalMode = 'skill';
     if (isReadOnlySkill(s) && !copy) {
+        const characterText = displayedSkillText(current(), s);
         $('#modal').innerHTML = `<div class="modal-header"><div><div class="eyebrow">SKILL REFERENCE</div><h2>${esc(displayedSkillName(current(), s))}</h2>\
 </div>${btn('×', 'close-modal', 'ghost', 'aria-label="閉じる"')}</div>\
 <div class="modal-form doc"><div class="skill-tags">${pill(SKILL_KINDS[s.kind], 'green')}${pill(`AP ${s.ap}`)}${pill(`行動値 ${s.cost}`)}${pill(RANGES[s.range])}</div>\
-<p style="margin:14px 0">${esc(s.note)}</p>\
-<div class="source-quote">${esc(s.original)}</div>\
+<p style="margin:14px 0">${esc(characterText.note)}</p>\
+<div class="source-quote">${esc(characterText.original)}</div>\
 <div style="margin-top:18px"><span class="subtle">取得条件</span><p style="font-size:12px">${esc(s.requirements || '条件なし')}</p>\
 </div></div><div class="modal-footer">${btn('複製して編集', `copy-skill:${s.id}`)}${btn(current().skills.includes(s.id) ? 'セットを外す' : 'このユニットにセット', `modal-equip:${s.id}`, 'primary')}</div>`;
         $('#modal').showModal();
         return;
     }
     modalDraft = s ? clone(s) : freshSkill({ id: uid('acc') });
+    const characterText = s ? displayedSkillText(current(), s) : null;
     if (copy)
         modalDraft = copyAsCustom(s);
     adaptAccelDraft(modalDraft);
@@ -764,6 +816,10 @@ function openSkill(id, copy = false) {
     modalDraft.selfEffects ??= {};
     modalDraft.elementCorrection ??= 0;
     renderModal();
+    if (characterText && current().specializedSkills?.[s.id] && !copy) {
+        const modalForm = $('#modal .modal-form');
+        modalForm.insertAdjacentHTML('afterbegin', `<div class="specialized-modal-reference"><strong>このキャラの特殊化：${esc(characterText.name)}</strong><div>元スキル：${esc(characterText.baseName)}</div>${characterText.note ? `<p>${esc(characterText.note)}</p>` : ''}${characterText.original ? `<p class="source-quote">${esc(characterText.original)}</p>` : ''}</div>`);
+    }
     $('#modal').showModal();
 }
 function renderModal() {
@@ -1311,16 +1367,38 @@ document.addEventListener('change', e => {
     if (el.matches('[data-rule]')) {
         const [i, k] = el.dataset.rule.split(':');
         const r = u.rules[i];
-        r[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : ['autoMove'].includes(k) ? el.value === 'true' : el.value;
+        // Preserve empty positioning inputs as null; Number('') would turn them into 0m.
+        r[k] = ['minDist', 'maxDist'].includes(k) && el.value === '' ? null :
+            el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) :
+                ['autoMove'].includes(k) ? el.value === 'true' : el.value;
         if (k === 'action') {
             if (['healHP', 'healAP', 'healBS', 'cover'].includes(r.action))
                 r.target = 'allies';
             if (['focusAttack', 'focusDefense', 'carry', 'wait'].includes(r.action)) {
                 r.target = 'self';
-                r.autoMove = false;
+                // A focus action is self-only; preserve explicit independent positioning.
+                if (['focusAttack', 'focusDefense'].includes(r.action) && r.splitMovement && r.moveTargetMode === 'individual') {
+                    r.autoMove = true;
+                    r.movePriority = 'movement';
+                } else {
+                    r.autoMove = false;
+                }
             }
             if (['attack', 'effectiveAttack', 'block'].includes(r.action))
                 r.target = 'enemies';
+        }
+        if (k === 'splitMovement' && ['focusAttack', 'focusDefense'].includes(r.action)) {
+            // Make an enabled focus split immediately usable; never move for legacy
+            // focus rules unless the user explicitly checks the split setting.
+            r.target = 'self';
+            if (r.splitMovement) {
+                r.moveTargetMode = 'individual';
+                if (r.moveSubject === 'previous') r.moveSubject = 'enemies';
+                r.movePriority = 'movement';
+                r.autoMove = true;
+            } else {
+                r.autoMove = false;
+            }
         }
         if (k === 'moveTargetMode' && r.moveTargetMode === 'individual' && r.moveSubject === 'id' && !r.moveUnitId)
             r.moveUnitId = u.id;

@@ -77,11 +77,14 @@ export function effectiveBS(entries) {
     }
     return active;
 }
+// Movement uses one decimal place in the UI.  The legal distance itself is
+// strictly below the next whole metre (e.g. 超遠: distance < 41m).
+const RANGE_POSITION_MARGIN = 0.1;
 export function rangeInfo(skill, d, policy = 'text', versatile = false) {
     // All healing skills (HP/AP/HP+AP/BS) have 万能 inherently. This is a
     // combat rule, not an optional effect stored in individual skill JSON.
     const universal = versatile || ['hp', 'ap', 'ha', 'cleanse'].includes(skill.kind);
-    let max = {
+    const nominalMax = {
         touch: 3,
         near: 10,
         mid: 20,
@@ -91,18 +94,20 @@ export function rangeInfo(skill, d, policy = 'text', versatile = false) {
     }[skill.range] ?? 10;
     if (['self', 'selfArea', 'selfWide'].includes(skill.scope))
         return { valid: true, bonus: 0, max: skill.scope === 'selfWide' ? 10 : skill.scope === 'selfArea' ? 5 : 0 };
-    const valid = d <= max + 1e-6 && (skill.range !== 'super' || d > 10 || universal);
+    const boundary = nominalMax + 1; // exclusive upper boundary for every range
+    const max = boundary - RANGE_POSITION_MARGIN; // farthest safe 0.1m UI position
+    const valid = d < boundary && (skill.range !== 'super' || d > 10 || universal);
     let bonus = 0;
     if (skill.range === 'touch')
         bonus = 15;
     if (skill.range === 'near')
         bonus = 10;
     if (skill.range === 'mid')
-        bonus = d <= 10 ? 7 : 10;
+        bonus = d < 11 ? 7 : 10;
     if (skill.range === 'far')
-        bonus = d <= 3 ? -10 : d <= 10 ? -5 : d <= 20 ? 5 : 10;
+        bonus = d < 4 ? -10 : d < 11 ? -5 : d < 21 ? 5 : 10;
     if (skill.range === 'super')
-        bonus = d <= 20 ? -5 : d <= 30 ? 5 : 10;
+        bonus = d < 21 ? -5 : d < 31 ? 5 : 10;
     if (universal)
         bonus = Math.max(0, bonus);
     if (skill.kind !== 'attack')
@@ -187,7 +192,7 @@ export class Battle {
         const skill = this.skills.get(id);
         if (!skill)
             return null;
-        const alias = u?.skillAliases?.[id];
+        const alias = u?.specializedSkills?.[id]?.name || u?.skillAliases?.[id];
         return alias && alias !== skill.name ? { ...skill, name: alias } : skill;
     }
     statuses(u) {
@@ -657,7 +662,7 @@ export class Battle {
         const candidates = this.pool(r.target, u, previous).filter(t => t.alive && this.targetMatches(u, t, filters));
         return this.sortTargets(u, candidates, priorities.length ? priorities : ['nearest']);
     }
-    movePlan(u, target, r, skill, capacityOverride = null) {
+    movePlan(u, target, r, skill, capacityOverride = null, actionTarget = target) {
         if (!r.autoMove && r.action !== 'move')
             return null;
         if (!target || target.id === u.id)
@@ -667,10 +672,51 @@ export class Battle {
             return null;
         const half = this.config.settings.mapSize / 2;
         const blockers = this.units.filter(b => b.alive && b.blockId === u.id && distance(b, u) <= 3);
+        let minDist = r.minDist, maxDist = r.maxDist;
+        if (['fixed', 'kite'].includes(r.moveMode)) {
+            const lowerEmpty = minDist == null || minDist === '';
+            const upperEmpty = maxDist == null || maxDist === '';
+            if (lowerEmpty && upperEmpty) {
+                // Both fields left blank: choose the *action skill's* legal firing band.
+                // Keep the current position when it is already valid; otherwise
+                // approach (or retreat for non-versatile 超遠) by the shortest amount.
+                const info = skill ? rangeInfo(skill, 0, this.config.settings.rangePolicy,
+                    this.effect(u, skill, 'versatile') > 0) : null;
+                minDist = skill?.range === 'super' &&
+                    !(['hp', 'ap', 'ha', 'cleanse'].includes(skill.kind) || this.effect(u, skill, 'versatile') > 0)
+                    ? 10 + 1e-5 : 0;
+                maxDist = info ? info.max : r.action === 'move' ? 1 : 3;
+            } else {
+                // A single empty bound leaves the other bound meaningful.
+                minDist = lowerEmpty ? 0 : minDist;
+                maxDist = upperEmpty ? Math.max(Number(minDist), distance(u, target)) : maxDist;
+            }
+        }
+        // A fixed-distance request must not select a position outside the action
+        // skill's range. Apply this only when moving relative to the action target;
+        // an independently selected movement target retains its own distance rule.
+        if (['fixed', 'kite'].includes(r.moveMode) && skill?.trigger === 'instant' &&
+            !['self', 'selfArea', 'selfWide'].includes(skill.scope) &&
+            (!actionTarget || target.id === actionTarget.id)) {
+            const versatile = this.effect(u, skill, 'versatile') > 0;
+            const info = rangeInfo(skill, 0, this.config.settings.rangePolicy, versatile);
+            const upper = Number(maxDist);
+            if (upper > info.max) {
+                const requestedLower = Number(minDist);
+                // A narrow 40–41m request for a 超遠 skill means the farthest
+                // attackable position (40.9m), not 41m. Keep broad bands broad.
+                const nearOuterEdge = requestedLower >= info.max - 0.9;
+                minDist = nearOuterEdge ? info.max : Math.min(requestedLower, info.max);
+                maxDist = info.max;
+            }
+            const universal = versatile || ['hp', 'ap', 'ha', 'cleanse'].includes(skill.kind);
+            const lower = skill.range === 'super' && !universal ? 10 + 1e-5 : 0;
+            if (Number(maxDist) < lower)
+                minDist = maxDist = lower;
+        }
         return selectDiskDestination(u, target, capacity, half, {
             mode: r.moveMode === 'kite' ? 'fixed' : r.moveMode,
-            minDist: r.minDist,
-            maxDist: r.maxDist,
+            minDist, maxDist,
             moveOnly: r.action === 'move',
             blocked: p => blockers.some(b => distance(b, p) <= distance(b, u) + .001)
         });
@@ -724,7 +770,16 @@ export class Battle {
     }
     positionForAction(u, reference, r, skill, actionTarget) {
         const capacity = this.stat(u, 'mobility') * 10;
-        const base = this.movePlan(u, reference, r, skill, capacity);
+        // An automatic firing band never causes a move when the skill is
+        // already in range. Explicit distance settings still take priority.
+        const bothBlank = (r.minDist == null || r.minDist === '') &&
+            (r.maxDist == null || r.maxDist === '');
+        if (bothBlank && ['fixed', 'kite'].includes(r.moveMode) &&
+            reference?.id === actionTarget?.id && skill?.trigger === 'instant' &&
+            rangeInfo(skill, distance(u, actionTarget), this.config.settings.rangePolicy,
+                this.effect(u, skill, 'versatile') > 0).valid)
+            return { move: null, extraSteps: 0, moveCost: 0 };
+        const base = this.movePlan(u, reference, r, skill, capacity, actionTarget);
         const response = { move: base, extraSteps: 0, moveCost: base ? (this.config.settings.moveCost || 40) : 0 };
         if (!skill || skill.trigger !== 'instant' || !r.autoMove || !actionTarget || !actionTarget.alive)
             return response;
@@ -742,7 +797,7 @@ export class Battle {
             const cost = (this.config.settings.moveCost || 40) + this.extraMovementCost(steps);
             if (u.av < cost)
                 break;
-            const candidates = [this.movePlan(u, reference, r, skill, capacity + 10 * steps)];
+            const candidates = [this.movePlan(u, reference, r, skill, capacity + 10 * steps, actionTarget)];
             // A fixed-distance band may itself lie outside the skill range. Once the
             // normal position is reached, the additional movement can close the gap.
             // This is still one of the three positioning modes, not a new mode.
@@ -1210,7 +1265,7 @@ export class Battle {
         if (!u.alive)
             return;
         if (p.move) {
-            const check = this.movePlan(u, p.moveTarget || p.target, p.r, p.s, this.stat(u, 'mobility') * 10 + 10 * (p.extraSteps || 0));
+            const check = this.movePlan(u, p.moveTarget || p.target, p.r, p.s, this.stat(u, 'mobility') * 10 + 10 * (p.extraSteps || 0), p.target);
             if (check) {
                 const moved = distance(u, check);
                 u.x = check.x;

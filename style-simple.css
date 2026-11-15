@@ -795,3 +795,15 @@ dialog {
 
 /* Shield protection appears beside HP/AP at the selected replay frame. */
 .replay-barrier { color: var(--green); font-weight: 700; white-space: nowrap; }
+
+/* Character-owned specializations are visually separated from the shared library. */
+.specialized-skill-section { margin: 12px 0 20px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--green-light); }
+.specialized-skill-header { margin-bottom: 8px; }
+.specialized-skill-header h2 { font-size: 14px; margin: 0; color: var(--ink); }
+.specialized-skill-header h2 span { font-size: 11px; font-weight: 500; color: var(--muted); }
+.specialized-skill-header p { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+.specialized-skill-section .skill-list { gap: 6px; }
+.specialized-skill-section .skill-entry { background: var(--white); }
+.specialized-base { margin: 3px 0 0; font-size: 10px; line-height: 1.35; color: var(--muted); }
+.specialized-modal-reference { padding: 10px 12px; border: 1px solid var(--line); border-radius: 5px; margin-bottom: 15px; background: var(--green-light); font-size: 12px; }
+.specialized-modal-reference p { margin: 7px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }

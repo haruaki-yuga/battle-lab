@@ -56,7 +56,45 @@ export function sameGameplaySkill(a, b) {
 }
 export const isWikiSkill = skill => /^wiki-\d{3}$/.test(skill?.id || '');
 export const isCharacterImportedSkill = skill => skill?.source === '公開キャラクターページ' || !!skill?.importedFromCharacter;
-export const displayedSkillName = (unit, skill) => unit?.skillAliases?.[skill?.id] || skill?.name || '';
+/** Character-specific presentation only; combat properties remain in the shared skill. */
+export const specializedSkillDetails = (unit, skill) => unit?.specializedSkills?.[skill?.id] || null;
+export const displayedSkillName = (unit, skill) => specializedSkillDetails(unit, skill)?.name || unit?.skillAliases?.[skill?.id] || skill?.name || '';
+export function displayedSkillText(unit, skill) {
+    const details = specializedSkillDetails(unit, skill);
+    return {
+        name: displayedSkillName(unit, skill),
+        baseName: details?.baseName || skill?.baseName || skill?.name || '',
+        note: details?.note ?? skill?.note ?? '',
+        original: details?.original ?? skill?.original ?? ''
+    };
+}
+/** Upgrade legacy per-character names without changing global IDs or mechanics. */
+export function migrateSpecializedSkillMetadata(config) {
+    if (!Array.isArray(config?.units) || !Array.isArray(config?.skills)) return config;
+    const skills = new Map(config.skills.map(skill => [skill.id, skill]));
+    for (const unit of config.units) {
+        const metadata = { ...(unit.specializedSkills || {}) };
+        for (const [id, name] of Object.entries(unit.skillAliases || {})) {
+            const skill = skills.get(id);
+            if (skill && name && name !== skill.name && !metadata[id]) {
+                // Older saves retained only the alias. Unknown original prose is not invented.
+                metadata[id] = { name, baseName: skill.baseName || skill.name };
+            }
+        }
+        for (const skill of config.skills) {
+            if (!unit.skills?.includes(skill.id) || metadata[skill.id] ||
+                !skill.baseName || skill.baseName === skill.name ||
+                skill.importedFromCharacter?.characterId !== unit.importedProfile?.characterId ||
+                !unit.importedProfile?.characterId) continue;
+            metadata[skill.id] = {
+                name: skill.name, baseName: skill.baseName,
+                note: skill.note || '', original: skill.original || ''
+            };
+        }
+        unit.specializedSkills = metadata;
+    }
+    return config;
+}
 /** Prefer a documented base skill, then matching public name, then WIKI ID. */
 export function findReusableImportedSkill(existingSkills, incoming) {
     if (incoming?.requiresReview)
@@ -79,12 +117,19 @@ export function deduplicateImportedSkills(config) {
     if (!config || !Array.isArray(config.skills) || !Array.isArray(config.units))
         return { config, removed: 0, converted: 0 };
     const replacements = new Map(), kept = [];
+    const importedById = new Map(config.skills.map(skill => [skill.id, skill]));
     const originals = config.skills.filter(s => !isCharacterImportedSkill(s));
     const imports = config.skills.filter(isCharacterImportedSkill);
     let converted = 0;
     for (const skill of imports) {
         const existing = skill.requiresReview ? null : findReusableImportedSkill([...originals, ...kept], skill);
-        if (existing && existing.id !== skill.id)
+        // Do not collapse two differently named skills already owned by one unit.
+        // One unit cannot hold two distinct names on the same skill ID.
+        const sharedSlotConflict = existing && config.units.some(unit =>
+            unit.skills?.includes(existing.id) && unit.skills.includes(skill.id) &&
+            (unit.skillAliases?.[existing.id] || existing.name) !==
+            (unit.skillAliases?.[skill.id] || skill.name));
+        if (existing && existing.id !== skill.id && !sharedSlotConflict)
             replacements.set(skill.id, { id: existing.id, name: skill.name, canonicalName: existing.name });
         else {
             if (skill.source === '公開キャラクターページ') {
@@ -99,6 +144,7 @@ export function deduplicateImportedSkills(config) {
         config.skills = config.skills.filter(s => !replacements.has(s.id));
         for (const unit of config.units) {
             const aliases = { ...(unit.skillAliases || {}) };
+            const specialized = { ...(unit.specializedSkills || {}) };
             for (const oldId of unit.skills || []) {
                 const replacement = replacements.get(oldId);
                 if (!replacement)
@@ -106,6 +152,15 @@ export function deduplicateImportedSkills(config) {
                 const alias = aliases[oldId] || replacement.name;
                 if (alias && alias !== replacement.canonicalName)
                     aliases[replacement.id] = alias;
+                const original = importedById.get(oldId);
+                if (alias && (alias !== replacement.canonicalName || original?.baseName !== original?.name)) {
+                    specialized[replacement.id] = specialized[oldId] || {
+                        name: alias,
+                        baseName: original?.baseName || replacement.canonicalName,
+                        note: original?.note || '', original: original?.original || ''
+                    };
+                }
+                delete specialized[oldId];
                 delete aliases[oldId];
             }
             if (Array.isArray(unit.skills))
@@ -114,7 +169,9 @@ export function deduplicateImportedSkills(config) {
                 if (rule?.action === 'skill' && replacements.has(rule.skillId))
                     rule.skillId = replacements.get(rule.skillId).id;
             unit.skillAliases = aliases;
+            unit.specializedSkills = specialized;
         }
     }
+    migrateSpecializedSkillMetadata(config);
     return { config, removed: replacements.size, converted };
 }

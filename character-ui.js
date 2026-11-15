@@ -59,7 +59,7 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
 <label class="field"><span>反映先</span><select id="character-destination">${option('add', '新しいキャラとして追加', state.replaceId)}${config.units.map(u => option(u.id, `${u.name} を置き換える`, state.replaceId)).join('')}</select>\
 </label><label class="field"><span>陣営</span><select id="character-team">${option('A', 'チームA / 自チーム', state.team)}${option('B', 'チームB / 相手チーム', state.team)}</select>\
 </label><label class="field"><span>通常攻撃の射程（手動指定）</span><select id="character-normal-range">${Object.entries(RANGES).filter(([k]) => k !== 'special').map(([k, v]) => option(k, v, state.normalRange)).join('')}</select>\
-</label></div><p class="footnote">射程・消費AP・威力・特殊効果などの性能が一致するWIKIスキルは、名前が違っていても元のIDを再利用し、特殊化名はこのキャラだけに表示します。一致しないスキルは編集できるアクセルカレイドとして登録します。通常攻撃の射程・キャラAI設定は公開データから取得できません。射程を確認してください。行動ルールは「効果的な攻撃 → 行動値持ち越し」で開始します。</p>${target ? `<p class="import-warning">\
+</label></div><p class="footnote">射程・消費AP・威力・特殊効果などの性能が一致するWIKIスキルは、名前が違っていても元のIDを再利用し、特殊化スキルはキャラ専用欄にまとめ、名前・説明文・効果原文もキャラ別に保持します。一致しないスキルは編集できるアクセルカレイドとして登録します。通常攻撃の射程・キャラAI設定は公開データから取得できません。射程を確認してください。行動ルールは「効果的な攻撃 → 行動値持ち越し」で開始します。</p>${target ? `<p class="import-warning">\
 「${esc(target.name)}」の数値・装備・キャラAI設定を置き換えます。初期位置は引き継ぎます。</p>` : ''}<p class="footnote">\
 取得日時：${esc(new Date(p.fetchedAt).toLocaleString('ja-JP'))} / 取得後の変更は再読み込みで反映</p>\
 </section>` : ''}</div>\
