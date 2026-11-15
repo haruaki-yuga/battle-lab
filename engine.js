@@ -305,21 +305,44 @@ export class Battle {
             detail: `障壁 ${fmt(before)} → ${fmt(left)} ｜ ${resource}被害 ${fmt(applied)} ｜ 被ダメージ ${fmt(amount)}`
         };
     }
-    /** Keep passive/付与 upkeep independent so an unaffordable grant is cancelled. */
+    /** ダメージ/ロスト upkeep consumes the same shared barrier as attack HP/AP damage.
+     * If the barrier is exhausted, the remainder is paid from HP/AP. A grant
+     * whose remaining upkeep is unaffordable is cancelled; innate passives are
+     * suppressed instead. No upkeep is charged on that cancelled occurrence.
+     */
     applyUpkeep(u, key) {
         const isHp = key === 'dot', resource = isHp ? 'hp' : 'ap';
         const label = isHp ? 'ダメージ' : 'ロスト';
-        const spend = amount => {
-            if (isHp) this.hurt(u, amount, null, 0, 0, null, true, true);
-            else u.ap = Math.max(0, u.ap - amount);
+        const pay = amount => {
+            // Check the portion that will actually reach HP/AP, after barrier.
+            const expectedBlocked = Math.min(amount, this.barrierValue(u));
+            const payable = amount - expectedBlocked;
+            if (u[resource] < payable) return false;
+            const shield = this.absorbBarrier(u, amount);
+            const remainder = amount - shield.blocked;
+            const report = () => {
+                const barrier = this.barrierLog(u.name, {
+                    incoming: amount, before: shield.before, blocked: shield.blocked,
+                    applied: remainder, left: shield.left
+                }, isHp ? 'HP' : 'AP');
+                // Keep routine upkeep quiet, but show its barrier absorption
+                // in one log before any HP damage knockout/drama event.
+                if (barrier) this.log('damage', barrier.message,
+                    `${label}${amount} ｜ ${barrier.detail}`, null, u);
+            };
+            if (remainder > 0 && isHp)
+                this.hurt(u, remainder, null, 0, 0, report, true, true);
+            else {
+                if (remainder > 0) u.ap = Math.max(0, u.ap - remainder);
+                report();
+            }
+            return true;
         };
         const innate = u.passivesSuppressed ? 0 : Math.max(0, Math.floor(Number(u.effects?.[key]) || 0));
-        if (innate) {
-            if (u[resource] < innate) {
-                u.passivesSuppressed = true;
-                u.baseBarrierLeft = 0;
-                this.log('effect', `${u.name}：${label}${innate}を支払えず、パッシブ効果を抑止`, '', u);
-            } else spend(innate);
+        if (innate && !pay(innate)) {
+            u.passivesSuppressed = true;
+            u.baseBarrierLeft = 0;
+            this.log('effect', `${u.name}：${label}${innate}を支払えず、パッシブ効果を抑止`, '', u);
         }
         if (!u.alive || this.statuses(u).has('無策')) return;
         // 付与Xは同種の最大値だけが有効。足りなければその付与を解除する。
@@ -327,10 +350,10 @@ export class Battle {
         if (!active.length) return;
         const buff = active.reduce((a,b) => Number(a.effects[key]) >= Number(b.effects[key]) ? a : b);
         const amount = Math.max(0, Math.floor(Number(buff.effects[key])));
-        if (u[resource] < amount) {
+        if (!pay(amount)) {
             u.buffs = u.buffs.filter(b => b !== buff);
             this.log('buff', `${u.name}：${label}${amount}を支払えず、付与を解除`, '', u);
-        } else spend(amount);
+        }
     }
     suddenRound() {
         return Math.max(0, Math.min(5, this.turn - 20));

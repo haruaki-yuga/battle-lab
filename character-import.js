@@ -181,8 +181,21 @@ export function parseActiveSkill(raw, index = 0) {
     }
     if (s.cost + (s.effects.chargeTime || 0) < 1)
         issues.push('行動値と溜が両方0です');
+    // ENCHANTMENT is the official category for Accel Kaleido grants.
+    // Its parsed 付/自 effects use the existing buff engine; unfamiliar tags
+    // still keep the skill as a non-equipped review draft.
+    if (active?.category === 'ENCHANTMENT') {
+        const hasGrants = Object.keys(s.modifiers).length || Object.keys(s.grantedEffects).length ||
+            Object.keys(s.selfModifiers).length || Object.keys(s.selfEffects).length;
+        if (!hasGrants)
+            issues.push('AKの付与効果を解析できません');
+        else if (s.mainBonus || s.subBonus || s.hitBonus || s.power)
+            issues.push('AKの攻撃・付与複合効果は手動確認が必要です');
+        else
+            s.kind = 'buff';
+    }
     // An unfamiliar category must not silently become an attack.
-    if (active?.category && !['ATTACK', 'HEAL', 'SUPPORT', 'BUFF'].includes(active.category))
+    if (active?.category && !['ATTACK', 'HEAL', 'SUPPORT', 'BUFF', 'ENCHANTMENT'].includes(active.category))
         issues.push(`未対応の分類 ${active.category}`);
     normalizeLegacyBarrierSkill(s);
     s.unmodeled = [...new Set(issues)];
