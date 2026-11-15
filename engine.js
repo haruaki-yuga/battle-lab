@@ -1691,8 +1691,9 @@ export class Battle {
                 });
                 this.log('buff', `${t.name}の付与をブレイク`, '', u, t);
             }
-            for (const name of s.bs || [])
-                this.inflict(u, t, name, s, rank);
+            // All BS in one hit are resolved against the same pre-application state.
+            // No newly inflicted BS may alter a later BS resistance roll.
+            this.inflictBatch(u, t, s.bs || [], s, rank);
             const bind = this.effect(u, s, 'bind');
             if (bind && rank >= 1) {
                 let loss = 0;
@@ -1716,31 +1717,58 @@ export class Battle {
         }
         this.counter(t, u, 'retaliations', depth);
     }
-    inflict(u, t, name, s, rank) {
-        const res = this.stat(t, 'resist') - this.effect(u, s, 'demon') + [
-            50,
-            25,
-            10,
-            0,
-            -25
-        ][rank];
-        if ((t.immunities || []).includes(name) && res >= 0 && !this.statuses(t).has('重圧'))
-            return;
-        const roll = this.roll(t);
-        if (roll.critical || !roll.fumble && roll.die >= 100 - res) {
-            this.log('bs', `${t.name}は${name}に抵抗`, `${roll.die} / 抵抗 ${res}`, u, t);
-            return;
+    // Resolve a hit's whole BS set simultaneously. The resistance, immunity,
+    // critical and fumble checks all use the defender's state *before* any of
+    // this hit's BS is added. The random rolls remain in skill-defined order.
+    inflictBatch(u, t, names, s, rank) {
+        if (!names.length) return;
+        const resist = this.stat(t, 'resist');
+        const heavy = this.statuses(t).has('重圧');
+        const results = [];
+        const pending = [];
+        let criticalRolls = 0;
+        for (const name of names) {
+            const res = resist - this.effect(u, s, 'demon') + [50, 25, 10, 0, -25][rank];
+            if ((t.immunities || []).includes(name) && res >= 0 && !heavy)
+                continue;
+            // Defer CT loss until all BS rolls are complete. This prevents a
+            // critical resistance on an earlier BS from changing the CT of a
+            // later BS in the same hit.
+            const roll = this.roll(t, {}, false);
+            if (roll.critical) criticalRolls++;
+            if (roll.critical || (!roll.fumble && roll.die >= 100 - res)) {
+                results.push({ name, res, roll, resisted: true });
+                continue;
+            }
+            let count = res < 0 ? Math.min(5, Math.ceil(-res / 25)) : 1;
+            if (roll.fumble)
+                count = Math.max(count, 1 + Math.ceil(roll.fb / 10));
+            count = Math.min(100, count);
+            const doubled = res < 0 && this.d() < Math.min(101, -res);
+            const duration = 3 * (doubled ? 2 : 1);
+            const added = Array.from({ length: count }, () => ({ name, remaining: duration, source: u.id, durationDoubled: doubled }));
+            pending.push(...added);
+            results.push({ name, res, roll, added, resisted: false });
         }
-        let count = res < 0 ? Math.min(5, Math.ceil(-res / 25)) : 1;
-        if (roll.fumble)
-            count = Math.max(count, 1 + Math.ceil(roll.fb / 10));
-        count = Math.min(100, count);
-        const doubled = res < 0 && this.d() < Math.min(101, -res);
-        const baseTurns = 3, duration = baseTurns * (doubled ? 2 : 1);
-        const added = Array.from({ length: count }, () => ({ name, remaining: duration, source: u.id, durationDoubled: doubled }));
-        t.bs.push(...added);
-        const active = t.bs.filter(b => b.name === name && b.remaining > 0);
+        // Commit the outcomes together; log frames now show all successful
+        // BS from the hit instead of misleading intermediate partial states.
+        t.ctLoss += criticalRolls * 10;
+        t.luckLoss += criticalRolls;
+        t.bs.push(...pending);
         const labels = entries => entries.map(bsLogLabel).join('　');
-        this.log('bs', `${t.name}にBS付与：${labels(added)}`, `新規：${labels(added)} / 現在：${labels(active)} / 抵抗 ${res} / 1d100 ${roll.die}`, u, t, [{ kind: 'status', label: `追加：${labels(added)}` }]);
+        for (const result of results) {
+            const { name, res, roll } = result;
+            if (result.resisted) {
+                this.log('bs', `${t.name}は${name}に抵抗`, `${roll.die} / 抵抗 ${res}`, u, t);
+            } else {
+                const added = result.added;
+                const active = t.bs.filter(b => b.name === name && b.remaining > 0);
+                this.log('bs', `${t.name}にBS付与：${labels(added)}`, `新規：${labels(added)} / 現在：${labels(active)} / 抵抗 ${res} / 1d100 ${roll.die}`, u, t, [{ kind: 'status', label: `追加：${labels(added)}` }]);
+            }
+        }
+    }
+    // Keep the single-BS entry point available for callers and tests.
+    inflict(u, t, name, s, rank) {
+        this.inflictBatch(u, t, [name], s, rank);
     }
 }
