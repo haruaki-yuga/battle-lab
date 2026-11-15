@@ -1,0 +1,41 @@
+/* Battle Lab bug-report dialog: plain, mobile-friendly and dark-mode aware. */
+.sidebar-footer .sidebar-bug-report{display:block;width:100%;text-align:left;min-height:36px;margin:0 0 9px;background:transparent;color:var(--ink);border:1px solid var(--line);font-size:12px}
+.sidebar-footer .sidebar-bug-report:hover{background:var(--green-light)}
+.bug-report-dialog{width:min(540px,calc(100vw - 24px));max-width:none;max-height:min(88dvh,760px);margin:auto;padding:0;overflow-y:auto;border:1px solid var(--line);border-radius:9px;background:var(--white);color:var(--ink);box-shadow:0 18px 60px #111d2c40}
+.bug-report-dialog::backdrop{background:#10182099}
+.bug-report-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:16px 20px 14px}
+.bug-report-kicker{font-size:10px;letter-spacing:.04em;color:var(--muted)}
+.bug-report-heading h2{margin:3px 0 0;font-size:19px;font-weight:700;color:var(--ink)}
+.bug-report-heading button{font-size:12px;flex:none;padding:5px 8px}
+.bug-report-intro{margin:0;padding:13px 20px 2px;font-size:12px;color:var(--muted)}
+#bug-report-form{display:grid;gap:12px;padding:14px 20px 18px}
+.bug-report-field{display:grid;gap:5px;min-width:0;font-size:12px;font-weight:650;color:var(--ink)}
+.bug-report-field input,.bug-report-field select,.bug-report-field textarea{display:block;width:100%;min-width:0;max-width:100%;font-size:13px;line-height:1.55;font-weight:400;border:1px solid var(--line);border-radius:5px;background:var(--white);color:var(--ink);padding:9px 11px}
+.bug-report-field textarea{resize:vertical;min-height:65px}
+.bug-report-required{display:inline-flex;align-items:center;margin-left:4px;font-size:10px;font-weight:500;color:var(--red)}
+.bug-report-privacy{font-size:11px;line-height:1.65;color:var(--muted);margin:3px 0 0;padding:10px 11px;background:var(--paper);border:1px solid var(--line);border-radius:5px}
+.bug-report-honeypot{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.bug-report-status{font-size:12px;margin:0;color:var(--muted);min-height:0}
+.bug-report-status:empty{display:none}
+.bug-report-status[data-kind="error"]{color:var(--red)}
+.bug-report-status[data-kind="success"]{color:var(--green);font-weight:600}
+.bug-report-actions{display:flex;justify-content:flex-end;gap:8px}
+.bug-report-actions button{min-height:38px}
+.bug-report-actions .primary{background:var(--green);color:#fff;border-color:var(--green)}
+.bug-report-actions .primary:hover{filter:brightness(1.1)}
+html[data-theme="dark"] .sidebar-footer .sidebar-bug-report{color:#d4e2ed;border-color:#475b6c;background:#243443}
+html[data-theme="dark"] .sidebar-footer .sidebar-bug-report:hover{background:#334b5e}
+html[data-theme="dark"] .bug-report-dialog{background:#202a35;color:#e4edf4;border-color:#3e5264}
+html[data-theme="dark"] .bug-report-heading{border-color:#3e5264}
+html[data-theme="dark"] .bug-report-heading h2,html[data-theme="dark"] .bug-report-field{color:#e4edf4}
+html[data-theme="dark"] .bug-report-field input,html[data-theme="dark"] .bug-report-field select,html[data-theme="dark"] .bug-report-field textarea{background:#263440;border-color:#4b5e6e;color:#e4edf4}
+html[data-theme="dark"] .bug-report-privacy{background:#263440;border-color:#3e5264;color:#b6c8d5}
+html[data-theme="dark"] .bug-report-status[data-kind="success"]{color:#9bd1b6}
+html[data-theme="dark"] .bug-report-actions .primary{background:#406d8b;border-color:#5d89a5;color:#fff}
+@media (max-width:700px){
+  .bug-report-dialog{max-height:calc(100dvh - 24px);width:calc(100vw - 20px);border-radius:8px}
+  .bug-report-heading{padding:13px 14px 11px}
+  .bug-report-intro{padding:10px 14px 0}
+  #bug-report-form{padding:12px 14px 16px;gap:11px}
+  .bug-report-actions button{flex:1;min-height:42px}
+}

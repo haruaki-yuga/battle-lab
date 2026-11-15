@@ -5,18 +5,19 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#f1f3f4">
     <meta name="description" content="ステータス、2026年11月14日までに実装されたスキル、条件付き行動を組み合わせるLost Arcadia戦闘検証ツール。">
-    <title>ロスアカ Battle Lab Web v1.17.1｜闘技趣味レーター</title>
+    <title>ロスアカ Battle Lab Web v1.17.2｜闘技趣味レーター</title>
     <script>
       // Apply saved appearance before styles render to avoid a light-mode flash.
       try { document.documentElement.dataset.theme = localStorage.getItem('battle-lab-theme') === 'dark' ? 'dark' : 'light'; }
       catch { document.documentElement.dataset.theme = 'light'; }
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'dark' ? '#151c24' : '#f1f3f4');
     </script>
-    <link rel="stylesheet" href="style.css?v=1.17.1">
-    <link rel="stylesheet" href="style-simple.css?v=1.17.1">
-    <link rel="stylesheet" href="style-dark.css?v=1.17.1">
-    <link rel="stylesheet" href="style-mobile.css?v=1.17.1">
-    <link rel="stylesheet" href="update-notice.css?v=1.17.1">
+    <link rel="stylesheet" href="style.css?v=1.17.2">
+    <link rel="stylesheet" href="style-simple.css?v=1.17.2">
+    <link rel="stylesheet" href="style-dark.css?v=1.17.2">
+    <link rel="stylesheet" href="style-mobile.css?v=1.17.2">
+    <link rel="stylesheet" href="update-notice.css?v=1.17.2">
+    <link rel="stylesheet" href="bug-report.css?v=1.17.2">
   </head>
   <body>
     <div id="app"></div>
@@ -34,6 +35,47 @@
         </div>
       </div>
     </dialog>
+    <dialog id="bug-report-dialog" class="bug-report-dialog" aria-labelledby="bug-report-title" aria-describedby="bug-report-intro">
+      <div class="bug-report-heading">
+        <div>
+          <div class="bug-report-kicker">Battle Lab / フィードバック</div>
+          <h2 id="bug-report-title">不具合報告</h2>
+        </div>
+        <button id="bug-report-close" type="button" aria-label="不具合報告フォームを閉じる">閉じる ×</button>
+      </div>
+      <p id="bug-report-intro" class="bug-report-intro">不具合の内容と、発生するまでの操作をお知らせください。</p>
+      <form id="bug-report-form" action="https://formspree.io/f/maeoewpq" method="POST">
+        <label class="bug-report-field" for="bug-report-category">不具合の種類
+          <select id="bug-report-category" name="category" required>
+            <option value="戦闘処理">戦闘処理</option>
+            <option value="AI設定・動作">AI設定・動作</option>
+            <option value="スキル・特殊効果">スキル・特殊効果</option>
+            <option value="画面表示・操作">画面表示・操作</option>
+            <option value="その他">その他</option>
+          </select>
+        </label>
+        <label class="bug-report-field" for="bug-report-description">不具合の内容 <span class="bug-report-required">必須</span>
+          <textarea id="bug-report-description" name="message" rows="4" maxlength="5000" required placeholder="例：障壁が消えた後、HPダメージが計上されない"></textarea>
+        </label>
+        <label class="bug-report-field" for="bug-report-steps">再現手順（任意）
+          <textarea id="bug-report-steps" name="steps" rows="3" maxlength="3000" placeholder="例：AIで○○を設定 → 戦闘を実行 → T03のログを確認"></textarea>
+        </label>
+        <label class="bug-report-field" for="bug-report-email">返信先メールアドレス（任意）
+          <input id="bug-report-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="example@gmail.com">
+        </label>
+        <input type="hidden" name="_subject" value="【Battle Lab】不具合報告">
+        <input type="hidden" name="app_version" value="1.17.2">
+        <input type="hidden" name="browser_info" value="">
+        <input type="hidden" name="reported_at" value="">
+        <div class="bug-report-honeypot" aria-hidden="true"><label>連絡先<input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
+        <p class="bug-report-privacy">送信内容・アプリのバージョン・ブラウザ情報はFormspreeを経由して管理者に届きます。キャラクターや戦闘ログのデータは自動送信しません。</p>
+        <p id="bug-report-status" class="bug-report-status" role="status" aria-live="polite"></p>
+        <div class="bug-report-actions">
+          <button type="button" id="bug-report-cancel">キャンセル</button>
+          <button class="bug-report-submit primary" type="submit">報告を送信</button>
+        </div>
+      </form>
+    </dialog>
     <dialog id="modal"></dialog>
     <dialog id="map-dialog" class="map-dialog" aria-label="戦闘マップの拡大表示">
       <div class="map-dialog-heading">
@@ -46,7 +88,8 @@
     <input id="character-json-import" type="file" accept="application/json,.json" hidden>
     <input id="unit-tactics-import" type="file" accept="application/json,.json" hidden>
     <input id="arena-html-import" type="file" accept="text/html,.html,.htm" hidden>
-    <script type="module" src="app.js?v=1.17.1"></script>
-    <script type="module" src="version-check.js?v=1.17.1"></script>
+    <script type="module" src="app.js?v=1.17.2"></script>
+    <script type="module" src="version-check.js?v=1.17.2"></script>
+    <script type="module" src="bug-report.js?v=1.17.2"></script>
   </body>
 </html>

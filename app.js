@@ -1,6 +1,6 @@
 import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig } from './model.js';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.17.1';
+import { Battle, clamp } from './engine.js?v=1.17.2';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
@@ -192,10 +192,10 @@ function render() {
     const titles = { setup: '編成・ステータス', skills: 'スキルライブラリ', rules: 'キャラAI設定（β版）', sim: 'シミュレーション' };
     const mobileTitles = { setup: '編成', skills: 'スキル', rules: 'AI設定', sim: '戦闘' };
     const mobileNav = `<nav class="mobile-bottom-nav" aria-label="スマートフォン用メニュー">${Object.entries(mobileTitles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>`, `page:${k}`, page === k ? 'active' : '', `aria-label="${titles[k]}" ${page === k ? 'aria-current="page"' : ''}`)).join('')}</nav>`;
-    const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><details class="mobile-file-menu"><summary>データ</summary><div class="mobile-file-menu-panel">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div></details></div>`;
+    const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><details class="mobile-file-menu"><summary>データ</summary><div class="mobile-file-menu-panel">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}${btn('不具合報告', 'open-bug-report')}</div></details></div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer"><button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><div class="version">Web版 1.17.1</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.1</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><div class="version">Web版 1.17.2</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.2</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -927,7 +927,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.17.1', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.17.2', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];
@@ -1021,6 +1021,11 @@ async function onAction(act) {
     if (a === 'import-arena-tactics') {
         arenaImportTarget = u.id;
         $('#arena-html-import').click();
+        return;
+    }
+    if (a === 'open-bug-report') {
+        document.querySelector('.mobile-file-menu')?.removeAttribute('open');
+        document.getElementById('bug-report-dialog')?.showModal();
         return;
     }
     if (a === 'page') {
