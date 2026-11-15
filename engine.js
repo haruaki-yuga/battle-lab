@@ -4,7 +4,7 @@ import { scoreDraw } from './battle-summary.js';
 import { selectDiskDestination } from './movement-disk.js';
 import { bsLogLabel } from './combat-log-format.js';
 import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
-import { elementDamageBonus } from './element-bonus.js?v=1.17.5';
+import { elementDamageBonus } from './element-bonus.js?v=1.17.6';
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export function seededRandom(seed) {
