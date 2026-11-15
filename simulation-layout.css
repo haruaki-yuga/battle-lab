@@ -1,21 +1,22 @@
-/* v1.17.7 — centered, balanced simulation controls at any panel width.
+/* v1.17.8 — align simulation options left and actions right on desktop.
+   Wrap the two groups cleanly when the panel is narrow; mobile stays compact.
    Layout only; combat controls and batch behavior are unchanged. */
 .sim-settings {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: space-between;
   column-gap: 22px;
   row-gap: 14px;
   width: 100%;
-  max-width: 1020px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 .sim-settings-fields {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 10px;
   min-width: 0;
 }
@@ -36,8 +37,9 @@
   flex: 0 1 auto;
   flex-wrap: nowrap;
   align-items: stretch;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 8px;
+  margin-left: auto;
   min-width: 0;
 }
 .sim-settings-actions button {
@@ -80,7 +82,6 @@
   align-items: center;
 }
 @media (max-width: 1050px) {
-  .sim-settings {max-width: 760px;}
   .sim-settings-actions {
     width: min(100%, 525px);
   }
@@ -96,6 +97,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
     width: 100%;
+    margin-left: 0;
     gap: 7px;
   }
   .sim-settings-actions button {width: 100% !important; min-height: 40px; white-space: normal;}
