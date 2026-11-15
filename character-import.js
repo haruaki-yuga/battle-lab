@@ -1,5 +1,5 @@
 import { STAT_LABELS, EFFECTS, BS_NAMES, freshSkill, freshUnit, freshRule, clone, uid } from './model.js';
-import { extractCharacterElements } from './element-bonus.js';
+import { extractMainCharacterElement, ELEMENT_ID_TO_KEY } from './element-bonus.js?v=1.17.4';
 import { findReusableImportedSkill } from './skill-dedup.js';
 import { normalizeLegacyBarrierSkill } from './barrier-rules.js';
 const statNames = {
@@ -218,10 +218,13 @@ export function parseCharacterData(data, sourceURL, at = new Date().toISOString(
         throw Error('キャラクターが見つからないか、公開されていません。');
     if (!Array.isArray(c.sub_status))
         throw Error('能力値が公開されていません。');
-    const elements = extractCharacterElements(c.sub_status);
-    if (!elements)
+    const element = extractMainCharacterElement(c.sub_status);
+    if (!element)
         throw Error('7属性の属性ID・属性値が揃っていません。元属性を特定できないため読み込みを中止しました。');
     const stats = {}, effects = {}, immunities = [], warnings = [], otherStats = [];
+    if (element.value > 0 && c.sub_status.filter(row =>
+        row?.type === 'ELEMENT' && ELEMENT_ID_TO_KEY[row.id] && row.value === element.value).length > 1)
+        warnings.push(`属性値${element.value}が同率で複数あります。${element.key}を採用しました。必要なら設定欄で変更してください。`);
     for (const row of c.sub_status) {
         const name = visibleText(row.name), abbr = visibleText(row.abbr), key = statNames[name] || statNames[abbr];
         if (key) {
@@ -268,7 +271,7 @@ export function parseCharacterData(data, sourceURL, at = new Date().toISOString(
         name: visibleText(c.name),
         level: c.level,
         stats,
-        elements,
+        element,
         effects,
         immunities,
         skills,
@@ -337,7 +340,7 @@ export function createImportedUnit(profile, { team = 'A', normalRange = 'near', 
         name: profile.name,
         team,
         ...profile.stats,
-        elements: clone(profile.elements),
+        element: clone(profile.element),
         normalRange,
         x: replace?.x ?? (team === 'A' ? -10 : 10),
         y: replace?.y ?? 0,

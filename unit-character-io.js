@@ -2,12 +2,12 @@
 import { clone, STAT_LABELS, RANGES, BS_NAMES, validateConfig } from './model.js';
 import { exportUnitTactics, importUnitTactics, UNIT_TACTICS_FORMAT } from './unit-tactics-io.js';
 import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
-import { emptyElements, validElements } from './element-bonus.js';
+import { emptyElement, validElement, highestElement, validElements } from './element-bonus.js?v=1.17.4';
 
 export const CHARACTER_FORMAT = 'rosuaka-unit-character';
 export const CHARACTER_FORMAT_VERSION = 1;
 const numericFields = [...Object.keys(STAT_LABELS), 'startHp', 'startAp'];
-const characterFields = ['name', ...numericFields, 'normalRange', 'elements', 'effects', 'initialBS', 'immunities', 'importedProfile'];
+const characterFields = ['name', ...numericFields, 'normalRange', 'element', 'effects', 'initialBS', 'immunities', 'importedProfile'];
 const isPlainObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 export function exportUnitCharacter(config, unitId) {
@@ -40,8 +40,10 @@ function validateCharacter(data) {
         if (typeof char[field] !== 'number' || !Number.isFinite(char[field]) || Math.abs(char[field]) > 1e9)
             throw Error(`${field} の能力値が不正です。`);
     }
-    if (char.elements !== undefined && !validElements(char.elements))
+    if (char.element !== undefined && !validElement(char.element))
         throw Error('キャラクターの属性データが不正です。');
+    if (char.elements !== undefined && !validElements(char.elements))
+        throw Error('旧形式の属性データが不正です。');
     if (!(char.normalRange in RANGES)) throw Error('通常攻撃の射程が不正です。');
     if (!isPlainObject(char.effects) || Object.values(char.effects).some(n => typeof n !== 'number' || !Number.isFinite(n)))
         throw Error('固有の特殊効果が不正です。');
@@ -64,7 +66,10 @@ export function importUnitCharacter(config, targetId, data) {
     // Clear importedProfile if the file did not contain one, avoiding stale metadata.
     delete destination.importedProfile;
     // Legacy character JSONs have no elements: do not retain the previous unit's values.
-    destination.elements = emptyElements();
+    destination.element = data.character.element !== undefined
+        ? clone(data.character.element)
+        : highestElement(data.character.elements) || emptyElement();
+    delete destination.elements;
     for (const field of characterFields) {
         if (field in data.character) destination[field] = clone(data.character[field]);
     }

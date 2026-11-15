@@ -1,4 +1,5 @@
 import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
+import { migrateUnitElement } from './element-bonus.js?v=1.17.4';
 // Keep historical saved settings usable after removing deprecated Web-only controls.
 export function cleanWebConfiguration(config) {
     if (!config || typeof config !== 'object')
@@ -13,6 +14,7 @@ export function cleanWebConfiguration(config) {
     const retired = new Set(config.skills.filter(skill => skill?.kind === 'passive').map(skill => skill.id));
     config.skills = config.skills.filter(skill => skill?.kind !== 'passive');
     for (const unit of config.units) {
+        migrateUnitElement(unit);
         delete unit.reactiveKite;
         delete unit.reactiveKiteLimit;
         if (Array.isArray(unit.skills))

@@ -2,7 +2,7 @@ import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateC
 import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js';
 import { deduplicateImportedSkills } from './skill-dedup.js';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
-import { ELEMENT_KEYS, elementLevel } from './element-bonus.js';
+import { elementLevel } from './element-bonus.js?v=1.17.4';
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -47,7 +47,7 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
 <span>${label}</span>\
 <strong>${p.stats[k] === undefined ? '未取得' : number(p.stats[k])}</strong>\
 </div>`).join('')}</div>\
-<h3 class="import-section-title">属性値（元属性で判定）</h3><div class="import-element-list">${ELEMENT_KEYS.map(k => `<span>${k} ${p.elements[k]} <small>Lv${elementLevel(p.elements[k])}</small></span>`).join('')}</div>\
+<h3 class="import-section-title">採用属性（最大値のみ）</h3><div class="import-element-list"><span>${p.element.key ? esc(p.element.key) : '未設定'} ${p.element.value} <small>Lv${elementLevel(p.element.value)}</small></span></div>\
 <div class="notice">公式プロフィールに表示された能力値を使用します。ステータス補正は再加算せず、闘技では属性相性によるダメージ増減のみを適用します。</div><h3 class="import-section-title">装備アクティブ <span class="rule-count">${supported.length} / ${p.skills.length} 件をセット可能</span>\
 </h3>${p.skills.length ? p.skills.map(r => `<details class="import-skill">\
 <summary><span>${esc(r.name)}${r.baseName ? `<small>\
