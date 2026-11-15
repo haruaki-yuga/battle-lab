@@ -1,0 +1,33 @@
+/* Update notice: isolated from the battle screen and its existing dialogs. */
+.update-notice {
+    box-sizing: border-box;
+    width: min(440px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    padding: 0;
+    border: 1px solid #cbd4dd;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #252a30;
+    box-shadow: 0 16px 56px rgba(20, 34, 50, .24);
+}
+.update-notice::backdrop { background: rgba(12, 23, 36, .55); }
+.update-notice-content { padding: 24px; }
+.update-notice-kicker { font-size: 11px; font-weight: 700; letter-spacing: .05em; color: #587489; }
+.update-notice h2 { font-size: 18px; line-height: 1.4; margin: 10px 0; color: inherit; }
+.update-notice p { margin: 8px 0 0; line-height: 1.6; }
+.update-notice-versions { color: #526676; font-size: 12px; }
+.update-notice-hint { color: #6b747c; font-size: 12px; }
+.update-notice-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.update-notice button { cursor: pointer; border-radius: 6px; border: 1px solid #cbd4dd; background: #f8fafb; color: inherit; font: inherit; padding: 10px 14px; min-height: 40px; }
+.update-notice #update-notice-reload { border-color: #365d76; background: #365d76; color: white; font-weight: 700; }
+.update-notice button:focus-visible { outline: 2px solid #4a91b4; outline-offset: 2px; }
+html[data-theme="dark"] .update-notice { background: #212d38; color: #edf2f6; border-color: #50606d; }
+html[data-theme="dark"] .update-notice-versions, html[data-theme="dark"] .update-notice-hint { color: #bac8d3; }
+html[data-theme="dark"] .update-notice-kicker { color: #9ec6de; }
+html[data-theme="dark"] .update-notice button { background: #30404e; color: #edf2f6; border-color: #597083; }
+html[data-theme="dark"] .update-notice #update-notice-reload { background: #5486a4; border-color: #5486a4; color: #fff; }
+@media (max-width: 700px) {
+    .update-notice-content { padding: 20px; }
+    .update-notice-actions button { flex: 1 1 auto; }
+}
