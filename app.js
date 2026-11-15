@@ -115,6 +115,7 @@ if (config.initialLayoutVersion !== 2) {
 }
 let selectedLogId = -1, logScrollTop = null, logScrollFrame = 0, unitTacticsImportTarget = null, characterJsonImportTarget = null, arenaImportTarget = null, arenaImportReport = null;
 let mapZoom = 1, mapRelations = false, mapMoveCircle = false, mapFocus = 'selected', mapPan = { x: 0, y: 0 }, mapDrag = null;
+const mobileExpandedRules = new Set([0]);
 let page = 'setup', selected = config.units[0].id, skillSearch = '', kindFilter = 'all', skillFilter = 'all', skillPage = 0, sim = null, frame = -1, logType = 'main', logTurn = 'all', logSearch = '', worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
 const $ = s => document.querySelector(s), app = $('#app');
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
@@ -183,16 +184,21 @@ const select = (obj, value, attrs = '') => `<select ${attrs}>${options(obj, valu
 const field = (label, content) => `<label class="field"><span>${label}</span>${content}</label>`;
 const input = (key, value, attrs = '') => `<input type="number" data-unit="${key}" value="${esc(value)}" step="any" ${attrs}>`;
 const unitSelect = () => select(Object.fromEntries(config.units.map(u => [u.id, `${u.team}｜${u.name}`])), selected, 'class="unit-selector" aria-label="編集するユニット" data-select-unit');
-const unitTacticsControls = () => `<div class="unit-tactics-buttons">${btn('このキャラのスキル・AIを書き出す', 'export-unit-tactics', 'small')}${btn('このキャラにスキル・AIを読み込む', 'import-unit-tactics', 'small')}${btn('公式アリーナHTMLから戦術を読込', 'import-arena-tactics', 'small')}</div>`;
+const unitTacticsControls = () => {
+    const buttons = `${btn('このキャラのスキル・AIを書き出す', 'export-unit-tactics', 'small')}${btn('このキャラにスキル・AIを読み込む', 'import-unit-tactics', 'small')}${btn('公式アリーナHTMLから戦術を読込', 'import-arena-tactics', 'small')}`;
+    return `<div class="unit-tactics-buttons desktop-tactics-controls">${buttons}</div><details class="mobile-tactics-details"><summary>スキル・AIのデータ管理</summary><div class="mobile-tactics-actions">${buttons}</div></details>`;
+};
 function render() {
     const titles = { setup: '編成・ステータス', skills: 'スキルライブラリ', rules: 'キャラAI設定（β版）', sim: 'シミュレーション' };
+    const mobileTitles = { setup: '編成', skills: 'スキル', rules: 'AI設定', sim: '戦闘' };
+    const mobileNav = `<nav class="mobile-bottom-nav" aria-label="スマートフォン用メニュー">${Object.entries(mobileTitles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>`, `page:${k}`, page === k ? 'active' : '', `aria-label="${titles[k]}" ${page === k ? 'aria-current="page"' : ''}`)).join('')}</nav>`;
+    const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><details class="mobile-file-menu"><summary>データ</summary><div class="mobile-file-menu-panel">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div></details></div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer"><button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><div class="version">Web版 1.6.24</div></div></aside><main class="main"><header class="topbar"><div class="breadcrumb">\
+<div class="sidebar-footer"><button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><div class="version">Web版 1.6.24</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.6.24</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
-<div class="top-actions"><span class="saved" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>\
-</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
-</main></div>`;
+<div class="top-actions"><span class="saved" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
+</main>${mobileNav}</div>`;
     if (page === 'sim' && sim)
         bindReplay();
 }
@@ -513,10 +519,9 @@ function movementSettings(r, i, u) {
 }
 function ruleCard(r, i, u) {
     const attr = k => `data-rule="${i}:${k}"`;
-    return `<article class="rule-card ${r.enabled ? '' : 'disabled'}"><div class="rule-head"><div class="rule-title"><span class="num">${String(i + 1).padStart(2, '0')}</span>\
+    return `<article class="rule-card ${r.enabled ? '' : 'disabled'} ${mobileExpandedRules.has(i) ? '' : 'mobile-collapsed'}" data-mobile-rule="${i}"><div class="rule-head"><div class="rule-title"><span class="num">${String(i + 1).padStart(2, '0')}</span>\
 <label class="checkbox-label"><input type="checkbox" ${r.enabled ? 'checked' : ''} ${attr('enabled')}>\
-適用</label></div><div class="btnrow">${btn('↑', `up-rule:${i}`, 'small ghost', i === 0 ? 'disabled aria-label="優先順位を上げる"' : 'aria-label="優先順位を上げる"')}${btn('↓', `down-rule:${i}`, 'small ghost', i === u.rules.length - 1 ? 'disabled aria-label="優先順位を下げる"' : 'aria-label="優先順位を下げる"')}${btn('複製', `clone-rule:${i}`, 'small ghost')}${btn('削除', `delete-rule:${i}`, 'small ghost danger')}</div>\
-</div>
+適用</label></div><div class="btnrow">${btn('↑', `up-rule:${i}`, 'small ghost', i === 0 ? 'disabled aria-label="優先順位を上げる"' : 'aria-label="優先順位を上げる"')}${btn('↓', `down-rule:${i}`, 'small ghost', i === u.rules.length - 1 ? 'disabled aria-label="優先順位を下げる"' : 'aria-label="優先順位を下げる"')}${btn('複製', `clone-rule:${i}`, 'small ghost')}${btn('削除', `delete-rule:${i}`, 'small ghost danger')}</div>${btn(mobileExpandedRules.has(i) ? '閉じる' : '開く', `toggle-mobile-rule:${i}`, 'small mobile-rule-toggle', `aria-expanded="${mobileExpandedRules.has(i)}" aria-label="ルール${i + 1}の編集欄を${mobileExpandedRules.has(i) ? '閉じる' : '開く'}"`)}<div class="mobile-rule-summary">${esc(ACTIONS[r.action] || r.action)} ／ ${r.conditions.length ? `条件${r.conditions.length}件` : '無条件'} ／ ${esc(({enemies:'敵',allies:'味方',self:'自身',all:'全員',previous:'条件該当者'})[r.target] || r.target)}</div></div>
  <div class="rule-body">${r.conditions.length ? r.conditions.map((c, ci) => conditionRow(c, i, ci)).join('') : '<div class="subtle" style="padding:7px 0">無条件で評価します。</div>'}
  ${btn('+ 条件を追加', `add-condition:${i}`, 'small ghost')}
  <div class="rule-action">${field('THEN / 行動', select(ACTIONS, r.action, attr('action')))}
@@ -898,6 +903,20 @@ function startBatch() {
 async function onAction(act) {
     const [a, arg, arg2] = act.split(':');
     const u = current();
+    if (a === 'toggle-mobile-rule') {
+        const i = Number(arg), card = document.querySelector(`[data-mobile-rule="${i}"]`);
+        if (!card) return;
+        const opening = !mobileExpandedRules.has(i);
+        if (opening) mobileExpandedRules.add(i); else mobileExpandedRules.delete(i);
+        card.classList.toggle('mobile-collapsed', !opening);
+        const toggle = card.querySelector('.mobile-rule-toggle');
+        if (toggle) {
+            toggle.textContent = opening ? '閉じる' : '開く';
+            toggle.setAttribute('aria-expanded', String(opening));
+            toggle.setAttribute('aria-label', `ルール${i + 1}の編集欄を${opening ? '閉じる' : '開く'}`);
+        }
+        return;
+    }
     if (a === 'map-zoom-in' || a === 'map-zoom-out') {
         const i = MAP_ZOOM_STEPS.indexOf(mapZoom);
         mapZoom = MAP_ZOOM_STEPS[Math.max(0, Math.min(MAP_ZOOM_STEPS.length - 1, i + (a === 'map-zoom-in' ? 1 : -1)))];
