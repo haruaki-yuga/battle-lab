@@ -396,8 +396,8 @@ function skillsPage() {
         const s = config.skills.find(s => s.id === id);
         return s ? btn(`${esc(displayedSkillName(u, s))} ×`, `equip:${id}`, '', 'aria-label="' + esc(displayedSkillName(u, s)) + 'を外す"') : '';
     }).join('')}</div><div class="searchbar"><input id="skill-search" type="search" placeholder="スキル名・効果で検索（例：炎、BS回復、迎撃）" value="${esc(skillSearch)}" aria-label="スキルを検索">${select({ all: 'すべての分類', ...SKILL_KINDS }, kindFilter, 'id="kind-filter" aria-label="スキル分類"')}${select({ all: 'すべて', equipped: 'セット中', custom: 'アクセルカレイド' }, skillFilter, 'id="skill-filter" aria-label="スキルの表示対象"')}</div>\
-<div class="skill-results-bar"><strong>検索結果 ${nf(filtered.length)} 件</strong><span class="subtle">${filtered.length ? `${start + 1}～${end}件を表示` : '表示するスキルはありません'} · 効果全文は一覧で確認できます · その他の設定は「詳細」</span></div>\
-<div class="skill-list" role="list" aria-label="スキル検索結果"><div class="skill-list-head" aria-hidden="true"><span>スキル</span><span>射程・対象</span><span>消費AP</span><span>消費行動値</span><span>効果</span><span>操作</span></div>${filtered.slice(start, end).map(s => skillCard(s, u)).join('')}</div>${!filtered.length ? '<div class="empty">条件に一致するスキルがありません。</div>' : ''}${showAll ? '' : `<div class="pagination">${btn('← 前へ', 'skill-prev', 'small', skillPage === 0 ? 'disabled' : '')}<span>${skillPage + 1} / ${Math.max(1, Math.ceil(filtered.length / 18))}</span>${btn('次へ →', 'skill-next', 'small', (skillPage + 1) * 18 >= filtered.length ? 'disabled' : '')}</div>`}`;
+<div id="skill-result-area"><div class="skill-results-bar"><strong>検索結果 ${nf(filtered.length)} 件</strong><span class="subtle">${filtered.length ? `${start + 1}～${end}件を表示` : '表示するスキルはありません'} · 効果全文は一覧で確認できます · その他の設定は「詳細」</span></div>\
+<div class="skill-list" role="list" aria-label="スキル検索結果"><div class="skill-list-head" aria-hidden="true"><span>スキル</span><span>射程・対象</span><span>消費AP</span><span>消費行動値</span><span>効果</span><span>操作</span></div>${filtered.slice(start, end).map(s => skillCard(s, u)).join('')}</div>${!filtered.length ? '<div class="empty">条件に一致するスキルがありません。</div>' : ''}${showAll ? '' : `<div class="pagination">${btn('← 前へ', 'skill-prev', 'small', skillPage === 0 ? 'disabled' : '')}<span>${skillPage + 1} / ${Math.max(1, Math.ceil(filtered.length / 18))}</span>${btn('次へ →', 'skill-next', 'small', (skillPage + 1) * 18 >= filtered.length ? 'disabled' : '')}</div>`}</div>`;
 }
 // 表示専用の短縮表記。射程距離や実際の対象判定には影響しない。
 const SKILL_RANGE_SHORT = {
@@ -1101,17 +1101,9 @@ async function onAction(act) {
         return;
     }
     if (a === 'skill-next' || a === 'skill-prev') {
-        // ページ送りでは画面全体を作り直さない。現在のスクロール位置を維持する。
+        // 検索欄を含む画面全体は再描画しない（スクロール・IME入力を維持）。
         skillPage += a === 'skill-next' ? 1 : -1;
-        const nextContent = document.createElement('template');
-        nextContent.innerHTML = skillsPage();
-        for (const selector of ['.skill-results-bar', '.skill-list', '.pagination']) {
-            const existing = $(selector);
-            const updated = nextContent.content.querySelector(selector);
-            if (existing && updated)
-                existing.replaceWith(updated);
-        }
-        // フォーカス移動によるブラウザの自動スクロールも防ぐ。
+        refreshSkillResults();
         const direction = a === 'skill-next' ? 'skill-next' : 'skill-prev';
         document.querySelector(`[data-act="${direction}"]`)?.focus({ preventScroll: true });
         return;
@@ -1488,7 +1480,35 @@ document.addEventListener('pointercancel', e => {
         repaintMaps();
     }
 });
+// 日本語IME変換中に検索欄を破棄すると、スマホの変換・連続入力が途切れる。
+// 検索結果だけを更新し、入力欄・カーソル・変換セッションを保持する。
 let searchTimer;
+let skillSearchComposing = false;
+function refreshSkillResults() {
+    if (page !== 'skills') return;
+    const results = $('#skill-result-area');
+    if (!results) return;
+    const preview = document.createElement('template');
+    preview.innerHTML = skillsPage();
+    const updated = preview.content.querySelector('#skill-result-area');
+    if (updated) results.innerHTML = updated.innerHTML;
+}
+function scheduleSkillSearch(value) {
+    skillSearch = value;
+    skillPage = 0;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(refreshSkillResults, 150);
+}
+document.addEventListener('compositionstart', e => {
+    if (e.target.id !== 'skill-search') return;
+    skillSearchComposing = true;
+    clearTimeout(searchTimer);
+});
+document.addEventListener('compositionend', e => {
+    if (e.target.id !== 'skill-search') return;
+    skillSearchComposing = false;
+    scheduleSkillSearch(e.target.value);
+});
 document.addEventListener('input', e => {
     const el = e.target;
     if (el.id === 'frame-range') {
@@ -1498,16 +1518,9 @@ document.addEventListener('input', e => {
         return;
     }
     if (el.id === 'skill-search') {
-        skillSearch = el.value;
-        skillPage = 0;
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-            const pos = el.selectionStart;
-            render();
-            const next = $('#skill-search');
-            next.focus();
-            next.setSelectionRange(pos, pos);
-        }, 180);
+        if (!skillSearchComposing && !e.isComposing)
+            scheduleSkillSearch(el.value);
+        return;
     }
     if (el.id === 'log-search') {
         logSearch = el.value;
