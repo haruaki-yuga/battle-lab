@@ -1,5 +1,5 @@
 import { CATALOG } from './catalog.js';
-import { emptyElement, validElement } from './element-bonus.js?v=1.17.6';
+import { emptyElement, validElement } from './element-bonus.js?v=1.17.7';
 export const STAT_LABELS = {
     maxHp: '最大HP',
     maxAp: '最大AP',

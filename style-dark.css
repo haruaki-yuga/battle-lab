@@ -267,7 +267,7 @@ html[data-theme="dark"] a {color:#9bc6e4}
 html[data-theme="dark"] :focus-visible {outline-color:#87b8d4}
 html[data-theme="dark"] ::selection {background:#456e8c;color:#fff}
 /* Theme toggle: anchored to the lower-left sidebar on desktop. */
-.sidebar-footer .theme-toggle {display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-height:35px;text-align:left;background:transparent;border:1px solid #cbd5dc;color:#3f5262;padding:7px 9px;border-radius:4px;line-height:1.35;font-size:11px;white-space:normal}
+.sidebar-footer .theme-toggle {display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:35px;text-align:center;background:transparent;border:1px solid #cbd5dc;color:#3f5262;padding:7px 9px;border-radius:4px;line-height:1.35;font-size:11px;white-space:normal}
 .sidebar-footer .theme-toggle svg {width:16px;height:16px;flex:0 0 16px}
 .sidebar-footer .theme-toggle:hover {background:#e4eaee}
 html[data-theme="dark"] .sidebar-footer .theme-toggle {background:#243443;color:#d9e5ef;border-color:#475b6c}

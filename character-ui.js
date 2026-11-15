@@ -2,7 +2,7 @@ import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateC
 import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js';
 import { deduplicateImportedSkills } from './skill-dedup.js';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
-import { elementLevel } from './element-bonus.js?v=1.17.6';
+import { elementLevel } from './element-bonus.js?v=1.17.7';
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -36,7 +36,7 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
         const p = state.profile, config = getConfig(), target = config.units.find(u => u.id === state.replaceId), supported = p?.skills.filter(s => s.supported) || [];
         dialog.innerHTML = `<div class="modal-header"><div><div class="eyebrow">CHARACTER IMPORT</div><h2 id="character-import-title">\
 キャラURLから読み込む</h2></div>${button('×', 'close', 'ghost')}</div>\
-<div class="modal-form"><p class="subtitle">公開中の能力値・装備アクティブスキル・常時特殊効果を取得します。</p><form id="character-url-form"><label class="field">\
+<div class="modal-form"><p class="subtitle">公開中の能力値・装備アクティブスキル・その他のステータスを取得します。</p><form id="character-url-form"><label class="field">\
 <span>キャラクター詳細ページのURL</span><input type="url" id="character-source-url" value="${esc(state.url)}" placeholder="${urlPlaceholder}" required autocomplete="off">\
 </label><div class="btnrow" style="margin-top:12px">${button(state.loading ? '読み込み中…' : '内容を取得', 'fetch', 'primary', state.loading)}</div>\
 </form>${state.error ? `<div class="error-box import-feedback" role="alert">${esc(state.error)}</div>` : ''}${state.loading ? '<p class="import-feedback" role="status">公開ページから読み込んでいます…</p>' : ''}${p ? `<section class="import-preview">\
@@ -55,7 +55,7 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
 <span class="pill ${r.supported ? 'green' : 'red'}">${r.supported ? `AP ${number(r.skill.ap)} · 行動値 ${number(r.skill.cost)}` : '未対応・セット対象外'}</span>\
 </summary><p class="source-quote">${esc(r.original)}</p>${r.issues.length ? `<p class="import-warning">\
 未対応：${r.issues.map(esc).join('、')}</p>` : ''}</details>`).join('') : '<p class="subtle">装備中のアクティブスキルはありません。</p>'}<h3 class="import-section-title">\
-常時特殊効果</h3><div class="skill-tags">${Object.entries(p.effects).length ? Object.entries(p.effects).map(([k, v]) => `<span class="pill">${esc(EFFECTS[k])} ${number(v)}</span>`).join('') : '<span class="subtle">対応する常時特殊効果はありません。</span>'}</div>${p.warnings.length ? `<div class="import-warning-box" role="status">\
+その他のステータス</h3><div class="skill-tags">${Object.entries(p.effects).length ? Object.entries(p.effects).map(([k, v]) => `<span class="pill">${esc(EFFECTS[k])} ${number(v)}</span>`).join('') : '<span class="subtle">対応するその他のステータスはありません。</span>'}</div>${p.warnings.length ? `<div class="import-warning-box" role="status">\
 <b>読み込み内容の確認</b><ul>${p.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>\
 </div>` : ''}<div class="import-destination fields two">\
 <label class="field"><span>反映先</span><select id="character-destination">${option('add', '新しいキャラとして追加', state.replaceId)}${config.units.map(u => option(u.id, `${u.name} を置き換える`, state.replaceId)).join('')}</select>\
