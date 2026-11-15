@@ -1,4 +1,5 @@
 import { CATALOG } from './catalog.js';
+import { emptyElements, validElements } from './element-bonus.js';
 export const STAT_LABELS = {
     maxHp: '最大HP',
     maxAp: '最大AP',
@@ -341,6 +342,7 @@ export function freshUnit(overrides = {}) {
         x: -10,
         y: 0,
         normalRange: 'near',
+        elements: emptyElements(),
         effects: {},
         initialBS: [],
         immunities: [],
@@ -515,6 +517,8 @@ export function validateConfig(c) {
         ])
             if (!Number.isFinite(u[k]))
                 errors.push(`${u.name}: ${k}は数値で指定してください。`);
+        if (u.elements !== undefined && !validElements(u.elements))
+            errors.push(`${u.name}: 7属性の値は0以上の整数で指定してください。`);
         if (u.maxHp < 1 || u.maxAp < 0 || u.mobility < 0)
             errors.push(`${u.name}: HPは1以上、AP・機動力は0以上です。`);
         if (!Array.isArray(u.rules) || !Array.isArray(u.skills)) {

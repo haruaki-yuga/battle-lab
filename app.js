@@ -1,6 +1,6 @@
 import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig } from './model.js';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.17.2';
+import { Battle, clamp } from './engine.js?v=1.17.3';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
@@ -13,6 +13,7 @@ import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
 import { createCharacterImporter } from './character-ui.js';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
+import { ELEMENT_KEYS, emptyElements, elementLevel } from './element-bonus.js';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -195,7 +196,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><details class="mobile-file-menu"><summary>データ</summary><div class="mobile-file-menu-panel">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}${btn('不具合報告', 'open-bug-report')}</div></details></div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><div class="version">Web版 1.17.2</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.2</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><div class="version">Web版 1.17.3</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.3</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -386,6 +387,7 @@ function setupPage() {
         'fumble',
         'drama'
     ].map(k => field(STAT_LABELS[k], input(k, u[k]))).join('')}${field('通常攻撃の射程', select(RANGES, u.normalRange, 'data-unit="normalRange"'))}</div>\
+<div class="field-section">属性値（ダメージ補正のみ）</div><div class="element-grid">${ELEMENT_KEYS.map(k => `<label class="field element-field"><span>${k} <small data-element-level="${k}">Lv${elementLevel(u.elements?.[k])}</small></span><input type="number" min="0" max="1000000" step="1" inputmode="numeric" data-element="${k}" value="${Number(u.elements?.[k]) || 0}"></label>`).join('')}</div><p class="element-note">属性値1／5／10／15／20／25でLv1～6。HP・攻撃力などの数値は再計算しません。</p>\
 <details class="accordion"><summary>初期位置・開始HP/AP・特殊効果</summary><div class="fields four">${field('初期X座標 (m)', input('x', u.x))}${field('初期Y座標 (m)', input('y', u.y))}${field('開始HP (%)', input('startHp', u.startHp, 'min="0" max="100"'))}${field('開始AP (%)', input('startAp', u.startAp, 'min="0" max="100"'))}</div>\
 <div class="fields two" style="margin-top:15px">${field('開始時BS（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-bs>${BS_NAMES.map(b => `<option ${(u.initialBS || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}${field('BS耐性（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-immunity>${BS_NAMES.map(b => `<option ${(u.immunities || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}</div>\
 <div class="btnrow" style="margin-top:15px">${btn('固有の特殊効果を編集', 'unit-effects', 'small')}</div>\
@@ -840,7 +842,7 @@ function renderModal() {
    ${namedField('消費AP', 'ap', s.ap)}${namedField('消費行動値（溜を含めない）', 'cost', s.cost)}
    ${field('射程', select(ACCEL_RANGES, s.range, 'data-draft="range"'))}
    ${field('効果範囲', select(ACCEL_SCOPES, s.scope, 'data-draft="scope"'))}
-   ${attacking ? namedField('属性相性・任意ダメージ補正 (%)', 'elementCorrection', s.elementCorrection || 0) : ''}
+   ${attacking ? namedField('スキル固有の任意ダメージ補正 (%)', 'elementCorrection', s.elementCorrection || 0) : ''}
   </div>
   ${attacking ? `<div class="field-section">威力・命中</div><div class="fields three">${namedField('主攻撃力に加算', 'mainBonus', s.mainBonus)}${namedField('副攻撃力に加算', 'subBonus', s.subBonus)}${namedField('命中に加算', 'hitBonus', s.hitBonus)}${namedField('主攻撃力の使用率 (%)', 'mainPct', s.mainPct)}${namedField('副攻撃力の使用率 (%)', 'subPct', s.subPct)}</div>` : ''}
   ${healing ? `<div class="field-section">回復量</div>${field('回復力に加算する威力', `<input type="number" step="any" data-draft="power" value="${esc(s.power)}">`)}` : ''}
@@ -927,7 +929,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.17.2', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.17.3', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];
@@ -1331,6 +1333,21 @@ document.addEventListener('change', e => {
     if (el.matches('[data-map-focus]')) {
         mapFocus = el.value;
         repaintMaps();
+        return;
+    }
+    if (el.matches('[data-element]')) {
+        const key = el.dataset.element;
+        if (!ELEMENT_KEYS.includes(key)) return;
+        const value = Number(el.value);
+        if (!Number.isSafeInteger(value) || value < 0 || value > 1e6) {
+            toast('属性値は0～1000000の整数で指定してください。');
+            return;
+        }
+        u.elements ??= emptyElements();
+        u.elements[key] = value;
+        save();
+        const label = document.querySelector(`[data-element-level="${key}"]`);
+        if (label) label.textContent = `Lv${elementLevel(value)}`;
         return;
     }
     if (el.matches('[data-unit]')) {

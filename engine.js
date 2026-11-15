@@ -4,6 +4,7 @@ import { scoreDraw } from './battle-summary.js';
 import { selectDiskDestination } from './movement-disk.js';
 import { bsLogLabel } from './combat-log-format.js';
 import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
+import { elementDamageBonus } from './element-bonus.js';
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export function seededRandom(seed) {
@@ -1579,7 +1580,8 @@ export class Battle {
             extra += Math.min(this.stat(t, 'heal'), this.stat(u, 'main'));
         if (this.effect(u, s, 'curseKill'))
             extra += new Set(t.bs.map(b => b.name)).size * 66;
-        const elementFactor = 1 + Number(s.elementCorrection || 0) / 100;
+        const attributeBonus = elementDamageBonus(u, t);
+        const elementFactor = (1 + Number(s.elementCorrection || 0) / 100) * attributeBonus.factor;
         let total = (m + subD + extra) * elementFactor;
         let euphoriaFactor = 1;
         if (this.statuses(t).has('恍惚')) {
@@ -1627,7 +1629,9 @@ export class Battle {
                 incoming: scaledBase, before: shield.before, blocked: baseBlocked,
                 left: scaledPursuit ? baseDisplayedLeft : shield.left, applied: scaledBase - baseBlocked
             });
-            const attackDetail = `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})`;
+            const attributeLog = attributeBonus.attackPercent || attributeBonus.reductionPercent
+                ? ` ｜ 属性：与ダメ+${attributeBonus.attackPercent}%・被ダメ軽減${attributeBonus.reductionPercent}%` : '';
+            const attackDetail = `${attackRoll.critical ? 'CT / ' : ''}${names[rank]}ヒット ${rate} / 命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） − 回避 ${evade}（対象別1d100 ${dodge.die}） + ヒットレート1d100 ${rateDie} / 防御 ${defended ? '成功' : '失敗'} (${defRoll.die})${attributeLog}`;
             this.log('damage', baseBarrier?.message || `${t.name}に${scaledBase.toLocaleString()}ダメージ`,
                 baseBarrier ? `${baseBarrier.detail} ｜ ${attackDetail}` : attackDetail, u, t, processTags);
             if (scaledPursuit > 0) {
