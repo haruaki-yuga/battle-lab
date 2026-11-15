@@ -1,5 +1,5 @@
 /* Battle Lab bug-report dialog: plain, mobile-friendly and dark-mode aware. */
-.sidebar-footer .sidebar-bug-report{display:block;width:100%;text-align:left;min-height:36px;margin:0 0 9px;background:transparent;color:var(--ink);border:1px solid var(--line);font-size:12px}
+.sidebar-footer .sidebar-bug-report{display:block;width:100%;text-align:center;min-height:36px;margin:0 0 9px;background:transparent;color:var(--ink);border:1px solid var(--line);font-size:12px}
 .sidebar-footer .sidebar-bug-report:hover{background:var(--green-light)}
 .bug-report-dialog{width:min(540px,calc(100vw - 24px));max-width:none;max-height:min(88dvh,760px);margin:auto;padding:0;overflow-y:auto;border:1px solid var(--line);border-radius:9px;background:var(--white);color:var(--ink);box-shadow:0 18px 60px #111d2c40}
 .bug-report-dialog::backdrop{background:#10182099}

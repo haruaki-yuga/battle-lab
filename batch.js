@@ -1,4 +1,4 @@
-import { Battle } from './engine.js?v=1.17.4';
+import { Battle } from './engine.js?v=1.17.5';
 import { runSeed } from './run-settings.js';
 export function runBatch(config, n, onProgress = () => {
 }) {

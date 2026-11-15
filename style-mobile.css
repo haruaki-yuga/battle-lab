@@ -223,3 +223,17 @@
   .mobile-replay-map:not([hidden]){width:120px;right:8px}
   .mobile-replay-map-caption span:last-child{font-size:8px}
 }
+
+@media (max-width:700px){
+  .skill-target-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 8px;margin-bottom:10px}
+  .skill-target-select{grid-column:1/-1;display:grid;grid-template-columns:43px minmax(0,1fr);align-items:center;gap:8px;width:100%}
+  .skill-target-select .unit-selector{width:100%;max-width:100%;min-width:0;min-height:38px}
+  .skill-target-toolbar>.pill{grid-column:1/-1;justify-self:start}
+  .skill-target-toolbar .mobile-tactics-details{grid-column:1/-1}
+  .mobile-tactics-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+  .mobile-tactics-actions button{text-align:center;min-width:0;min-height:38px;white-space:normal}
+}
+@media (max-width:365px){
+  .mobile-tactics-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mobile-tactics-actions button:last-child{grid-column:1/-1}
+}
