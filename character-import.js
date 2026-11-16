@@ -1,5 +1,5 @@
 import { STAT_LABELS, EFFECTS, BS_NAMES, freshSkill, freshUnit, freshRule, clone, uid } from './model.js';
-import { extractMainCharacterElement, ELEMENT_ID_TO_KEY } from './element-bonus.js?v=1.17.12';
+import { extractMainCharacterElement, ELEMENT_ID_TO_KEY } from './element-bonus.js?v=1.17.13';
 import { findReusableImportedSkill } from './skill-dedup.js';
 import { normalizeLegacyBarrierSkill } from './barrier-rules.js';
 const statNames = {
@@ -284,7 +284,7 @@ export function parseCharacterData(data, sourceURL, at = new Date().toISOString(
 export function createImportedUnit(profile, { team = 'A', normalRange = 'near', replace = null, count = 0, existingSkills = [] } = {}) {
     if (profile.missing.length)
         throw Error('必要な能力値を取得できなかったため、取り込みを中止しました。');
-    const skills = [], equipment = [], skillAliases = {}, specializedSkills = {};
+    const skills = [], equipment = [], skillAliases = {}, specializedSkills = {}, officialSkillIds = {};
     let reused = 0;
     for (const entry of profile.skills.filter(r => r.supported)) {
         let existing = findReusableImportedSkill([...existingSkills, ...skills], entry.skill);
@@ -309,6 +309,10 @@ export function createImportedUnit(profile, { team = 'A', normalRange = 'near', 
             equipment.push(created.id);
             skillId = created.id;
         }
+        // Preserve the source ID even when an existing WIKI skill is reused without
+        // specialization or alias. The shared AI uses these original skill IDs.
+        if (entry.originSkillId != null && entry.originSkillId !== '')
+            officialSkillIds[skillId] = String(entry.originSkillId);
         const baseName = entry.skill.baseName;
         if ((baseName && baseName !== entry.name) || (existing && entry.name !== existing.name)) {
             specializedSkills[skillId] = {
@@ -347,6 +351,7 @@ export function createImportedUnit(profile, { team = 'A', normalRange = 'near', 
         skills: [...new Set(equipment)],
         skillAliases,
         specializedSkills,
+        officialSkillIds,
         effects: clone(profile.effects),
         immunities: clone(profile.immunities),
         rules: [freshRule({ action: 'effectiveAttack', moveMode: 'approach' }), freshRule({ conditions: [], action: 'carry', autoMove: false, target: 'self' })],

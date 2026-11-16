@@ -1,7 +1,7 @@
 // Official Arena share codes are server-side lookup tokens, not locally encoded tactics.
 // This adapter never transmits local Battle Lab character data to the official server.
 import { clone, freshRule, freshCondition, uid, validateConfig, ARENA_MAX_RULES, BS_NAMES } from './model.js';
-import { OFFICIAL_ACTION_KEYS, OFFICIAL_CONDITION_SPECS, OFFICIAL_METRIC_KEYS, OFFICIAL_MOVE_KEYS, OFFICIAL_SORT_KEYS, OFFICIAL_SUBJECT_KEYS, OFFICIAL_TARGET_KEYS, OFFICIAL_AI } from './official-ai-schema.js?v=1.17.12';
+import { OFFICIAL_ACTION_KEYS, OFFICIAL_CONDITION_SPECS, OFFICIAL_METRIC_KEYS, OFFICIAL_MOVE_KEYS, OFFICIAL_SORT_KEYS, OFFICIAL_SUBJECT_KEYS, OFFICIAL_TARGET_KEYS, OFFICIAL_AI } from './official-ai-schema.js?v=1.17.13';
 
 const DECODER_QUERY = `query DecodeArenaSettings($password: String!) {
   rev2ArenaSettingsDecode(password: $password) {
@@ -23,7 +23,8 @@ export function validateArenaShareCode(value) {
 export async function fetchArenaShareCode(value, { fetchImpl = fetch, signal } = {}) {
     const password = validateArenaShareCode(value);
     let response;
-    const officialUrl = 'https://rev2.reversion.jp/graphql';
+    // Match the official Apollo request path, including the operation-name query parameter.
+    const officialUrl = 'https://rev2.reversion.jp/graphql?opname=DecodeArenaSettings';
     const sameOrigin = typeof location !== 'undefined' && location.origin === new URL(officialUrl).origin;
     try {
         response = await fetchImpl(officialUrl, {
@@ -48,11 +49,11 @@ export function extractSharedArenaActions(input) {
         try { x = JSON.parse(x); } catch { throw Error('JSONとして読み取れません。Networkのレスポンス全文を指定してください。'); }
     }
     if (isPlain(x) && Array.isArray(x.errors) && x.errors.length)
-        throw Error('公式サーバーがエラーを返しました。共有コードが正しいか確認してください。');
+        throw Error('公式サーバーがエラーを返しました。共有コードまたはログイン状態を確認してください。');
     if (isPlain(x) && isPlain(x.data)) x = x.data;
     if (isPlain(x) && Object.hasOwn(x, 'rev2ArenaSettingsDecode')) x = x.rev2ArenaSettingsDecode;
     // For debugging and regression tests, the official action setting response is also accepted.
-    if (!Array.isArray(x)) throw Error('共有コードの復号結果が含まれていません。rev2ArenaSettingsDecode のレスポンスを指定してください。');
+    if (!Array.isArray(x)) throw Error(isPlain(x) && Object.hasOwn(x, 'rev2ArenaSettingsEncode') ? 'これは共有コードの発行結果です。AI本体を取り込むには rev2ArenaSettingsDecode のレスポンスを指定してください。' : '共有コードの復号結果が含まれていません。rev2ArenaSettingsDecode のレスポンスを指定してください。');
     if (!x.length || x.length > ARENA_MAX_RULES) throw Error(`共有コード内の戦術は1～${ARENA_MAX_RULES}件にしてください。`);
     if (x.some(a => !isPlain(a) || !isPlain(a.maneuver) || !isPlain(a.target) || !Array.isArray(a.conditions) || a.conditions.length > 5))
         throw Error('公式アリーナの戦術データ形式が不正です。');
@@ -63,11 +64,20 @@ function invalid(message, warnings, issues, index) {
     issues.add(index);
     warnings.push(`${index + 1}行目：${message}`);
 }
+function normalizedCharacterId(id) {
+    const raw = String(id ?? '').trim();
+    // The same ID may occur as "r2p000035", "000035", or "35".
+    const digits = raw.match(/^(?:r2p)?(\d+)$/i);
+    return digits ? `r2p${digits[1].replace(/^0+(?=\d)/, '')}` : raw;
+}
 function mapOfficialId(id, config) {
     if (id == null || id === '') return '';
-    const raw = String(id);
-    const found = config.units.filter(u => [u.id, u.importedProfile?.characterId,
-        String(u.importedProfile?.characterId || '').replace(/^r2p/, '')].includes(raw));
+    const canonical = normalizedCharacterId(id);
+    const found = config.units.filter(u =>
+        String(u.id) === String(id) ||
+        (u.importedProfile?.characterId != null &&
+            normalizedCharacterId(u.importedProfile.characterId) === canonical));
+    // IDs belonging to multiple units must not be guessed.
     return found.length === 1 ? found[0].id : '';
 }
 function mapBs(ids, warnings, issues, i) {
@@ -106,7 +116,7 @@ function convertCondition(source, config, warnings, issues, i) {
     if (subject === 'turn') return { ...freshCondition(), type:'turn', multiple: validNumber(p.param1, 1),
         offset: validNumber(p.param2, 0), not: !!p.negate };
     if (subject === 'afterWait') return { ...freshCondition(), type:'afterWait', not: !!p.negate };
-    if (subject === 'chance') return { ...freshCondition(), type:'chance', chance: validNumber(p.param1, 50) };
+    if (subject === 'chance') return { ...freshCondition(), type:'chance', chance: validNumber(p.param1, 50), not: !!p.negate };
     const c = convertParams(source, warnings, issues, i);
     const characterId = subject === 'id' ? mapOfficialId(p.character_id, config) : '';
     if (subject === 'id' && !characterId) invalid(`指定キャラクターID「${String(p.character_id || '')}」が編成内で特定できません。編成内のIDを指定し直してください。`, warnings, issues, i);
@@ -127,10 +137,19 @@ function convertTarget(source, config, warnings, issues, i) {
     };
 }
 function matchSkillByOfficialId(config, unit, officialId) {
-    const id = String(officialId ?? '');
-    const candidates = config.skills.filter(s => unit.skills.includes(s.id) && [s.id, s.originSkillId,
-        s.importedFromCharacter?.originalId, s.importedFromCharacter?.skillId,
-        s.importedProfile?.skillId].some(v => v != null && String(v) === id));
+    const id = String(officialId ?? '').trim();
+    if (!id) return '';
+    // When an imported skill is reused from the global WIKI catalog, its official
+    // skill ID is kept on the UNIT's specialization metadata, not the catalog row.
+    const candidates = config.skills.filter(s => unit.skills.includes(s.id) && [
+        s.id,
+        s.originSkillId,
+        s.importedFromCharacter?.originalId,
+        s.importedFromCharacter?.skillId,
+        s.importedProfile?.skillId,
+        unit.officialSkillIds?.[s.id],
+        unit.specializedSkills?.[s.id]?.originSkillId
+    ].some(v => v != null && String(v).trim() === id));
     return candidates.length === 1 ? candidates[0].id : '';
 }
 export function convertArenaSharedActions(actions, config, unitId, { mode = 'replace' } = {}) {

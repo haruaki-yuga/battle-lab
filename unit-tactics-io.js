@@ -39,7 +39,8 @@ export function exportUnitTactics(config, unitId) {
         rules: clone(unit.rules),
         customSkills: definitions,
         skillAliases: clone(unit.skillAliases || {}),
-        specializedSkills: clone(unit.specializedSkills || {})
+        specializedSkills: clone(unit.specializedSkills || {}),
+        officialSkillIds: clone(unit.officialSkillIds || {})
     };
 }
 /** Import without touching stats, team, position, or any other unit's equipment/AI. */
@@ -63,6 +64,11 @@ export function importUnitTactics(config, targetId, data) {
             ['baseName', 'note', 'original'].some(k => detail[k] !== undefined &&
                 (typeof detail[k] !== 'string' || detail[k].length > 20000)))))
         throw Error('キャラクター別の特殊化スキル情報が不正です。');
+    if (data.officialSkillIds !== undefined && (!data.officialSkillIds ||
+        typeof data.officialSkillIds !== 'object' || Array.isArray(data.officialSkillIds) ||
+        Object.entries(data.officialSkillIds).some(([id, originalId]) =>
+            !data.skills.includes(id) || typeof originalId !== 'string' || !originalId || originalId.length > 200)))
+        throw Error('公式スキルIDの対応情報が不正です。');
     if (data.rules.some(r => !r || typeof r !== 'object' || Array.isArray(r)))
         throw Error('キャラAIルールの形式が不正です。');
     const target = config.units.find(u => u.id === targetId);
@@ -111,6 +117,8 @@ export function importUnitTactics(config, targetId, data) {
     dst.skills = data.skills.map(id => idMap.get(id) || id);
     dst.skillAliases = Object.fromEntries(Object.entries(data.skillAliases || {}).map(([id, name]) => [idMap.get(id) || id, name]));
     dst.specializedSkills = Object.fromEntries(Object.entries(data.specializedSkills || {}).map(([id, detail]) => [idMap.get(id) || id, clone(detail)]));
+    dst.officialSkillIds = Object.fromEntries(Object.entries(data.officialSkillIds || {})
+        .map(([id, original]) => [idMap.get(id) || id, original]));
     // Old tactic exports only had aliases; preserve those as per-unit records.
     for (const [id, name] of Object.entries(dst.skillAliases)) {
         const s = result.skills.find(s => s.id === id);

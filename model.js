@@ -1,6 +1,6 @@
 import { CATALOG } from './catalog.js';
-import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.12';
-import { emptyElement, validElement } from './element-bonus.js?v=1.17.12';
+import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.13';
+import { emptyElement, validElement } from './element-bonus.js?v=1.17.13';
 export const STAT_LABELS = {
     maxHp: '最大HP',
     maxAp: '最大AP',
@@ -543,6 +543,11 @@ export function validateConfig(c) {
         }
         if (u.skills.some(id => !ids.has(id)))
             errors.push(`${u.name}: 存在しないスキルが装備されています。`);
+        if (u.officialSkillIds !== undefined && (!u.officialSkillIds ||
+            typeof u.officialSkillIds !== 'object' || Array.isArray(u.officialSkillIds) ||
+            Object.entries(u.officialSkillIds).some(([id, original]) => !u.skills.includes(id) ||
+                typeof original !== 'string' || !original || original.length > 200)))
+            errors.push(`${u.name}: 公式スキルIDの対応情報が不正です。`);
         if (u.specializedSkills !== undefined) {
             if (!u.specializedSkills || typeof u.specializedSkills !== 'object' || Array.isArray(u.specializedSkills))
                 errors.push(`${u.name}: 特殊化スキル情報が不正です。`);

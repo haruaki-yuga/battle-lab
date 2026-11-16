@@ -2,7 +2,7 @@ import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateC
 import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js';
 import { deduplicateImportedSkills } from './skill-dedup.js';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
-import { elementLevel } from './element-bonus.js?v=1.17.12';
+import { elementLevel } from './element-bonus.js?v=1.17.13';
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',

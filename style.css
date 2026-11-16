@@ -2992,3 +2992,8 @@ h1 {
 .arena-share-dialog #share-import-preview[hidden] {display:none;}
 .arena-share-dialog .share-merge-label {font-size:12px;font-weight:600;}
 @media(max-width:520px){.arena-share-dialog .modal-form{padding:14px;}.arena-share-dialog .share-code-controls{flex-wrap:wrap;}.arena-share-dialog .share-code-controls button{width:100%;}}
+
+/* v1.17.13: response-file import is an alternative to console copy/paste. */
+.arena-share-dialog .share-json-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.arena-share-dialog .share-file-label{font-size:13px;font-weight:500;}
+.arena-share-dialog #share-response-file{width:auto;max-width:100%;font-size:12px;}
