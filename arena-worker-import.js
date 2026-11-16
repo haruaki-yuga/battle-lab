@@ -1,6 +1,6 @@
 // Battle Lab -> owner-operated Cloudflare Worker -> official authenticated Arena API.
 // No admin token is used on the public endpoint. Official credentials remain in Worker Secrets.
-import { validateArenaShareCode, extractSharedArenaActions } from './arena-share-import.js?v=1.17.16';
+import { validateArenaShareCode, extractSharedArenaActions } from './arena-share-import.js?v=1.17.18';
 
 export function normalizeArenaWorkerUrl(input) {
     let url;
@@ -50,4 +50,31 @@ export async function fetchArenaSharedAiViaWorker(value, {
         throw Error(`${desc}${stage}`);
     }
     return extractSharedArenaActions(payload);
+}
+
+/** Issue a new official Arena share code using an authenticated owner-operated Worker. */
+export async function issueArenaShareCodeViaWorker(actions, {workerUrl, fetchImpl = fetch, signal} = {}) {
+    if (!Array.isArray(actions) || !actions.length || actions.length > 20)
+        throw Error('発行できるAIは1～20件です。');
+    const origin=normalizeArenaWorkerUrl(workerUrl);
+    let response;
+    try {
+        response=await fetchImpl(origin+'/arena/encode',{
+            method:'POST',mode:'cors',credentials:'omit',redirect:'error',cache:'no-store',
+            referrerPolicy:'no-referrer',headers:{'Content-Type':'application/json','Accept':'application/json'},
+            body:JSON.stringify({actions}),signal
+        });
+    } catch(error) {
+        if (['AbortError','TimeoutError'].includes(error?.name)) throw Error('共有コード発行がタイムアウトしました。');
+        throw Error('Workerとの通信が失敗しました。Workerのデプロイ・CORS設定を確認してください。');
+    }
+    let data;
+    try {data=await response.json();}
+    catch {throw Error('WorkerからJSON形式の応答を受け取れませんでした。');}
+    if (!response.ok || data?.ok !== true)
+        throw Error(typeof data?.error==='string' ? data.error.slice(0,300) : `共有コードを発行できませんでした（HTTP ${response.status}）。`);
+    const code=data.shareCode;
+    if (typeof code !== 'string' || !/^[A-Za-z0-9]{1,64}$/.test(code))
+        throw Error('Workerから有効な共有コードが返されませんでした。');
+    return code;
 }

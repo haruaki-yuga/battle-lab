@@ -1,15 +1,16 @@
 import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js';
-import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.16';
+import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.18';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.17.16';
+import { Battle, clamp } from './engine.js?v=1.17.18';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
 import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
-import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.16';
-import { fetchArenaSharedAiViaWorker } from './arena-worker-import.js?v=1.17.16';
-import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.16';
+import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.18';
+import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.17.18';
+import { buildOfficialArenaActions } from './arena-share-export.js?v=1.17.18';
+import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.18';
 import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
@@ -17,7 +18,7 @@ import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
 import { createCharacterImporter } from './character-ui.js';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
-import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.16';
+import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.18';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -122,6 +123,7 @@ let selectedLogId = -1, logScrollTop = null, logScrollFrame = 0, unitTacticsImpo
 let mapZoom = 1, mapRelations = false, mapMoveCircle = false, mapFocus = 'selected', mapPan = { x: 0, y: 0 }, mapDrag = null;
 const mobileExpandedRules = new Set([0]);
 let shareImportActions = null, shareImportTargetId = null, shareImportBusy = false;
+let shareExportTargetId = null, shareExportBusy = false;
 let page = 'setup', selected = config.units[0].id, skillSearch = '', kindFilter = 'all', skillFilter = 'all', skillPage = 0, sim = null, frame = -1, logType = 'main', logTurn = 'all', logSearch = '', worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
 const $ = s => document.querySelector(s), app = $('#app');
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
@@ -191,7 +193,7 @@ const field = (label, content) => `<label class="field"><span>${label}</span>${c
 const input = (key, value, attrs = '') => `<input type="number" data-unit="${key}" value="${esc(value)}" step="any" ${attrs}>`;
 const unitSelect = () => select(Object.fromEntries(config.units.map(u => [u.id, `${u.team}｜${u.name}`])), selected, 'class="unit-selector" aria-label="編集するユニット" data-select-unit');
 const unitTacticsControls = () => {
-    const buttons = `${btn('書き出し', 'export-unit-tactics', 'small', 'title="スキル・AIを書き出す" aria-label="選択中のキャラのスキル・AIを書き出す"')}${btn('読み込み', 'import-unit-tactics', 'small', 'title="スキル・AIを読み込む" aria-label="選択中のキャラにスキル・AIを読み込む"')}${btn('アリーナ取込', 'import-arena-tactics', 'small', 'title="公式アリーナHTMLから戦術を読み込む" aria-label="公式アリーナHTMLから戦術を読み込む"')}${btn('共有コード', 'import-share-code', 'small', 'title="公式アリーナの共有コードからAIを読み込む"')}`;
+    const buttons = `${btn('書き出し', 'export-unit-tactics', 'small', 'title="スキル・AIを書き出す" aria-label="選択中のキャラのスキル・AIを書き出す"')}${btn('読み込み', 'import-unit-tactics', 'small', 'title="スキル・AIを読み込む" aria-label="選択中のキャラにスキル・AIを読み込む"')}${btn('アリーナ取込', 'import-arena-tactics', 'small', 'title="公式アリーナHTMLから戦術を読み込む" aria-label="公式アリーナHTMLから戦術を読み込む"')}${btn('共有コード読込', 'import-share-code', 'small', 'title="公式アリーナの共有コードからAIを読み込む"')}${btn('共有コード発行', 'open-share-export', 'small', 'title="選択したAIを公式アリーナの共有コードとして発行する"')}`;
     return `<div class="unit-tactics-buttons desktop-tactics-controls" role="group" aria-label="スキル・AI管理"><span class="unit-tactics-label">スキル・AI</span>${buttons}</div><details class="mobile-tactics-details"><summary>スキル・AI管理</summary><div class="mobile-tactics-actions">${buttons}</div></details>`;
 };
 function render() {
@@ -201,7 +203,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><details class="mobile-file-menu"><summary>データ</summary><div class="mobile-file-menu-panel">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}${btn('不具合報告', 'open-bug-report')}</div></details></div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer"><details class="desktop-data-tools"><summary>キャラデータ管理</summary><div class="desktop-data-tool-actions">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div></details>${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.16</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.16</small></div><div class="breadcrumb">\
+<div class="sidebar-footer"><details class="desktop-data-tools"><summary>キャラデータ管理</summary><div class="desktop-data-tool-actions">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div></details>${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.18</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.18</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -951,7 +953,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.17.16', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.17.18', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];
@@ -980,6 +982,74 @@ function startBatch() {
     worker.postMessage({ config, n });
     render();
 }
+function exportStatus(message, error = false) {
+    const node = $('#share-export-status');
+    if (!node) return;
+    node.textContent = message;
+    node.classList.toggle('is-error', error);
+}
+function openShareExportDialog(unit) {
+    shareExportTargetId = unit.id;
+    const dialog = $('#arena-share-export-dialog');
+    if (!dialog) return;
+    $('#share-export-unit').textContent = unit.name;
+    $('#share-export-list').innerHTML = unit.rules.map((rule, index) => {
+        const text = ACTIONS[rule.action] || rule.action;
+        return `<label class="share-export-option"><input type="checkbox" data-share-export-index="${index}" ${rule.enabled ? 'checked' : ''}><span>${index + 1}. ${esc(text)}${rule.enabled ? '' : '（無効）'}</span></label>`;
+    }).join('');
+    const result = $('#share-export-result');
+    if (result) result.hidden = true;
+    exportStatus('発行するルールを選択してください。無効のルールは初期状態では選択されません。');
+    dialog.showModal();
+}
+async function issueShareCode() {
+    if (shareExportBusy) return;
+    const unit = config.units.find(u => u.id === shareExportTargetId);
+    if (!unit) return exportStatus('発行元のキャラクターが見つかりません。',true);
+    const selectedIndices = [...document.querySelectorAll('#share-export-list [data-share-export-index]:checked')]
+        .map(input => Number(input.dataset.shareExportIndex));
+    let actions;
+    try {
+        actions = buildOfficialArenaActions(config, unit.id, selectedIndices);
+        if (!ARENA_SHARED_WORKER_URL) throw Error('共有AIの発行先が未設定です。');
+    } catch(error) { return exportStatus(error.message,true); }
+    if (!confirm(`${actions.length}件の戦術を公式アリーナへ登録して共有コードを発行します。
+発行後のコードは他の人も利用できます。続行しますか？`)) return;
+    const button = $('#share-export-submit'), result = $('#share-export-result');
+    shareExportBusy = true;
+    if (button) button.disabled = true;
+    if (result) result.hidden = true;
+    exportStatus('公式アリーナで共有コードを発行しています…');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000);
+    try {
+        const code = await issueArenaShareCodeViaWorker(actions, {
+            workerUrl: ARENA_SHARED_WORKER_URL, signal: controller.signal
+        });
+        if (!$('#arena-share-export-dialog')?.open) return;
+        const field = $('#share-export-code');
+        if (field) field.value = code;
+        if (result) result.hidden = false;
+        exportStatus(`${actions.length}件のAIを共有コードとして発行しました。`);
+    } catch(error) { exportStatus(error.message || '共有コードを発行できませんでした。',true); }
+    finally {
+        clearTimeout(timeout);
+        shareExportBusy = false;
+        if (button) button.disabled = false;
+    }
+}
+async function copyIssuedCode() {
+    const input = $('#share-export-code');
+    if (!input?.value) return;
+    try {
+        await navigator.clipboard.writeText(input.value);
+        exportStatus('共有コードをコピーしました。');
+    } catch {
+        input.focus(); input.select();
+        exportStatus('コードを選択しました。手動でコピーしてください。');
+    }
+}
+
 function shareStatus(message, error = false) {
     const node = $('#share-import-status');
     if (!node) return;
@@ -1132,6 +1202,22 @@ async function onAction(act) {
     if (a === 'import-unit-tactics') {
         unitTacticsImportTarget = u.id;
         $('#unit-tactics-import').click();
+        return;
+    }
+    if (a === 'open-share-export') {
+        openShareExportDialog(u);
+        return;
+    }
+    if (a === 'issue-share-code') {
+        await issueShareCode();
+        return;
+    }
+    if (a === 'copy-issued-code') {
+        await copyIssuedCode();
+        return;
+    }
+    if (a === 'close-share-export') {
+        $('#arena-share-export-dialog')?.close();
         return;
     }
     if (a === 'import-share-code') {

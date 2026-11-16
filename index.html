@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#f1f3f4">
     <meta name="description" content="ステータス、2026年11月14日までに実装されたスキル、条件付き行動を組み合わせるLost Arcadia戦闘検証ツール。">
-    <title>ロスアカ Battle Lab Web v1.17.16｜闘技趣味レーター</title>
+    <title>ロスアカ Battle Lab Web v1.17.18｜闘技趣味レーター</title>
     <script>
       // Apply saved appearance before styles render to avoid a light-mode flash.
       try { document.documentElement.dataset.theme = localStorage.getItem('battle-lab-theme') === 'dark' ? 'dark' : 'light'; }
       catch { document.documentElement.dataset.theme = 'light'; }
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'dark' ? '#151c24' : '#f1f3f4');
     </script>
-    <link rel="stylesheet" href="style.css?v=1.17.16">
-    <link rel="stylesheet" href="style-simple.css?v=1.17.16">
-    <link rel="stylesheet" href="style-dark.css?v=1.17.16">
-    <link rel="stylesheet" href="style-mobile.css?v=1.17.16">
-    <link rel="stylesheet" href="update-notice.css?v=1.17.16">
-    <link rel="stylesheet" href="bug-report.css?v=1.17.16">
-    <link rel="stylesheet" href="element-bonus.css?v=1.17.16">
-    <link rel="stylesheet" href="simulation-layout.css?v=1.17.16">
+    <link rel="stylesheet" href="style.css?v=1.17.18">
+    <link rel="stylesheet" href="style-simple.css?v=1.17.18">
+    <link rel="stylesheet" href="style-dark.css?v=1.17.18">
+    <link rel="stylesheet" href="style-mobile.css?v=1.17.18">
+    <link rel="stylesheet" href="update-notice.css?v=1.17.18">
+    <link rel="stylesheet" href="bug-report.css?v=1.17.18">
+    <link rel="stylesheet" href="element-bonus.css?v=1.17.18">
+    <link rel="stylesheet" href="simulation-layout.css?v=1.17.18">
   </head>
   <body>
     <div id="app"></div>
@@ -66,7 +66,7 @@
           <input id="bug-report-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="example@gmail.com">
         </label>
         <input type="hidden" name="_subject" value="【Battle Lab】不具合報告">
-        <input type="hidden" name="app_version" value="1.17.16">
+        <input type="hidden" name="app_version" value="1.17.18">
         <input type="hidden" name="browser_info" value="">
         <input type="hidden" name="reported_at" value="">
         <div class="bug-report-honeypot" aria-hidden="true"><label>連絡先<input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
@@ -90,6 +90,21 @@
       </div>
       <div class="modal-footer"><button data-act="close-share-code" type="button">閉じる</button></div>
     </dialog>
+    <dialog id="arena-share-export-dialog" class="arena-share-dialog" aria-labelledby="arena-share-export-title">
+      <div class="modal-header"><div><div class="eyebrow">ARENA SHARE EXPORT</div><h2 id="arena-share-export-title">共有コードを発行する</h2></div><button data-act="close-share-export" type="button" class="ghost" aria-label="閉じる">×</button></div>
+      <div class="modal-form">
+        <p>発行元：<strong id="share-export-unit"></strong></p>
+        <p class="share-export-help">公式アリーナに登録するAIルールを選択してください。対応できないルールがある場合、発行せず理由を表示します。</p>
+        <div id="share-export-list" class="share-rule-preview share-export-list" role="group" aria-label="発行するAIルール"></div>
+        <button type="button" id="share-export-submit" data-act="issue-share-code" class="primary">選択したAIの共有コードを発行</button>
+        <p id="share-export-status" role="status" aria-live="polite"></p>
+        <div id="share-export-result" hidden>
+          <label class="share-field" for="share-export-code">発行された公式共有コード</label>
+          <div class="share-code-controls"><input id="share-export-code" type="text" readonly autocomplete="off" spellcheck="false"><button type="button" data-act="copy-issued-code">コピー</button></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button data-act="close-share-export" type="button">閉じる</button></div>
+    </dialog>
     <dialog id="modal"></dialog>
     <dialog id="map-dialog" class="map-dialog" aria-label="戦闘マップの拡大表示">
       <div class="map-dialog-heading">
@@ -102,8 +117,8 @@
     <input id="character-json-import" type="file" accept="application/json,.json" hidden>
     <input id="unit-tactics-import" type="file" accept="application/json,.json" hidden>
     <input id="arena-html-import" type="file" accept="text/html,.html,.htm" hidden>
-    <script type="module" src="app.js?v=1.17.16"></script>
-    <script type="module" src="version-check.js?v=1.17.16"></script>
-    <script type="module" src="bug-report.js?v=1.17.16"></script>
+    <script type="module" src="app.js?v=1.17.18"></script>
+    <script type="module" src="version-check.js?v=1.17.18"></script>
+    <script type="module" src="bug-report.js?v=1.17.18"></script>
   </body>
 </html>

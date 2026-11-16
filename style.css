@@ -3001,3 +3001,13 @@ h1 {
 .arena-share-dialog .share-bridge-guide summary {cursor:pointer;font-size:13px;font-weight:600;}
 .arena-share-dialog .share-bridge-guide p {margin:12px 0;}
 .arena-share-dialog .share-bookmarklet {display:inline-block;border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:13px;cursor:grab;text-decoration:none;}
+
+/* Official arena share code publishing (v1.17.18) */
+.arena-share-dialog .share-export-help {font-size:13px;line-height:1.7;margin:0;}
+.arena-share-dialog .share-export-list {display:grid;gap:7px;max-height:220px;overflow:auto;}
+.arena-share-dialog .share-export-option {display:flex;gap:10px;align-items:center;font-size:13px;cursor:pointer;}
+.arena-share-dialog .share-export-option input {width:auto;margin:0;flex:0 0 auto;}
+.arena-share-dialog #share-export-status {font-size:13px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;}
+.arena-share-dialog #share-export-status.is-error {color:#c4513e;}
+.arena-share-dialog #share-export-result {display:grid;gap:5px;}
+.arena-share-dialog #share-export-result[hidden] {display:none;}
