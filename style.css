@@ -2992,7 +2992,7 @@ h1 {
 
 
 
-/* v1.17.14 official first-party tab bridge (no JSON fallback) */
+/* v1.17.16 official first-party tab bridge (no JSON fallback) */
 .arena-share-dialog .share-official-bridge {border:1px solid var(--line);border-radius:9px;padding:14px;display:grid;gap:12px;}
 .arena-share-dialog .share-official-bridge[hidden] {display:none;}
 .arena-share-dialog .share-official-bridge p {font-size:13px;line-height:1.65;margin:0;}

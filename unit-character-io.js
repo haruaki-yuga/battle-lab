@@ -2,7 +2,7 @@
 import { clone, STAT_LABELS, RANGES, BS_NAMES, validateConfig } from './model.js';
 import { exportUnitTactics, importUnitTactics, UNIT_TACTICS_FORMAT } from './unit-tactics-io.js';
 import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
-import { emptyElement, validElement, highestElement, validElements } from './element-bonus.js?v=1.17.14';
+import { emptyElement, validElement, highestElement, validElements } from './element-bonus.js?v=1.17.16';
 
 export const CHARACTER_FORMAT = 'rosuaka-unit-character';
 export const CHARACTER_FORMAT_VERSION = 1;

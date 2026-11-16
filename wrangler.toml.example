@@ -1,0 +1,12 @@
+# Example only. Copy into a Wrangler project and adjust account deployment settings.
+# Do not place credential values in this file.
+name = "tougi-ai"
+main = "worker-public.js"
+compatibility_date = "2026-11-16"
+
+[[ratelimits]]
+name = "ARENA_RATE_LIMITER"
+namespace_id = "1171601"
+  [ratelimits.simple]
+  limit = 12
+  period = 60

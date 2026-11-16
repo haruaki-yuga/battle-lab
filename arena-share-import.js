@@ -1,7 +1,7 @@
 // Official Arena share codes are server-side lookup tokens, not locally encoded tactics.
 // This adapter never transmits local Battle Lab character data to the official server.
 import { clone, freshRule, freshCondition, uid, validateConfig, ARENA_MAX_RULES, BS_NAMES } from './model.js';
-import { OFFICIAL_ACTION_KEYS, OFFICIAL_CONDITION_SPECS, OFFICIAL_METRIC_KEYS, OFFICIAL_MOVE_KEYS, OFFICIAL_SORT_KEYS, OFFICIAL_SUBJECT_KEYS, OFFICIAL_TARGET_KEYS, OFFICIAL_AI } from './official-ai-schema.js?v=1.17.14';
+import { OFFICIAL_ACTION_KEYS, OFFICIAL_CONDITION_SPECS, OFFICIAL_METRIC_KEYS, OFFICIAL_MOVE_KEYS, OFFICIAL_SORT_KEYS, OFFICIAL_SUBJECT_KEYS, OFFICIAL_TARGET_KEYS, OFFICIAL_AI } from './official-ai-schema.js?v=1.17.16';
 
 export const DECODER_QUERY = `query DecodeArenaSettings($password: String!) {
   rev2ArenaSettingsDecode(password: $password) {
