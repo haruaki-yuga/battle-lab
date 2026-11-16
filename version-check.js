@@ -1,6 +1,6 @@
 // Battle Lab update notification (static-hosting friendly).
 // Increase CURRENT_VERSION and version.json together for each release.
-const CURRENT_VERSION = '1.17.9';
+const CURRENT_VERSION = '1.17.10';
 const CHECK_INTERVAL_MS = 60_000;
 const REMIND_AFTER_MS = 30 * 60_000;
 
@@ -13,7 +13,7 @@ let lastDismissedAt = 0;
 let checking = false;
 let lastCheckedAt = 0;
 
-// Use numerical version comparison, not lexicographic order (1.17.90 > 1.17.9).
+// Use numerical version comparison, not lexicographic order (1.17.100 > 1.17.10).
 function versionParts(version) {
     if (typeof version !== 'string' || !/^\d+(?:\.\d+){1,3}$/.test(version)) return null;
     return version.split('.').map(Number);

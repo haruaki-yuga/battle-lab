@@ -4,7 +4,7 @@ import { scoreDraw } from './battle-summary.js';
 import { selectDiskDestination } from './movement-disk.js';
 import { bsLogLabel } from './combat-log-format.js';
 import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
-import { elementDamageBonus } from './element-bonus.js?v=1.17.9';
+import { elementDamageBonus } from './element-bonus.js?v=1.17.10';
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 export function seededRandom(seed) {
@@ -567,7 +567,8 @@ export class Battle {
         for (const c of conditions) {
             let ok = false;
             if (c.type === 'who') {
-                previous = this.pool(c.subject, u, previous).filter(t => {
+                const base = c.subject === 'id' ? [this.get(c.characterId)].filter(Boolean) : this.pool(c.subject, u, previous);
+                previous = base.filter(t => {
                     const v = this.metric(t, c.metric, u, c);
                     const match = typeof v === 'boolean' ? v : v >= c.min && v <= c.max;
                     return c.not ? !match : match;
@@ -660,7 +661,8 @@ export class Battle {
         const rules = targetCriteriaForRule(r);
         const filters = rules.filter(q => q.type === 'filter');
         const priorities = rules.filter(q => q.type === 'sort').map(q => q.sort);
-        const candidates = this.pool(r.target, u, previous).filter(t => t.alive && this.targetMatches(u, t, filters));
+        const base = r.target === 'id' ? [this.get(r.targetUnitId)].filter(Boolean) : this.pool(r.target, u, previous);
+        const candidates = base.filter(t => t.alive && this.targetMatches(u, t, filters));
         return this.sortTargets(u, candidates, priorities.length ? priorities : ['nearest']);
     }
     movePlan(u, target, r, skill, capacityOverride = null, actionTarget = target) {
