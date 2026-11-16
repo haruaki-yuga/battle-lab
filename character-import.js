@@ -1,5 +1,5 @@
 import { STAT_LABELS, EFFECTS, BS_NAMES, freshSkill, freshUnit, freshRule, clone, uid } from './model.js';
-import { extractMainCharacterElement, ELEMENT_ID_TO_KEY } from './element-bonus.js?v=1.17.10';
+import { extractMainCharacterElement, ELEMENT_ID_TO_KEY } from './element-bonus.js?v=1.17.9';
 import { findReusableImportedSkill } from './skill-dedup.js';
 import { normalizeLegacyBarrierSkill } from './barrier-rules.js';
 const statNames = {

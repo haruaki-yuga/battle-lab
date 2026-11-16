@@ -12,8 +12,7 @@ const actionTable = [
     ['通常攻撃', 'attack'],
     ['ブロック', 'block'],
     ['待機', 'wait'],
-    ['移動のみ', 'move'],
-    ['自動位置取り', 'move']
+    ['移動', 'move']
 ];
 const subjects = [
     ['敵味方', 'all'],
