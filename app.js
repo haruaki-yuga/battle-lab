@@ -1,6 +1,7 @@
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig } from './model.js';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js';
+import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.11';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.17.9';
+import { Battle, clamp } from './engine.js?v=1.17.11';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
@@ -13,7 +14,7 @@ import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
 import { createCharacterImporter } from './character-ui.js';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
-import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.9';
+import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.11';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -196,7 +197,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><details class="mobile-file-menu"><summary>データ</summary><div class="mobile-file-menu-panel">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}${btn('不具合報告', 'open-bug-report')}</div></details></div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer"><details class="desktop-data-tools"><summary>キャラデータ管理</summary><div class="desktop-data-tool-actions">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div></details>${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.9</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.9</small></div><div class="breadcrumb">\
+<div class="sidebar-footer"><details class="desktop-data-tools"><summary>キャラデータ管理</summary><div class="desktop-data-tool-actions">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div></details>${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.11</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.11</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -413,7 +414,7 @@ function conditionSummary(c) {
         return `待機直後${c.not ? 'ではない' : ''}`;
     if (c.type === 'chance')
         return `確率 ${c.chance}%`;
-    return `${SUBJECTS[c.subject]} ${METRICS[c.metric]?.[0] || ''} ${METRICS[c.metric]?.[2] === 'bool' ? '' : `${c.min}～${c.max}${METRICS[c.metric]?.[2] || ''}`} ${c.not ? 'でない時' : 'である時'}`;
+    return `${SUBJECTS[c.subject] || 'ID'} ${METRICS[c.metric]?.[0] || ''} ${METRICS[c.metric]?.[2] === 'bool' ? '' : `${c.min}～${c.max}${METRICS[c.metric]?.[2] || ''}`} ${c.not ? 'でない時' : 'である時'}`;
 }
 function skillsPage() {
     const u = current();
@@ -482,56 +483,81 @@ function skillCard(s, u, specialized = false) {
 <div class="skill-row-actions">${btn(equipped ? '解除' : '＋ セット', `equip:${s.id}`, `small ${equipped ? 'skill-unequip' : 'primary'}`, `aria-label="${esc(name)}を${equipped ? 'セットから外す' : 'セットする'}"`)}${btn('詳細', `skill-detail:${s.id}`, 'small ghost', `aria-label="${esc(name)}の詳細"`)}</div>\
 </article>`;
 }
+// The official 2026-11-16 Arena schema determines groups, labels and input limits.
+// Legacy-only sort options are kept in a separate group for existing saved JSON.
 function metricSelect(value, attrs) {
-    return `<select ${attrs}>${['行動', '状態', 'パラメータ'].map(g => `<optgroup label="${g}">${Object.entries(METRICS).filter(([k, v]) => v[1] === g).map(([k, v]) => `<option value="${k}" ${k === value ? 'selected' : ''}>${esc(v[0])}</option>`).join('')}</optgroup>`).join('')}</select>`;
+    return `<select ${attrs}>${['行動', '状態', 'パラメーター'].map(group => `<optgroup label="${group}">${ARENA_METRIC_ROWS.filter(x => x.group === group).map(x => `<option value="${x.key}" ${x.key === value ? 'selected' : ''}>${esc(x.condition_name)}</option>`).join('')}</optgroup>`).join('')}</select>`;
 }
-// BS checkboxes: no modifier key is necessary to select multiple status types.
+function officialRangeInputs(c, attr, label) {
+    const spec = ARENA_CONDITION_SPECS[c.metric];
+    if (!spec?.has_range) return '';
+    const low = spec.range_min, high = spec.range_max;
+    return `<input type="number" step="1" min="${low}" max="${high}" value="${esc(c.min ?? low)}" ${attr('min')} aria-label="${esc(label)}の下限">` +
+        `<span>～</span><input type="number" step="1" min="${low}" max="${high}" value="${esc(c.max ?? high)}" ${attr('max')} aria-label="${esc(label)}の上限">` +
+        `<span>${esc(spec.param_unit || '')}</span>`;
+}
+function resetOfficialMetric(c, key) {
+    c.metric = key;
+    const spec = ARENA_CONDITION_SPECS[key];
+    // A new condition needs a usable inclusive range, while the JSON schema also permits omitted values.
+    c.min = spec?.has_range ? (spec.range_min < 0 ? spec.range_min : 0) : 0;
+    c.max = spec?.has_range ? spec.range_max : 100;
+    if (!spec?.has_bs_list) c.bs = [];
+}
+function subjectSelector(c, attr) {
+    const value = c.type === 'who' ? `who:${c.subject || 'enemies'}` : c.type;
+    return `<select ${attr('selector')} aria-label="判定対象">${['対象', 'タイミング', 'その他'].map(group => {
+        const rows = ARENA_SUBJECT_ROWS.filter(x => x.group === group);
+        return `<optgroup label="${group}">${rows.map(x => `<option value="${x.has_sub_conditions ? 'who:' + x.key : x.key}" ${value === (x.has_sub_conditions ? 'who:' + x.key : x.key) ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</optgroup>`;
+    }).join('')}</select>`;
+}
 const selectedBsTitle = bs => !(bs || []).length ? '対象BS：すべて（未指定）' : `対象BS：${bs.length}種類選択中（${bs.slice(0, 3).join('、')}${bs.length > 3 ? ' ほか' : ''}）`;
 function bsConditionChecklist(c, attr) {
     const chosen = new Set(c.bs || []);
     const allGroups = [...BS_GROUPS, BS_NAMES.filter(bs => !BS_GROUPS.some(group => group.includes(bs)))];
-    return `<details class="bs-condition-chooser"><summary>${esc(selectedBsTitle(c.bs))}</summary><div class="bs-condition-panel"><p class="bs-condition-help">\
-チェックしたBSだけを条件に含めます。すべて外すと全BSが対象です。</p>${allGroups.map((group, index) => `<fieldset class="bs-condition-family">\
-<legend>${esc(index === BS_GROUPS.length ? 'その他' : group[0] + '系')}</legend>\
-<div class="bs-condition-options">${group.map(bs => `<label class="bs-condition-item">\
-<input type="checkbox" value="${esc(bs)}" ${chosen.has(bs) ? 'checked' : ''} ${attr('bs')}>\
-<span>${esc(bs)}</span>\
-</label>`).join('')}</div>\
-</fieldset>`).join('')}</div>\
-</details>`;
+    return `<details class="bs-condition-chooser"><summary>${esc(selectedBsTitle(c.bs))}</summary><div class="bs-condition-panel"><p class="bs-condition-help">チェックしたBSだけを条件に含めます。すべて外すと全BSが対象です。</p>${allGroups.map((group, index) => `<fieldset class="bs-condition-family"><legend>${esc(index === BS_GROUPS.length ? 'その他' : group[0] + '系')}</legend><div class="bs-condition-options">${group.map(bs => `<label class="bs-condition-item"><input type="checkbox" value="${esc(bs)}" ${chosen.has(bs) ? 'checked' : ''} ${attr('bs')}><span>${esc(bs)}</span></label>`).join('')}</div></fieldset>`).join('')}</div></details>`;
+}
+function rosterPicker(value, attrs) {
+    const known = Object.fromEntries(config.units.map(unit => [unit.id, `${unit.team}｜${unit.name}`]));
+    if (value && !known[value]) known[value] = `不明なID: ${value}`;
+    return select({ '': '対象キャラクターを選択', ...known }, value || '', attrs);
 }
 function conditionRow(c, ri, ci, isMove = false) {
     const attr = key => `data-${isMove ? 'move-condition' : 'condition'}="${ri}:${ci}:${key}" aria-label="ルール${ri + 1} ${isMove ? '移動' : '行動'}条件${ci + 1} ${key}"`;
-    return `<div class="condition-row"><span class="join">${ci ? 'AND' : 'IF'}</span>${select({ who: '誰が？', turn: '現在ターン', afterWait: '待機直後', chance: '確率' }, c.type, attr('type'))}${c.type === 'who' ? `${select(SUBJECTS, c.subject, attr('subject'))}${metricSelect(c.metric, attr('metric'))}${['bsCount', 'bsTypes'].includes(c.metric) ? bsConditionChecklist(c, attr) : ''}${METRICS[c.metric][2] !== 'bool' ? `<input type="number" value="${c.min}" ${attr('min')}>\
-<span>～</span><input type="number" value="${c.max}" ${attr('max')}>\
-<span>${METRICS[c.metric][2]}</span>` : ''}` : c.type === 'turn' ? `<input type="number" min="1" value="${c.multiple}" ${attr('multiple')}>\
-<span>の倍数（×0含む）＋</span><input type="number" min="0" value="${c.offset}" ${attr('offset')}>\
-<span>ターン目</span>` : c.type === 'chance' ? `<input type="number" min="0" max="100" value="${c.chance}" ${attr('chance')}>\
-<span>%の確率で</span>` : ''}${c.type !== 'chance' ? select({ false: 'である時', true: 'でない時' }, String(c.not), attr('not')) : ''}${btn('×', `${isMove ? 'remove-move-condition' : 'remove-condition'}:${ri}:${ci}`, 'small ghost remove', 'aria-label="この条件を削除"')}</div>`;
+    const meta = ARENA_SUBJECT_ROWS.find(x => x.key === c.subject);
+    const who = c.type === 'who';
+    return `<div class="condition-row"><span class="join">${ci ? 'AND' : 'IF'}</span>${subjectSelector(c, attr)}` +
+        (who ? `${meta?.has_character_id ? rosterPicker(c.characterId, attr('characterId')) : ''}` +
+        `${meta?.is_multiple_character ? `<span>${c.not ? 'のうち誰も' : 'のうち誰か'}</span>` : ''}` +
+        `${metricSelect(c.metric, attr('metric'))}${ARENA_CONDITION_SPECS[c.metric]?.has_bs_list ? bsConditionChecklist(c, attr) : ''}${officialRangeInputs(c, attr, '発動条件')}` :
+            c.type === 'turn' ? `<select ${attr('multiple')}>${Array.from({length:10},(_,i)=>i+1).map(n=>`<option value="${n}" ${Number(c.multiple) === n ? 'selected' : ''}>${n}の倍数（×0含む）＋</option>`).join('')}</select><input type="number" step="1" min="0" value="${esc(c.offset ?? 0)}" ${attr('offset')}><span>ターン目</span>` :
+            c.type === 'chance' ? `<input type="number" step="1" min="0" max="100" value="${esc(c.chance ?? 50)}" ${attr('chance')}><span>％の確率で</span>` : '') +
+        `${c.type !== 'chance' ? select({ false: 'である時', true: 'ではない時' }, String(!!c.not), attr('not')) : ''}${btn('×', `${isMove ? 'remove-move-condition' : 'remove-condition'}:${ri}:${ci}`, 'small ghost remove', 'aria-label="この条件を削除"')}</div>`;
 }
 function targetConditionRow(c, ri, ci) {
     const attr = key => `data-target-condition="${ri}:${ci}:${key}" aria-label="ルール${ri + 1} 対象選択${ci + 1} ${key}"`;
     const choice = c.type === 'sort' ? `sort:${c.sort || 'nearest'}` : `filter:${c.metric || 'hpPct'}`;
-    const def = METRICS[c.metric] || METRICS.hpPct;
-    const options = `<select ${attr('choice')} aria-label="対象選択${ci + 1}の条件">` +
-        `<optgroup label="追加条件 / 対象を絞り込む">${Object.entries(METRICS).map(([key, val]) => `<option value="filter:${key}" ${choice === `filter:${key}` ? 'selected' : ''}>${esc(val[0])}</option>`).join('')}</optgroup>` +
-        `<optgroup label="優先条件 / 対象を並べ替える">${Object.entries(TARGET_SORTS).map(([key, val]) => `<option value="sort:${key}" ${choice === `sort:${key}` ? 'selected' : ''}>${esc(val)}</option>`).join('')}</optgroup>\
-</select>`;
-    const inputs = c.type === 'sort' ? '' : `${['bsCount', 'bsTypes'].includes(c.metric) ? bsConditionChecklist(c, attr) : ''}${def[2] === 'bool' ? '' : `<input type="number" placeholder="下限 X" value="${c.min}" ${attr('min')} aria-label="条件${ci + 1} 下限 X">\
-<span>～</span><input type="number" placeholder="上限 X" value="${c.max}" ${attr('max')} aria-label="条件${ci + 1} 上限 X">\
-<span>${esc(def[2] || '')}</span>`}${select({ false: 'である時', true: 'でない時' }, String(!!c.not), attr('not'))}`;
-    const prefix = c.type === 'sort' ? '優先' : ci ? 'AND' : '絞込';
-    return `<div class="condition-row target-condition-row"><span class="join">${prefix}</span>${options}${inputs}${btn('×', `remove-target-condition:${ri}:${ci}`, 'small ghost remove', 'aria-label="対象選択の条件を削除"')}</div>`;
+    const officialFilters = ARENA_METRIC_ROWS.filter(row => row.has_range && row.target_name && row.target_name !== '-');
+    const legacyFilters = ARENA_METRIC_ROWS.filter(row => !row.has_range && !ARENA_SORT_ROWS.some(x => x.key === row.key));
+    const legacySorts = Object.entries(TARGET_SORTS).filter(([key]) => !ARENA_SORT_ROWS.some(x => x.key === key));
+    const choices = `<select ${attr('choice')} aria-label="対象選択${ci + 1}の条件">`+
+       `<optgroup label="追加条件">${officialFilters.map(row => `<option value="filter:${row.key}" ${choice === `filter:${row.key}` ? 'selected' : ''}>${esc(row.target_name)}</option>`).join('')}</optgroup>`+
+       `<optgroup label="優先条件">${ARENA_SORT_ROWS.map(row => `<option value="sort:${row.key}" ${choice === `sort:${row.key}` ? 'selected' : ''}>${esc(row.target_name)}</option>`).join('')}</optgroup>`+
+       (legacyFilters.length ? `<optgroup label="従来の追加条件">${legacyFilters.map(row => `<option value="filter:${row.key}" ${choice === `filter:${row.key}` ? 'selected' : ''}>${esc(row.condition_name)}</option>`).join('')}</optgroup>` : '') +
+       (legacySorts.length ? `<optgroup label="従来の追加オプション">${legacySorts.map(([key,label])=>`<option value="sort:${key}" ${choice === `sort:${key}` ? 'selected' : ''}>${esc(label)}</option>`).join('')}</optgroup>` : '') + `</select>`;
+    const filter = c.type === 'filter';
+    const inputs = filter ? `${ARENA_CONDITION_SPECS[c.metric]?.has_bs_list ? bsConditionChecklist(c, attr) : ''}${officialRangeInputs(c, attr, '対象条件')}${select({false: 'である者', true: 'ではない者'}, String(!!c.not), attr('not'))}` : '';
+    return `<div class="condition-row target-condition-row"><span class="join">${filter ? '絞込' : '優先'}</span>${choices}${inputs}${btn('×', `remove-target-condition:${ri}:${ci}`, 'small ghost remove', 'aria-label="対象選択の条件を削除"')}</div>`;
 }
 function rulesPage() {
     const u = current();
-    return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '上から順に判定。条件・対象・行動・位置取りをプルダウンで設定できます。', btn('AI設定追加', 'add-rule', 'primary')) + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
+    return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '公式アリーナの条件・行動・対象・位置取り定義（2026年11月16日取得）に準拠。上から順に判定します。', btn('AI設定追加', 'add-rule', 'primary', u.rules.length >= ARENA_MAX_RULES ? 'disabled title="公式の最大20件"' : '')) + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
 <strong>公式アリーナHTMLの戦術を読み込みました：${arenaImportReport.ruleCount}ルール</strong>\
 <p>未対応スキルは使用できないAIルールとして残しています。対応スキルを装備した後、ルールを有効にしてください。</p>${arenaImportReport.warnings.length ? `<details>\
 <summary>変換時の注意（${arenaImportReport.warnings.length}件）</summary>\
 <ul>${arenaImportReport.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>\
 </details>` : ''}</section>` : '') + `<div class="toolbar-secondary tactics-toolbar">${unitSelect()}<span class="subtle">${u.rules.length} ルール · ↑↓ で優先順位を変更</span>${unitTacticsControls()}</div>\
-<div class="rule-layout"><div>${u.rules.map((r, i) => ruleCard(r, i, u)).join('')}${btn('AI設定追加', 'add-rule', '', 'style="width:100%"')}</div>\
+<div class="rule-layout"><div>${u.rules.map((r, i) => ruleCard(r, i, u)).join('')}${btn('AI設定追加', 'add-rule', '', `style="width:100%" ${u.rules.length >= ARENA_MAX_RULES ? 'disabled title="公式の最大20件"' : ''}`)}</div>\
 </div>`;
 }
 function movementSettings(r, i, u) {
@@ -557,7 +583,7 @@ function movementSettings(r, i, u) {
     ${field('移動基準の優先条件', select(TARGET_SORTS, r.moveSort || 'nearest', attr('moveSort')))}${field('行動と移動の優先', select({ action: '行使優先', movement: '移動優先' }, r.movePriority || 'action', attr('movePriority')))}</div>
     <div class="movement-extra-conditions"><div class="move-conditions-title">移動基準の追加条件</div>
     ${(r.moveConditions || []).map((c, j) => conditionRow(c, i, j, true)).join('')}
-    ${btn('+ 追加条件', `add-move-condition:${i}`, 'small ghost')}
+    ${btn('+ 追加条件', `add-move-condition:${i}`, 'small ghost', (r.moveConditions || []).length >= ARENA_MAX_CONDITIONS ? 'disabled' : '')}
     <p class="rule-help">追加条件は通常の条件と同じ項目・範囲を使用できます。「前の条件を満たす対象」は移動基準の候補を参照します。</p>
     </div>` : ''}
   </div>` : ''}
@@ -570,24 +596,20 @@ function ruleCard(r, i, u) {
 <label class="checkbox-label"><input type="checkbox" ${r.enabled ? 'checked' : ''} ${attr('enabled')}>\
 適用</label></div><div class="btnrow">${btn('↑', `up-rule:${i}`, 'small ghost', i === 0 ? 'disabled aria-label="優先順位を上げる"' : 'aria-label="優先順位を上げる"')}${btn('↓', `down-rule:${i}`, 'small ghost', i === u.rules.length - 1 ? 'disabled aria-label="優先順位を下げる"' : 'aria-label="優先順位を下げる"')}${btn('複製', `clone-rule:${i}`, 'small ghost')}${btn('削除', `delete-rule:${i}`, 'small ghost danger')}</div>${btn(mobileExpandedRules.has(i) ? '閉じる' : '開く', `toggle-mobile-rule:${i}`, 'small mobile-rule-toggle', `aria-expanded="${mobileExpandedRules.has(i)}" aria-label="ルール${i + 1}の編集欄を${mobileExpandedRules.has(i) ? '閉じる' : '開く'}"`)}<div class="mobile-rule-summary">${esc(ACTIONS[r.action] || r.action)} ／ ${r.conditions.length ? `条件${r.conditions.length}件` : '無条件'} ／ ${esc(({enemies:'敵',allies:'味方',self:'自身',all:'全員',previous:'条件該当者'})[r.target] || r.target)}</div></div>
  <div class="rule-body">${r.conditions.length ? r.conditions.map((c, ci) => conditionRow(c, i, ci)).join('') : '<div class="subtle" style="padding:7px 0">無条件で評価します。</div>'}
- ${btn('+ 条件を追加', `add-condition:${i}`, 'small ghost')}
- <div class="rule-action">${field('THEN / 行動', select(ACTIONS, r.action, attr('action')))}
+ ${btn('+ 条件を追加', `add-condition:${i}`, 'small ghost', r.conditions.length >= ARENA_MAX_CONDITIONS ? 'disabled title="公式の最大5条件"' : '')}
+ <div class="rule-action">${field('THEN / 行動', select(ARENA_ACTION_CHOICES, r.action, attr('action')))}
  ${r.action === 'skill' ? field('使用スキル', select({ '': 'スキルを選択', ...Object.fromEntries(u.skills.map(id => config.skills.find(s => s.id === id)).filter(s => s && s.kind !== 'passive').map(s => [s.id, displayedSkillName(u, s)])) }, r.skillId, attr('skillId'))) : ''}
- ${focusAction ? field('行動対象', '<select disabled aria-label="行動対象（自身に固定）"><option>自身（集中）</option></select>') : field(r.splitMovement ? '行動対象' : '対象', select({
-        enemies: '敵',
-        allies: '自陣営',
-        companions: '同行者',
-        self: '自身',
-        all: '敵味方',
-        previous: '条件該当者'
-    }, r.target, attr('target')))}
+ ${focusAction ? field('行動対象', '<select disabled aria-label="行動対象（自身に固定）"><option>自身（集中）</option></select>') : field(r.splitMovement ? '行動対象' : '対象', select(Object.fromEntries([
+        ['previous', '条件該当者'], ['all', '敵味方'], ['self', '自身'],
+        ['allies', '自陣営'], ['companions', '同行者'], ['enemies', '敵'], ['id', 'ID']
+    ]), r.target, attr('target')))}${!focusAction && r.target === 'id' ? field('対象ID', rosterPicker(r.targetUnitId, attr('targetUnitId'))) : ''}
  </div>${focusAction ? '' : `<div class="target-extra-conditions"><div class="move-conditions-title">対象の条件・優先順位（同じプルダウンから選択）</div>${targetCriteriaForRule(r).map((c, j) => targetConditionRow(c, i, j)).join('')}${btn('+ 対象条件を追加', `add-target-condition:${i}`, 'small ghost')}<p class="rule-help">\
 追加条件は全てANDで候補を絞り、優先条件は上から順に比較します。</p></div>`}
  ${movementSettings(r, i, u)}
- ${!['wait', 'carry'].includes(r.action) && (!focusAction || r.splitMovement) ? `<div class="move-options">${field('自動位置取り', select({ true: 'する', false: 'しない' }, String(r.autoMove), attr('autoMove')))}
- ${r.autoMove || r.action === 'move' ? `${field('移動方法', select({ approach: '対象に近付く', away: '対象から離れる', fixed: '固定移動指定' }, r.moveMode, attr('moveMode')))}
- ${r.moveMode === 'fixed' ? field('対象からの距離 (m)', `<div class="btnrow"><input type="number" min="0" value="${r.minDist ?? ''}" ${attr('minDist')} aria-label="移動距離の下限">\
-<span>～</span><input type="number" min="0" value="${r.maxDist ?? ''}" ${attr('maxDist')} aria-label="移動距離の上限">\
+ ${!['wait', 'carry'].includes(r.action) && (!focusAction || r.splitMovement) ? `<div class="move-options">${field('自動位置取り', select({ true: 'する（消費行動値＋40/50/65/85）', false: 'しない' }, String(r.autoMove), attr('autoMove')))}
+ ${r.autoMove || r.action === 'move' ? `${field('移動方法', select(Object.fromEntries(OFFICIAL_MOVE_ROWS.map(row => [row.key, row.name])), r.moveMode, attr('moveMode')))}
+ ${r.moveMode === 'fixed' ? field('対象からの距離 (m)', `<div class="btnrow"><input type="number" min="0" max="999" step="1" value="${r.minDist ?? ''}" ${attr('minDist')} aria-label="移動距離の下限">\
+<span>～</span><input type="number" min="0" max="999" step="1" value="${r.maxDist ?? ''}" ${attr('maxDist')} aria-label="移動距離の上限">\
 </div><span class="subtle">${focusAction ? '両方空欄：移動基準から3m以内を目標（集中にスキル射程はありません）' : '両方空欄：スキルの有効射程へ自動移動'}</span>`) : ''}` : ''}</div>` : ''}
  <p class="rule-help">${focusAction ? (r.splitMovement ? '集中は自身に適用します。移動基準を「個別に指定」、優先を「移動優先」、自動位置取りを「する」にすると、対象への位置取り後に集中します（通常移動は機動力×10m、行動値＋40）。' : '集中は自身に適用し、位置取りを行いません。') : (r.autoMove || r.action === 'move' ? '通常移動は機動力×10m（行動値＋40）。射程外なら追加で最大30m、10mごとに行動値＋10・＋15・＋20を累積加算。なお射程に届かない場合は移動のみ。' : '現在位置で実行します。')}${!focusAction && r.splitMovement && r.moveTargetMode === 'individual' ? ' 行使優先は現在位置で行動できる場合に移動を省略します。移動優先は移動基準への位置取りを先に試みます。' : ''}${r.action === 'effectiveAttack' ? ' 実行可能な攻撃の概算威力を比較します。' : ''}</p>
  </div></article>`;
@@ -925,7 +947,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.17.9', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.17.11', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];
@@ -1189,6 +1211,12 @@ async function onAction(act) {
         }
         const v = clone(u);
         v.id = uid('u');
+        for (const rule of v.rules) {
+            if (rule.target === 'id' && rule.targetUnitId === u.id) rule.targetUnitId = v.id;
+            if (rule.moveSubject === 'id' && rule.moveUnitId === u.id) rule.moveUnitId = v.id;
+            for (const c of [...(rule.conditions || []), ...(rule.moveConditions || [])])
+                if (c.type === 'who' && c.subject === 'id' && c.characterId === u.id) c.characterId = v.id;
+        }
         v.name += '（コピー）';
         config.units.push(v);
         arrangeInitialPositions(config.units);
@@ -1204,14 +1232,22 @@ async function onAction(act) {
             for (const r of v.rules)
                 if (r.moveSubject === 'id' && r.moveUnitId === u.id)
                     r.moveUnitId = v.id;
+                if (r.target === 'id' && r.targetUnitId === u.id)
+                    r.targetUnitId = v.id;
+                for (const c of [...r.conditions, ...(r.moveConditions || [])])
+                    if (c.type === 'who' && c.subject === 'id' && c.characterId === u.id)
+                        c.characterId = v.id;
         arrangeInitialPositions(config.units);
         selected = config.units[0].id;
     }
-    else if (a === 'add-rule')
+    else if (a === 'add-rule') {
+        if (u.rules.length >= ARENA_MAX_RULES) { toast('公式仕様では最大20件です。'); return; }
         u.rules.push(freshRule());
+    }
     else if (a === 'delete-rule')
         u.rules.splice(Number(arg), 1);
     else if (a === 'clone-rule') {
+        if (u.rules.length >= ARENA_MAX_RULES) { toast('公式仕様では最大20件です。'); return; }
         const r = clone(u.rules[arg]);
         r.id = uid('r');
         u.rules.splice(Number(arg) + 1, 0, r);
@@ -1220,8 +1256,10 @@ async function onAction(act) {
         const i = Number(arg), j = i + (a === 'up-rule' ? -1 : 1);
         [u.rules[i], u.rules[j]] = [u.rules[j], u.rules[i]];
     }
-    else if (a === 'add-condition')
+    else if (a === 'add-condition') {
+        if (u.rules[arg].conditions.length >= ARENA_MAX_CONDITIONS) { toast('公式仕様では1戦術につき最大5条件です。'); return; }
         u.rules[arg].conditions.push(freshCondition());
+    }
     else if (a === 'add-target-condition') {
         const r = u.rules[arg];
         ensureTargetCriteria(r).push(freshTargetCriterion());
@@ -1230,6 +1268,7 @@ async function onAction(act) {
         const r = u.rules[arg];
         if (!Array.isArray(r.moveConditions))
             r.moveConditions = [];
+        if (r.moveConditions.length >= ARENA_MAX_CONDITIONS) { toast('追加条件は最大5件です。'); return; }
         r.moveConditions.push(freshCondition());
     }
     else if (a === 'remove-condition')
@@ -1402,6 +1441,8 @@ document.addEventListener('change', e => {
         r[k] = ['minDist', 'maxDist'].includes(k) && el.value === '' ? null :
             el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) :
                 ['autoMove'].includes(k) ? el.value === 'true' : el.value;
+        if (['minDist', 'maxDist'].includes(k) && r[k] !== null)
+            r[k] = Math.max(0, Math.min(999, Math.trunc(r[k])));
         if (k === 'action') {
             if (['healHP', 'healAP', 'healBS', 'cover'].includes(r.action))
                 r.target = 'allies';
@@ -1431,6 +1472,8 @@ document.addEventListener('change', e => {
                 r.autoMove = false;
             }
         }
+        if (k === 'target' && r.target === 'id' && !r.targetUnitId)
+            r.targetUnitId = u.id;
         if (k === 'moveTargetMode' && r.moveTargetMode === 'individual' && r.moveSubject === 'id' && !r.moveUnitId)
             r.moveUnitId = u.id;
         if (k === 'moveSubject' && r.moveSubject === 'id' && !r.moveUnitId)
@@ -1438,6 +1481,33 @@ document.addEventListener('change', e => {
         save();
         render();
         return;
+    }
+    // Official Arena subject picker combines the historical type and subject fields.
+    function updateOfficialCondition(c, key, element) {
+        if (key === 'selector') {
+            const selected = element.value;
+            if (selected.startsWith('who:')) {
+                c.type = 'who'; c.subject = selected.slice(4);
+                if (c.subject === 'id' && !c.characterId) c.characterId = u.id;
+                if (!ARENA_CONDITION_SPECS[c.metric]) resetOfficialMetric(c, 'alive');
+            } else {
+                c.type = selected;
+            }
+            return;
+        }
+        if (key === 'metric') { resetOfficialMetric(c, element.value); return; }
+        if (key === 'not') { c.not = element.value === 'true'; return; }
+        if (key === 'multiple') { c.multiple = Math.min(10, Math.max(1, Number(element.value) || 1)); return; }
+        if (key === 'characterId') { c.characterId = element.value; return; }
+        if (key === 'min' || key === 'max') {
+            const spec = ARENA_CONDITION_SPECS[c.metric];
+            const low = spec?.range_min ?? -9999, high = spec?.range_max ?? 99999;
+            c[key] = Math.max(low, Math.min(high, Math.trunc(Number(element.value) || 0)));
+            return;
+        }
+        if (key === 'chance') { c.chance = Math.max(0, Math.min(100, Math.trunc(Number(element.value) || 0))); return; }
+        if (key === 'offset') { c.offset = Math.max(0, Math.trunc(Number(element.value) || 0)); return; }
+        c[key] = element.type === 'number' ? Number(element.value) : element.value;
     }
     if (el.matches('[data-condition]')) {
         const [ri, ci, k] = el.dataset.condition.split(':');
@@ -1447,11 +1517,9 @@ document.addEventListener('change', e => {
             c.bs = [...chooser.querySelectorAll('input[type=checkbox]:checked')].map(item => item.value);
             chooser.querySelector('summary').textContent = selectedBsTitle(c.bs);
         }
-        else
-            c[k] = k === 'not' ? el.value === 'true' : el.type === 'number' ? Number(el.value) : el.value;
+        else updateOfficialCondition(c, k, el);
         save();
-        if (k !== 'bs')
-            render();
+        if (k !== 'bs') render();
         return;
     }
     if (el.matches('[data-target-condition]')) {
@@ -1462,19 +1530,19 @@ document.addEventListener('change', e => {
             const [type, key] = el.value.split(':');
             if (type === 'sort' && TARGET_SORTS[key])
                 rows[ci] = { type: 'sort', sort: key };
-            else if (type === 'filter' && METRICS[key])
-                rows[ci] = { ...freshTargetCriterion(), metric: key };
+            else if (type === 'filter' && ARENA_CONDITION_SPECS[key]) {
+                rows[ci] = freshTargetCriterion();
+                resetOfficialMetric(rows[ci], key);
+            }
         }
         else if (k === 'bs') {
             const chooser = el.closest('.bs-condition-chooser');
             c.bs = [...chooser.querySelectorAll('input[type=checkbox]:checked')].map(item => item.value);
             chooser.querySelector('summary').textContent = selectedBsTitle(c.bs);
         }
-        else
-            c[k] = k === 'not' ? el.value === 'true' : el.type === 'number' ? Number(el.value) : el.value;
+        else updateOfficialCondition(c, k, el);
         save();
-        if (k !== 'bs')
-            render();
+        if (k !== 'bs') render();
         return;
     }
     if (el.matches('[data-move-condition]')) {
@@ -1485,11 +1553,9 @@ document.addEventListener('change', e => {
             c.bs = [...chooser.querySelectorAll('input[type=checkbox]:checked')].map(item => item.value);
             chooser.querySelector('summary').textContent = selectedBsTitle(c.bs);
         }
-        else
-            c[k] = k === 'not' ? el.value === 'true' : el.type === 'number' ? Number(el.value) : el.value;
+        else updateOfficialCondition(c, k, el);
         save();
-        if (k !== 'bs')
-            render();
+        if (k !== 'bs') render();
         return;
     }
     if (el.id === 'batch-count') {

@@ -1,5 +1,6 @@
 import { CATALOG } from './catalog.js';
-import { emptyElement, validElement } from './element-bonus.js?v=1.17.9';
+import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.11';
+import { emptyElement, validElement } from './element-bonus.js?v=1.17.11';
 export const STAT_LABELS = {
     maxHp: '最大HP',
     maxAp: '最大AP',
@@ -22,6 +23,7 @@ export const SUBJECTS = {
     allies: '自陣営のうち誰か',
     companions: '同行者のうち誰か',
     enemies: '敵のうち誰か',
+    id: 'ID',
     previous: '前の条件を満たす対象'
 };
 export const METRICS = {
@@ -52,6 +54,12 @@ export const METRICS = {
     distance: ['との距離が', '状態', 'm'],
     ...Object.fromEntries(Object.entries(STAT_LABELS).filter(([k]) => !['maxHp', 'maxAp'].includes(k)).map(([k, v]) => [k, [`の${v}が`, 'パラメータ', '']]))
 };
+// Use official wording and group names for every supported Arena condition.
+for (const row of OFFICIAL_METRIC_ROWS) {
+    const prior = METRICS[row.key];
+    if (!prior) throw Error(`未対応の公式条件: ${row.type}`);
+    METRICS[row.key] = [row.condition_name, row.group, row.has_range ? (row.param_unit || '') : 'bool'];
+}
 // Target priority options: legacy keys remain available so saved tactics keep their meaning.
 export const TARGET_SORTS = {
     acting: 'で行動中の者',
@@ -77,6 +85,20 @@ export const TARGET_SORTS = {
     main: 'で主攻撃力が最も高い者（従来）',
     random: 'ランダム（従来）'
 };
+// Official names take priority. Historic extra options remain readable for older JSON files.
+for (const row of OFFICIAL_SORT_ROWS) {
+    if (!Object.hasOwn(TARGET_SORTS, row.key)) throw Error(`未対応の公式優先条件: ${row.type}`);
+    TARGET_SORTS[row.key] = row.target_name;
+}
+export const ARENA_SUBJECT_CHOICES = Object.fromEntries(OFFICIAL_SUBJECT_ROWS.filter(x => x.has_sub_conditions).map(x => [x.key, x.name]));
+export const ARENA_ACTION_CHOICES = Object.fromEntries(OFFICIAL_ACTION_ROWS.map(x => [x.key, x.name]));
+export const ARENA_CONDITION_SPECS = OFFICIAL_CONDITION_SPECS;
+export const ARENA_METRIC_ROWS = OFFICIAL_METRIC_ROWS;
+export const ARENA_SORT_ROWS = OFFICIAL_SORT_ROWS;
+export const ARENA_SUBJECT_ROWS = OFFICIAL_SUBJECT_ROWS;
+export const ARENA_TARGET_ROWS = OFFICIAL_AI.actionTargets;
+export const ARENA_MAX_RULES = 20;
+export const ARENA_MAX_CONDITIONS = 5;
 export const freshTargetCondition = () => ({
     metric: 'hpPct',
     min: 0,
@@ -232,19 +254,12 @@ export const BS_GROUPS = [
     ['混乱', '狂気', '魅了'],
     ['怒り', '激怒', '赫怒', '逆上']
 ];
-export const BS_NAMES = [
-    ...BS_GROUPS.flat(),
-    '呪い',
-    '致命',
-    '封印',
-    '暗闇',
-    '恍惚',
-    '重圧',
-    '無策'
-];
+// These 65 IDs/names are taken directly from the Arena definitions.
+export const BS_NAMES = OFFICIAL_BS_NAMES;
 export const freshCondition = () => ({
     type: 'who',
     subject: 'enemies',
+    characterId: '',
     metric: 'alive',
     min: 0,
     max: 100,
@@ -273,6 +288,7 @@ export function freshRule(overrides = {}) {
         action: 'attack',
         skillId: '',
         target: 'enemies',
+        targetUnitId: '',
         sort: 'nearest',
         targetConditions: [],
         autoMove: true,
@@ -567,6 +583,8 @@ export function validateConfig(c) {
                 if (!Array.isArray(r.moveConditions))
                     errors.push(`${u.name}: 移動の追加条件が不正です。`);
             }
+            if (r.target === 'id' && !c.units.some(t => t.id === r.targetUnitId))
+                errors.push(`${u.name}: 行動対象の指定IDが存在しません。`);
             if (r.targetConditions !== undefined && !Array.isArray(r.targetConditions))
                 errors.push(`${u.name}: 対象の追加条件は配列で指定してください。`);
             if (r.targetCriteria !== undefined) {
@@ -595,8 +613,10 @@ export function validateConfig(c) {
                     errors.push(`${u.name}: 対象の追加条件の項目・範囲を確認してください。`);
             }
             for (const q of [...r.conditions, ...(r.splitMovement && r.moveTargetMode === 'individual' && Array.isArray(r.moveConditions) ? r.moveConditions : [])]) {
-                if (q.type === 'who' && (!SUBJECTS[q.subject] || !METRICS[q.metric] || !Number.isFinite(q.min) || !Number.isFinite(q.max) || q.min > q.max))
+                if (q.type === 'who' && (!SUBJECTS[q.subject] && q.subject !== 'id' || !METRICS[q.metric] || !Number.isFinite(q.min) || !Number.isFinite(q.max) || q.min > q.max))
                     errors.push(`${u.name}: 条件の項目・範囲を確認してください。`);
+                if (q.type === 'who' && q.subject === 'id' && !c.units.some(t => t.id === q.characterId))
+                    errors.push(`${u.name}: 条件の指定IDが存在しません。`);
                 if (q.type === 'turn' && (!Number.isFinite(q.multiple) || q.multiple < 1 || !Number.isFinite(q.offset) || q.offset < 0))
                     errors.push(`${u.name}: ターン条件は倍数1以上、加算0以上です。`);
                 if (q.type === 'chance' && (!Number.isFinite(q.chance) || q.chance < 0 || q.chance > 100))

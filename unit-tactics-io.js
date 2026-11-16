@@ -122,6 +122,23 @@ export function importUnitTactics(config, targetId, data) {
         r.id = uid('r');
         if (r.action === 'skill' && idMap.has(r.skillId))
             r.skillId = idMap.get(r.skillId);
+        // Character ID references to the source self must follow the chosen import slot.
+        if (r.target === 'id') {
+            if (r.targetUnitId === data.sourceUnit.id) r.targetUnitId = targetId;
+            else if (!result.units.some(u => u.id === r.targetUnitId)) {
+                r.target = 'self'; r.targetUnitId = '';
+                warnings.push('存在しない行動対象IDがあったため「自身」へ変更しました。');
+            }
+        }
+        for (const condition of [...(r.conditions || []), ...(r.moveConditions || [])]) {
+            if (condition?.type !== 'who' || condition.subject !== 'id') continue;
+            if (condition.characterId === data.sourceUnit.id) condition.characterId = targetId;
+            else if (!result.units.some(u => u.id === condition.characterId)) {
+                // Do not turn an impossible external character ID into an arbitrary valid target.
+                r.enabled = false;
+                warnings.push('存在しない発動条件のIDが含まれるルールを無効化しました。');
+            }
+        }
         if (r.splitMovement && r.moveTargetMode === 'individual' && r.moveSubject === 'id') {
             if (r.moveUnitId === data.sourceUnit.id)
                 r.moveUnitId = targetId;
