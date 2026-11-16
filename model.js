@@ -1,6 +1,6 @@
 import { CATALOG } from './catalog.js';
-import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.11';
-import { emptyElement, validElement } from './element-bonus.js?v=1.17.11';
+import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.12';
+import { emptyElement, validElement } from './element-bonus.js?v=1.17.12';
 export const STAT_LABELS = {
     maxHp: '最大HP',
     maxAp: '最大AP',
@@ -576,14 +576,14 @@ export function validateConfig(c) {
                     'id'
                 ].includes(r.moveSubject))
                     errors.push(`${u.name}: 移動基準の対象が不正です。`);
-                if (r.moveSubject === 'id' && !c.units.some(t => t.id === r.moveUnitId))
+                if (r.enabled && r.moveSubject === 'id' && !c.units.some(t => t.id === r.moveUnitId))
                     errors.push(`${u.name}: 移動基準の指定IDが存在しません。`);
                 if (r.movePriority && !['action', 'movement'].includes(r.movePriority))
                     errors.push(`${u.name}: 行使・移動の優先順位が不正です。`);
                 if (!Array.isArray(r.moveConditions))
                     errors.push(`${u.name}: 移動の追加条件が不正です。`);
             }
-            if (r.target === 'id' && !c.units.some(t => t.id === r.targetUnitId))
+            if (r.enabled && r.target === 'id' && !c.units.some(t => t.id === r.targetUnitId))
                 errors.push(`${u.name}: 行動対象の指定IDが存在しません。`);
             if (r.targetConditions !== undefined && !Array.isArray(r.targetConditions))
                 errors.push(`${u.name}: 対象の追加条件は配列で指定してください。`);
@@ -615,7 +615,7 @@ export function validateConfig(c) {
             for (const q of [...r.conditions, ...(r.splitMovement && r.moveTargetMode === 'individual' && Array.isArray(r.moveConditions) ? r.moveConditions : [])]) {
                 if (q.type === 'who' && (!SUBJECTS[q.subject] && q.subject !== 'id' || !METRICS[q.metric] || !Number.isFinite(q.min) || !Number.isFinite(q.max) || q.min > q.max))
                     errors.push(`${u.name}: 条件の項目・範囲を確認してください。`);
-                if (q.type === 'who' && q.subject === 'id' && !c.units.some(t => t.id === q.characterId))
+                if (r.enabled && q.type === 'who' && q.subject === 'id' && !c.units.some(t => t.id === q.characterId))
                     errors.push(`${u.name}: 条件の指定IDが存在しません。`);
                 if (q.type === 'turn' && (!Number.isFinite(q.multiple) || q.multiple < 1 || !Number.isFinite(q.offset) || q.offset < 0))
                     errors.push(`${u.name}: ターン条件は倍数1以上、加算0以上です。`);

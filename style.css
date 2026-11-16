@@ -2971,3 +2971,24 @@ h1 {
 .skill-target-toolbar .unit-tactics-buttons button{padding:6px 9px;min-height:31px;font-size:11px;white-space:nowrap}
 .unit-tactics-buttons .unit-tactics-label{margin-right:3px}
 .unit-tactics-management .unit-tactics-buttons button{font-size:11px;min-height:32px;padding:6px 9px}
+
+/* Official Arena shared-AI importer — local confirmation before changing any unit. */
+.arena-share-dialog {width:min(720px,94vw);}
+.arena-share-dialog .modal-form {padding:18px 22px;display:grid;gap:15px;}
+.arena-share-dialog .share-field {display:block;font-size:13px;font-weight:600;}
+.arena-share-dialog .share-field input,.arena-share-dialog .share-field textarea,
+.arena-share-dialog .share-merge-label select {box-sizing:border-box;width:100%;margin-top:6px;border:1px solid var(--line);border-radius:7px;padding:10px;background:var(--paper,#fff);color:var(--ink);font:inherit;}
+.arena-share-dialog .share-code-controls {display:flex;gap:8px;align-items:end;}
+.arena-share-dialog .share-code-controls input {flex:1;min-width:100px;}
+.arena-share-dialog .share-code-controls button {flex:0 0 auto;white-space:nowrap;}
+.arena-share-dialog .share-notice,.arena-share-dialog .share-json-fallback p {font-size:12px;line-height:1.65;margin:0;}
+.arena-share-dialog .share-json-fallback {border:1px solid var(--line);border-radius:8px;padding:12px;}
+.arena-share-dialog .share-json-fallback summary {cursor:pointer;font-size:13px;font-weight:600;}
+.arena-share-dialog .share-json-fallback p {margin:10px 0;}
+.arena-share-dialog #share-import-status {font-size:13px;margin:0;white-space:pre-line;overflow-wrap:anywhere;}
+.arena-share-dialog #share-import-status.is-error {color:#c4513e;}
+.arena-share-dialog .share-rule-preview {padding:10px;max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:8px;font-size:12px;line-height:1.75;}
+.arena-share-dialog #share-import-preview {display:grid;gap:12px;}
+.arena-share-dialog #share-import-preview[hidden] {display:none;}
+.arena-share-dialog .share-merge-label {font-size:12px;font-weight:600;}
+@media(max-width:520px){.arena-share-dialog .modal-form{padding:14px;}.arena-share-dialog .share-code-controls{flex-wrap:wrap;}.arena-share-dialog .share-code-controls button{width:100%;}}
