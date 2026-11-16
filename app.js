@@ -1,13 +1,14 @@
 import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js';
-import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.13';
+import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.14';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.17.13';
+import { Battle, clamp } from './engine.js?v=1.17.14';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
 import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
-import { fetchArenaShareCode, extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.13';
+import { fetchArenaShareCode, extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.14';
+import { newBridgeNonce, officialTabUrl, isOfficialBridgeEvent, officialBookmarkletHref } from './arena-official-bridge.js?v=1.17.14';
 import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
@@ -15,7 +16,7 @@ import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
 import { createCharacterImporter } from './character-ui.js';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
-import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.13';
+import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.14';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -119,7 +120,7 @@ if (config.initialLayoutVersion !== 2) {
 let selectedLogId = -1, logScrollTop = null, logScrollFrame = 0, unitTacticsImportTarget = null, characterJsonImportTarget = null, arenaImportTarget = null, arenaImportReport = null;
 let mapZoom = 1, mapRelations = false, mapMoveCircle = false, mapFocus = 'selected', mapPan = { x: 0, y: 0 }, mapDrag = null;
 const mobileExpandedRules = new Set([0]);
-let shareImportActions = null, shareImportTargetId = null, shareImportBusy = false;
+let shareImportActions = null, shareImportTargetId = null, shareImportBusy = false, pendingShareBridge = null;
 let page = 'setup', selected = config.units[0].id, skillSearch = '', kindFilter = 'all', skillFilter = 'all', skillPage = 0, sim = null, frame = -1, logType = 'main', logTurn = 'all', logSearch = '', worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
 const $ = s => document.querySelector(s), app = $('#app');
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
@@ -199,7 +200,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><details class="mobile-file-menu"><summary>データ</summary><div class="mobile-file-menu-panel">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}${btn('不具合報告', 'open-bug-report')}</div></details></div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer"><details class="desktop-data-tools"><summary>キャラデータ管理</summary><div class="desktop-data-tool-actions">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div></details>${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.13</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.13</small></div><div class="breadcrumb">\
+<div class="sidebar-footer"><details class="desktop-data-tools"><summary>キャラデータ管理</summary><div class="desktop-data-tool-actions">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div></details>${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.14</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.14</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -949,7 +950,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.17.13', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.17.14', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];
@@ -1008,11 +1009,10 @@ function showShareDialog(unit) {
     const preview = $('#share-import-preview');
     if (preview) { preview.hidden = true; preview.innerHTML = ''; }
     const code = $('#share-import-code');
-    const json = $('#share-import-json');
     if (code) code.value = '';
-    if (json) json.value = '';
-    const file = $('#share-response-file');
-    if (file) file.value = '';
+    pendingShareBridge = null;
+    const bridgePanel = $('#share-official-bridge');
+    if (bridgePanel) bridgePanel.hidden = true;
     $('#share-import-unit').textContent = unit.name;
     shareStatus('共有コードを入力して検索してください。');
     dialog.showModal();
@@ -1038,24 +1038,43 @@ async function searchShareCode() {
         const preview = $('#share-import-preview');
         if (preview) preview.hidden = true;
         shareStatus(error.message, true);
-        document.querySelector('.share-json-fallback')?.setAttribute('open', '');
+        const bridgePanel = $('#share-official-bridge');
+        if (bridgePanel) bridgePanel.hidden = false;
     } finally {
         shareImportBusy = false;
         const button = $('#share-import-search');
         if (button) button.disabled = false;
     }
 }
-function pasteShareResponse() {
+function openOfficialArenaTab() {
     try {
-        showSharePreview($('#share-import-json')?.value || '');
-        shareStatus('公式GraphQLレスポンスを読み込みました。');
-    } catch (error) {
-        shareImportActions = null;
-        const preview = $('#share-import-preview');
-        if (preview) preview.hidden = true;
-        shareStatus(error.message, true);
-    }
+        const code = validateArenaShareCode($('#share-import-code')?.value);
+        const nonce = newBridgeNonce();
+        const url = officialTabUrl(code, nonce, location.origin);
+        // Open synchronously in response to the user click to avoid popup blockers.
+        const popup = window.open(url, '_blank');
+        if (!popup) throw Error('公式タブが開けません。ブラウザのポップアップブロックを解除してください。');
+        pendingShareBridge = {popup, nonce, code};
+        shareStatus('公式タブを開きました。連携拡張機能が入っていれば公式タブに「Battle LabへAIを送る」ボタンが表示されます。拡張機能がない場合は登録したブックマークをクリックしてください。');
+        $('#share-official-bridge').hidden = false;
+    } catch (error) { shareStatus(error.message, true); }
 }
+function onOfficialArenaBridgeMessage(event) {
+    const pending = pendingShareBridge;
+    if (!pending || !isOfficialBridgeEvent(event, pending)) return;
+    if (!$('#arena-share-dialog')?.open) return;
+    if (event.data.error) {
+        shareStatus(`公式タブからの応答：${String(event.data.error).slice(0,240)}`, true);
+        return;
+    }
+    try {
+        showSharePreview(event.data.payload);
+        shareStatus('公式のログイン済みタブから共有AIを取得しました。');
+        pendingShareBridge = null;
+    } catch (error) { shareStatus(error.message, true); }
+}
+window.addEventListener('message', onOfficialArenaBridgeMessage);
+
 function applyShareResponse() {
     if (!shareImportActions || !shareImportTargetId) return;
     try {
@@ -1144,8 +1163,8 @@ async function onAction(act) {
         await searchShareCode();
         return;
     }
-    if (a === 'paste-share-response') {
-        pasteShareResponse();
+    if (a === 'open-official-arena-tab') {
+        openOfficialArenaTab();
         return;
     }
     if (a === 'apply-share-code') {
@@ -1153,6 +1172,7 @@ async function onAction(act) {
         return;
     }
     if (a === 'close-share-code') {
+        pendingShareBridge = null;
         $('#arena-share-dialog').close();
         return;
     }
@@ -1884,24 +1904,13 @@ $('#unit-tactics-import').addEventListener('change', async (e) => {
         e.target.value = '';
     }
 });
-// Local file fallback for the official DecodeArenaSettings response.
-// The file is read only inside this browser and is never uploaded.
-$('#share-response-file').addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    try {
-        if (!file) return;
-        if (file.size > 1500000) throw Error('レスポンスは1.5MB以内にしてください。');
-        const body = await file.text();
-        showSharePreview(body);
-        shareStatus('公式の復号レスポンスファイルを読み込みました。');
-    } catch (error) {
-        shareImportActions = null;
-        const preview = $('#share-import-preview');
-        if (preview) preview.hidden = true;
-        shareStatus(error.message, true);
-    } finally {
-        e.target.value = '';
-    }
+// Installable bookmarklet: drag its link into the bookmarks bar.
+// An extension in the ZIP performs the same request automatically on the official tab.
+const bookmarklet = $('#share-bookmarklet');
+if (bookmarklet) bookmarklet.setAttribute('href', officialBookmarkletHref());
+bookmarklet?.addEventListener('click', event => {
+    event.preventDefault();
+    shareStatus('このリンクをブックマークバーにドラッグして登録し、Battle Labから開いた公式タブ上でクリックしてください。');
 });
 $('#arena-html-import').addEventListener('change', async (e) => {
     const f = e.target.files?.[0], unitId = arenaImportTarget;

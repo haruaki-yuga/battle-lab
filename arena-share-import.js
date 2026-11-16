@@ -1,9 +1,9 @@
 // Official Arena share codes are server-side lookup tokens, not locally encoded tactics.
 // This adapter never transmits local Battle Lab character data to the official server.
 import { clone, freshRule, freshCondition, uid, validateConfig, ARENA_MAX_RULES, BS_NAMES } from './model.js';
-import { OFFICIAL_ACTION_KEYS, OFFICIAL_CONDITION_SPECS, OFFICIAL_METRIC_KEYS, OFFICIAL_MOVE_KEYS, OFFICIAL_SORT_KEYS, OFFICIAL_SUBJECT_KEYS, OFFICIAL_TARGET_KEYS, OFFICIAL_AI } from './official-ai-schema.js?v=1.17.13';
+import { OFFICIAL_ACTION_KEYS, OFFICIAL_CONDITION_SPECS, OFFICIAL_METRIC_KEYS, OFFICIAL_MOVE_KEYS, OFFICIAL_SORT_KEYS, OFFICIAL_SUBJECT_KEYS, OFFICIAL_TARGET_KEYS, OFFICIAL_AI } from './official-ai-schema.js?v=1.17.14';
 
-const DECODER_QUERY = `query DecodeArenaSettings($password: String!) {
+export const DECODER_QUERY = `query DecodeArenaSettings($password: String!) {
   rev2ArenaSettingsDecode(password: $password) {
     active
     conditions { subject params { character_id condition_type param1 param2 bs_list negate } }
@@ -28,13 +28,13 @@ export async function fetchArenaShareCode(value, { fetchImpl = fetch, signal } =
     const sameOrigin = typeof location !== 'undefined' && location.origin === new URL(officialUrl).origin;
     try {
         response = await fetchImpl(officialUrl, {
-            method: 'POST', mode: 'cors', credentials: sameOrigin ? 'same-origin' : 'omit',
+            method: 'POST', mode: 'cors', credentials: sameOrigin ? 'same-origin' : 'include',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({operationName: 'DecodeArenaSettings', variables: {password}, query: DECODER_QUERY}),
             signal
         });
     } catch {
-        throw Error('公式サイトへの直接通信が許可されていません（CORS・ネットワーク等）。公式サイトで共有コードを検索し、Networkの「レスポンス」をコピーして下欄から取り込んでください。');
+        throw Error('公式への直接通信がブラウザに遮断されました。下の「公式タブで取得」を使用してください。');
     }
     if (!response.ok) throw Error(`公式サイトの照会が失敗しました（HTTP ${response.status}）。ログインや通信許可が必要な可能性があります。`);
     let data;
@@ -49,7 +49,7 @@ export function extractSharedArenaActions(input) {
         try { x = JSON.parse(x); } catch { throw Error('JSONとして読み取れません。Networkのレスポンス全文を指定してください。'); }
     }
     if (isPlain(x) && Array.isArray(x.errors) && x.errors.length)
-        throw Error('公式サーバーがエラーを返しました。共有コードまたはログイン状態を確認してください。');
+        throw Error(String(x.errors[0]?.message || '公式APIでエラーが発生しました。').slice(0,240));
     if (isPlain(x) && isPlain(x.data)) x = x.data;
     if (isPlain(x) && Object.hasOwn(x, 'rev2ArenaSettingsDecode')) x = x.rev2ArenaSettingsDecode;
     // For debugging and regression tests, the official action setting response is also accepted.

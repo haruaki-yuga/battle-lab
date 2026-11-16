@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#f1f3f4">
     <meta name="description" content="ステータス、2026年11月14日までに実装されたスキル、条件付き行動を組み合わせるLost Arcadia戦闘検証ツール。">
-    <title>ロスアカ Battle Lab Web v1.17.13｜闘技趣味レーター</title>
+    <title>ロスアカ Battle Lab Web v1.17.14｜闘技趣味レーター</title>
     <script>
       // Apply saved appearance before styles render to avoid a light-mode flash.
       try { document.documentElement.dataset.theme = localStorage.getItem('battle-lab-theme') === 'dark' ? 'dark' : 'light'; }
       catch { document.documentElement.dataset.theme = 'light'; }
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'dark' ? '#151c24' : '#f1f3f4');
     </script>
-    <link rel="stylesheet" href="style.css?v=1.17.13">
-    <link rel="stylesheet" href="style-simple.css?v=1.17.13">
-    <link rel="stylesheet" href="style-dark.css?v=1.17.13">
-    <link rel="stylesheet" href="style-mobile.css?v=1.17.13">
-    <link rel="stylesheet" href="update-notice.css?v=1.17.13">
-    <link rel="stylesheet" href="bug-report.css?v=1.17.13">
-    <link rel="stylesheet" href="element-bonus.css?v=1.17.13">
-    <link rel="stylesheet" href="simulation-layout.css?v=1.17.13">
+    <link rel="stylesheet" href="style.css?v=1.17.14">
+    <link rel="stylesheet" href="style-simple.css?v=1.17.14">
+    <link rel="stylesheet" href="style-dark.css?v=1.17.14">
+    <link rel="stylesheet" href="style-mobile.css?v=1.17.14">
+    <link rel="stylesheet" href="update-notice.css?v=1.17.14">
+    <link rel="stylesheet" href="bug-report.css?v=1.17.14">
+    <link rel="stylesheet" href="element-bonus.css?v=1.17.14">
+    <link rel="stylesheet" href="simulation-layout.css?v=1.17.14">
   </head>
   <body>
     <div id="app"></div>
@@ -66,7 +66,7 @@
           <input id="bug-report-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="example@gmail.com">
         </label>
         <input type="hidden" name="_subject" value="【Battle Lab】不具合報告">
-        <input type="hidden" name="app_version" value="1.17.13">
+        <input type="hidden" name="app_version" value="1.17.14">
         <input type="hidden" name="browser_info" value="">
         <input type="hidden" name="reported_at" value="">
         <div class="bug-report-honeypot" aria-hidden="true"><label>連絡先<input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
@@ -85,17 +85,17 @@
         <label class="share-field" for="share-import-code">公式アリーナの共有コード
           <div class="share-code-controls"><input type="text" id="share-import-code" maxlength="64" autocomplete="off" spellcheck="false" placeholder="例：801sjg7ey548wq"><button type="button" class="primary" id="share-import-search" data-act="search-share-code">公式から検索</button></div>
         </label>
-        <p class="share-notice">公式サイトは共有コードをサーバー上で管理しています。Battle Labから直接取得できない場合は、公式サイトの通信制限またはログイン制限が原因である可能性があります。</p>
-        <details class="share-json-fallback"><summary>直接取得できない場合：公式レスポンスJSONから取り込む</summary>
-          <p>公式サイトで「設定の取り込み」から共有コードを検索し、開発者ツールのNetworkで <code>DecodeArenaSettings</code> の通信を選んで、<strong>Response（レスポンス）</strong>のJSONをコピーして貼り付けてください。Cookie・認証ヘッダーやHAR全体は貼り付けないでください。</p>
-          <label class="share-field" for="share-import-json">公式GraphQLレスポンス
-            <textarea id="share-import-json" rows="5" maxlength="1500000" spellcheck="false" placeholder='{ "data": { "rev2ArenaSettingsDecode": [...] } }'></textarea></label>
-          <div class="share-json-controls">
-            <button type="button" data-act="paste-share-response">貼り付けたJSONを解析</button>
-            <label for="share-response-file" class="share-file-label">レスポンスのJSON／TXTファイルを選択</label>
-            <input id="share-response-file" type="file" accept=".json,.txt,application/json,text/plain" aria-label="公式レスポンスJSONファイル">
-          </div>
-        </details>
+        <p class="share-notice">共有コードは公式サーバーへ問い合わせます。公式のログイン状態が必要です。Battle Labにはログイン情報を保存しません。</p>
+        <div id="share-official-bridge" class="share-official-bridge" hidden>
+          <p><strong>直接取得できない場合</strong>：公式アリーナのログイン済みタブを利用して取得できます。</p>
+          <button type="button" data-act="open-official-arena-tab" class="primary">公式タブで取得（ログイン済み）</button>
+          <details class="share-bridge-guide"><summary>公式タブ連携の初期設定・使い方</summary>
+            <p>自動取得する場合は、同梱の <code>arena-bridge-extension</code> をChrome / Edgeの拡張機能管理画面から「パッケージ化されていない拡張機能を読み込む」で追加してください（公式サイトへのアクセス権限のみ）。その後、上のボタンで公式タブを開くと画面右上に「Battle LabへAIを送る」ボタンが表示されます。ボタンを押すと連携します。</p>
+            <p>拡張機能を使わない場合は、下のリンクをブラウザの<strong>ブックマークバーへドラッグ</strong>して登録し、上のボタンで開いた公式タブで登録したブックマークを押してください。JSONの貼付・ファイル選択は不要です。</p>
+            <a id="share-bookmarklet" class="share-bookmarklet" href="#" draggable="true" title="ブックマークバーにドラッグしてください">Battle LabへAIを送る（バーへドラッグ）</a>
+            <p>ログインできていない場合は公式タブでキャラクターログイン後、ページを再読み込みしてください。公式サイトのタブが元のBattle Labタブと接続できない場合は、ブラウザの安全設定により連携が制限されている可能性があります。</p>
+          </details>
+        </div>
         <p id="share-import-status" role="status" aria-live="polite"></p>
         <div id="share-import-preview" hidden></div>
       </div>
@@ -113,8 +113,8 @@
     <input id="character-json-import" type="file" accept="application/json,.json" hidden>
     <input id="unit-tactics-import" type="file" accept="application/json,.json" hidden>
     <input id="arena-html-import" type="file" accept="text/html,.html,.htm" hidden>
-    <script type="module" src="app.js?v=1.17.13"></script>
-    <script type="module" src="version-check.js?v=1.17.13"></script>
-    <script type="module" src="bug-report.js?v=1.17.13"></script>
+    <script type="module" src="app.js?v=1.17.14"></script>
+    <script type="module" src="version-check.js?v=1.17.14"></script>
+    <script type="module" src="bug-report.js?v=1.17.14"></script>
   </body>
 </html>

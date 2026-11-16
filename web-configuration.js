@@ -1,5 +1,5 @@
 import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
-import { migrateUnitElement } from './element-bonus.js?v=1.17.13';
+import { migrateUnitElement } from './element-bonus.js?v=1.17.14';
 // Keep historical saved settings usable after removing deprecated Web-only controls.
 export function cleanWebConfiguration(config) {
     if (!config || typeof config !== 'object')

@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Battle Lab 公式アリーナ共有AI連携",
+  "description": "公式アリーナにログインしたタブから、要求された共有AIだけをBattle Labへ転送します。",
+  "version": "1.0.0",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://rev2.reversion.jp/arena*"
+      ],
+      "js": [
+        "official-relay.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

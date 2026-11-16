@@ -1,6 +1,6 @@
 import { CATALOG } from './catalog.js';
-import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.13';
-import { emptyElement, validElement } from './element-bonus.js?v=1.17.13';
+import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.14';
+import { emptyElement, validElement } from './element-bonus.js?v=1.17.14';
 export const STAT_LABELS = {
     maxHp: '最大HP',
     maxAp: '最大AP',
