@@ -1,26 +1,26 @@
-import { conditionalPassiveDescription, passiveStatusPreview } from './conditional-passives.js?v=1.17.26';
-import { deleteUnitSafely } from './unit-management.js?v=1.17.26';
+import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview } from './conditional-passives.js?v=1.17.28';
+import { deleteUnitSafely } from './unit-management.js?v=1.17.28';
 import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js';
-import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.26';
+import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.28';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.17.26';
+import { Battle, clamp } from './engine.js?v=1.17.28';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.17.26';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.17.28';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
-import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.26';
-import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.17.26';
-import { buildOfficialArenaActions } from './arena-share-export.js?v=1.17.26';
-import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.26';
+import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.28';
+import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.17.28';
+import { buildOfficialArenaActions } from './arena-share-export.js?v=1.17.28';
+import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.28';
 import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
-import { createCharacterImporter } from './character-ui.js?v=1.17.26';
+import { createCharacterImporter } from './character-ui.js?v=1.17.28';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
-import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.26';
+import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.28';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -208,7 +208,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.26</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.26</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.28</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.28</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -376,8 +376,9 @@ function conditionalPassivesDisplay(u) {
     return `<section class="conditional-passive-section" aria-label="条件付きパッシブ"><div class="field-section">条件付きパッシブ</div>
 <div class="conditional-passive-list">${list.map(p => {
         const info = conditionalPassiveDescription(p, STAT_LABELS);
+        const state = conditionalPassiveState(u, p, passivePreviewTurn, hpPct);
         const next = p.kind === 'accel' && p.interval <= 20 ? `（T${p.interval}で1回目、T${Math.min(20, p.interval * 2)}で${p.interval * 2 <= 20 ? '2回目' : '上限'}）` : '';
-        return `<div class="conditional-passive-item"><strong>${esc(p.name)}</strong><span>${esc(info.heading)} ${next}</span><small>${info.values.map(esc).join(' / ')}</small></div>`;
+        return `<div class="conditional-passive-item"><strong>${esc(p.name)}</strong><span>${esc(info.heading)} ${next}</span><span class="conditional-passive-state ${state.active ? 'is-active' : 'is-inactive'}">${esc(state.label)}</span><small>${info.values.map(esc).join(' / ')}</small></div>`;
     }).join('')}</div>
 <div class="passive-preview" aria-label="条件付きパッシブ適用後のステータス">
 <div class="passive-preview-head"><strong>戦闘中の実効値</strong><div class="passive-preview-filters">
@@ -1012,7 +1013,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.17.26', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.17.28', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];

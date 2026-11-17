@@ -3032,8 +3032,11 @@ h1 {
 .conditional-passive-item>strong{font-weight:650}
 .conditional-passive-item>span{font-size:.88em}
 .conditional-passive-item>small{flex-basis:100%;font-size:.88em;line-height:1.65}
+.conditional-passive-state{margin-left:auto;padding:2px 8px;border-radius:999px;font-weight:650;white-space:nowrap;background:var(--surface-soft,#eceff3);border:1px solid var(--line,#ccd2d9)}
+.conditional-passive-state.is-active{border-color:var(--line,#ccd2d9);background:var(--surface-soft,#e9eef2)}
+.conditional-passive-state.is-inactive{opacity:.7}
 
-/* v1.17.26: compact, single-location data management */
+/* v1.17.28: compact, single-location data management */
 #data-management-panel{scroll-margin-top:75px}
 .data-management-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .data-management-unit{margin:5px 0 12px}

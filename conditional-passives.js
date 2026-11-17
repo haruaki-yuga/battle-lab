@@ -33,11 +33,32 @@ const statAliases = Object.freeze({
     CT: 'critical', クリティカル: 'critical', FB: 'fumble', ファンブル: 'fumble', ドラマ: 'drama'
 });
 
+/**
+ * Official GraphQL display_effects is HTML-marked text, not a plain formula.
+ * <x-effect description="...">加速4</x-effect> is a NORMAL response shape.
+ * Ignore tag attributes (which may themselves mention effects), preserve only
+ * visible text, and decode numeric/basic entities. Never inject this into HTML.
+ */
+function officialEffectText(value) {
+    return String(value ?? '')
+        .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '')
+        .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, '')
+        .replace(/<(?:[^>"']|"[^"]*"|'[^']*')*>/g, '')
+        .replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos|nbsp|plus);/gi, (_, entity) => {
+            if (entity[0] === '#') {
+                const n = entity[1]?.toLowerCase() === 'x' ? parseInt(entity.slice(2), 16) : parseInt(entity.slice(1), 10);
+                return n > 0 && n <= 0x10ffff && !(n >= 0xd800 && n <= 0xdfff) ? String.fromCodePoint(n) : '';
+            }
+            return {amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' ',plus:'+'}[entity.toLowerCase()] ?? '';
+        })
+        .normalize('NFKC')
+        .replace(/\s+/g, '');
+}
+
 export function parseConditionalPassive(raw, category = 'パッシヴ') {
-    // GraphQL's display_effects holds the official passive modifier string.
-    // Some official skills write the interval as 〖加速+5〗 rather than 〖加速5〗.
-    // Retain the interval sign as part of the marker, not as an additional bonus.
-    const original = String(raw?.display_effects ?? '').normalize('NFKC').replace(/\s+/g, '');
+    // Parse the VISIBLE official formula, never the x-effect markup/attributes.
+    // Some official skills write 〖加速+5〗 rather than 〖加速5〗.
+    const original = officialEffectText(raw?.display_effects);
     const tags = [...original.matchAll(/[〖【]([^〗】]+)[〗】]/g)].map(m => m[1]);
     const conditions = tags.map(tag => {
         if (tag === '渾身') return { kind: 'full', interval: null };
@@ -49,7 +70,7 @@ export function parseConditionalPassive(raw, category = 'パッシヴ') {
     }).filter(Boolean);
     const name = String(raw?.name || '(名称なし)').trim();
     if (!conditions.length) {
-        const suspicious = tags.find(tag => /^(加速|時限|渾身|底力)/.test(tag));
+        const suspicious = tags.find(tag => /^(加速|時限|渾身|底力)/.test(tag)) || (/(?:加速|時限|渾身|底力)/.test(original) ? '該当効果' : null);
         return {entry: null, warning: suspicious
             ? `${name}：条件付きパッシブ「${suspicious}」の書式を認識できません。公式の効果文を確認してください`
             : null};
@@ -132,6 +153,28 @@ function conditionMultiplier(p, turn, hp, maxHp) {
         return Math.min(Math.floor(20 / p.interval), Math.floor(Math.max(0, turn) / p.interval));
     return 0;
 }
+/**
+ * Read-only condition status for the unit editor. The status is derived from
+ * the very same multiplier used by Battle.stat(); it does not mutate the
+ * official baseline and is never used to make a second combat calculation.
+ */
+export function conditionalPassiveState(unit, passive, turn = 1, hpPct = 100) {
+    const maxHp = Math.max(1, Number(unit?.maxHp) || 1);
+    const pct = Math.min(100, Math.max(0, Number(hpPct) || 0));
+    const hp = maxHp * pct / 100;
+    if (unit?.passivesSuppressed)
+        return { label: '抑止中', active: false, multiplier: 0 };
+    const multiplier = conditionMultiplier(passive, turn, hp, maxHp);
+    if (passive?.kind === 'accel')
+        return { label: multiplier > 0 ? `累積 ${multiplier} 回` : '累積前', active: multiplier > 0, multiplier };
+    if (passive?.kind === 'timed')
+        return { label: multiplier < 0 ? '効果消失' : '効果維持中', active: multiplier === 0, multiplier };
+    if (passive?.kind === 'full' || passive?.kind === 'low')
+        return { label: multiplier === (passive.kind === 'full' ? 0 : 1) ? '発動中' : '未発動',
+            active: multiplier === (passive.kind === 'full' ? 0 : 1), multiplier };
+    return { label: '未対応', active: false, multiplier: 0 };
+}
+
 export function conditionalPassiveModifier(unit, statKey, turn, hp, maxHp) {
     if (!Array.isArray(unit.conditionalPassives)) return 0;
     return unit.conditionalPassives.reduce((total, p) => total +
