@@ -330,7 +330,7 @@ html[data-theme="dark"] .skill-effect-chip { border-color: #506574; color: #d1e1
 html[data-theme="dark"] .data-management-group,html[data-theme="dark"] .passive-preview{background:#202933;border-color:#3d4b58}
 html[data-theme="dark"] .effective-stat{border-color:#3d4b58}
 
-/* v1.17.29: visible conditional passive state badges on dark surfaces. */
+/* v1.17.30: visible conditional passive state badges on dark surfaces. */
 html[data-theme="dark"] .conditional-passive-item > .conditional-passive-state{color:#dce8f2;background:#314452;border-color:#587184}
 html[data-theme="dark"] .conditional-passive-item > .conditional-passive-state.is-active{color:#d5f6e3;background:#214b3e;border-color:#4c9578}
 html[data-theme="dark"] .conditional-passive-item > .conditional-passive-state.is-inactive{color:#d1dce6;background:#33404d;border-color:#617384}

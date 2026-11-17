@@ -24,6 +24,7 @@ const effectAliases = Object.freeze({
     スプラッシュ: 'splash', 弱点: 'weak', 曲射: 'curve', 重甲: 'heavy',
     高速詠唱: 'fastCast', 'ブレイクガード': 'breakGuard', 光輝: 'radiance'
 });
+export const CONDITIONAL_SUPPORTED_EFFECT_KEYS = Object.freeze([...new Set(Object.values(effectAliases))]);
 const statAliases = Object.freeze({
     HP: 'maxHp', AP: 'maxAp',
     主攻: 'main', 主攻撃力: 'main', 副攻: 'sub', 副攻撃力: 'sub',
@@ -123,6 +124,8 @@ export function validConditionalPassives(value) {
         p && typeof p === 'object' && !Array.isArray(p) &&
         Object.hasOwn(PASSIVE_KIND_LABELS, p.kind) &&
         typeof p.name === 'string' && p.name.length > 0 && p.name.length <= 200 &&
+        (p.baselineIncluded === undefined || typeof p.baselineIncluded === 'boolean') &&
+        (p.note === undefined || (typeof p.note === 'string' && p.note.length <= 400)) &&
         (!['accel', 'timed'].includes(p.kind) ||
             (Number.isInteger(p.interval) && p.interval >= 1 &&
              p.interval <= (p.kind === 'accel' ? 20 : 9999))) &&
@@ -141,14 +144,13 @@ export function validConditionalPassives(value) {
 /** Official thresholds and the maximum 20 / X acceleration increments. */
 function conditionMultiplier(p, turn, hp, maxHp) {
     const ratio = maxHp > 0 ? hp / maxHp : 0;
-    // 渾身 is baked into the official imported value. Remove it only
-    // when its HP requirement is not met; never add it a second time.
-    if (p.kind === 'full') return ratio >= .8 - 1e-12 ? 0 : -1;
+    // Official import includes 渾身; manually selected passives do not.
+    if (p.kind === 'full') return ratio >= .8 - 1e-12 ? (p.baselineIncluded === false ? 1 : 0) : (p.baselineIncluded === false ? 0 : -1);
     if (p.kind === 'low') return ratio <= .3 + 1e-12 ? 1 : 0;
     // A timed modifier is already included in the imported base value. Remove
     // it on the first turn AFTER X turns have elapsed (turn X+1).
     if (p.kind === 'timed' && Number.isInteger(p.interval) && p.interval > 0)
-        return turn > p.interval ? -1 : 0;
+        return turn > p.interval ? (p.baselineIncluded === false ? 0 : -1) : (p.baselineIncluded === false ? 1 : 0);
     if (p.kind === 'accel' && Number.isInteger(p.interval) && p.interval > 0)
         return Math.min(Math.floor(20 / p.interval), Math.floor(Math.max(0, turn) / p.interval));
     return 0;
@@ -168,10 +170,13 @@ export function conditionalPassiveState(unit, passive, turn = 1, hpPct = 100) {
     if (passive?.kind === 'accel')
         return { label: multiplier > 0 ? `累積 ${multiplier} 回` : '累積前', active: multiplier > 0, multiplier };
     if (passive?.kind === 'timed')
-        return { label: multiplier < 0 ? '効果消失' : '効果維持中', active: multiplier === 0, multiplier };
-    if (passive?.kind === 'full' || passive?.kind === 'low')
-        return { label: multiplier === (passive.kind === 'full' ? 0 : 1) ? '発動中' : '未発動',
-            active: multiplier === (passive.kind === 'full' ? 0 : 1), multiplier };
+        return { label: passive.baselineIncluded === false ? (multiplier > 0 ? '効果維持中' : '効果消失') : (multiplier < 0 ? '効果消失' : '効果維持中'), active: passive.baselineIncluded === false ? multiplier > 0 : multiplier === 0, multiplier };
+    if (passive?.kind === 'full' || passive?.kind === 'low') {
+        const active = passive.kind === 'full'
+            ? (passive.baselineIncluded === false ? multiplier > 0 : multiplier === 0)
+            : multiplier > 0;
+        return { label: active ? '発動中' : '未発動', active, multiplier };
+    }
     return { label: '未対応', active: false, multiplier: 0 };
 }
 
@@ -179,9 +184,10 @@ export function conditionalPassiveModifier(unit, statKey, turn, hp, maxHp) {
     if (!Array.isArray(unit.conditionalPassives)) return 0;
     return unit.conditionalPassives.reduce((total, p) => total +
         (Number(p?.modifiers?.[statKey]) || 0) *
-        (unit.passivesSuppressed ? (p?.kind === 'timed' || p?.kind === 'full' ? -1 : 0) : conditionMultiplier(p, turn, hp, maxHp)), 0);
+        (unit.passivesSuppressed ? (['timed','full'].includes(p?.kind) && p.baselineIncluded !== false ? -1 : 0) : conditionMultiplier(p, turn, hp, maxHp)), 0);
 }
 export function conditionalPassiveEffectModifier(unit, effectKey, turn, hp, maxHp) {
+    // Battle.effectRaw already suppresses the entire innate effects base.
     if (unit.passivesSuppressed || !Array.isArray(unit.conditionalPassives)) return 0;
     return unit.conditionalPassives.reduce((total, p) => total +
         (Number(p?.effects?.[effectKey]) || 0) * conditionMultiplier(p, turn, hp, maxHp), 0);

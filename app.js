@@ -1,26 +1,27 @@
-import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions } from './conditional-passives.js?v=1.17.29';
-import { deleteUnitSafely } from './unit-management.js?v=1.17.29';
+import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.17.30';
+import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor } from './passive-editor.js?v=1.17.30';
+import { deleteUnitSafely } from './unit-management.js?v=1.17.30';
 import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js';
-import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.29';
+import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.30';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.17.29';
+import { Battle, clamp } from './engine.js?v=1.17.30';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.17.29';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.17.30';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
-import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.29';
-import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.17.29';
-import { buildOfficialArenaActions } from './arena-share-export.js?v=1.17.29';
-import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.29';
+import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.30';
+import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.17.30';
+import { buildOfficialArenaActions } from './arena-share-export.js?v=1.17.30';
+import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.30';
 import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
-import { createCharacterImporter } from './character-ui.js?v=1.17.29';
+import { createCharacterImporter } from './character-ui.js?v=1.17.30';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
-import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.29';
+import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.30';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -208,7 +209,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.29</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.29</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.30</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.30</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -391,11 +392,11 @@ function conditionalPassivesDisplay(u) {
         return `<div class="passive-timed-step"><strong>T${expiry}以降</strong><span>${[...statSummary, ...effectSummary].join(' / ')}</span></div>`;
     }).join('')}</div></div>` : '';
     return `<section class="conditional-passive-section" aria-label="条件付きパッシブ"><div class="field-section">条件付きパッシブ</div>
-<div class="conditional-passive-list">${list.map(p => {
+<div class="conditional-passive-list">${list.map((p, passiveIndex) => {
         const info = conditionalPassiveDescription(p, STAT_LABELS);
         const state = conditionalPassiveState(u, p, turn, hpPct);
         const next = p.kind === 'accel' && p.interval <= 20 ? `（T${p.interval}で1回目、T${Math.min(20, p.interval * 2)}で${p.interval * 2 <= 20 ? '2回目' : '上限'}）` : '';
-        return `<div class="conditional-passive-item"><strong>${esc(p.name)}</strong><span>${esc(info.heading)} ${next}</span><span class="conditional-passive-state ${state.active ? 'is-active' : 'is-inactive'}">${esc(state.label)}</span><small>${info.values.map(esc).join(' / ')}</small></div>`;
+        return `<div class="conditional-passive-item"><strong>${esc(p.name)}</strong><span>${esc(info.heading)} ${next}</span><span class="conditional-passive-state ${state.active ? 'is-active' : 'is-inactive'}">${esc(state.label)}</span>${btn('削除', `remove-unit-passive:${passiveIndex}`, 'small danger')}<small>${info.values.map(esc).join(' / ')}</small></div>`;
     }).join('')}</div>
 <div class="passive-preview" aria-label="条件付きパッシブ適用後のステータス">
 <div class="passive-preview-head"><strong>戦闘中の実効値</strong>${filters}</div>
@@ -424,7 +425,7 @@ function importedEffectsDisplay(u) {
     const entries = Object.entries(u.effects || {}).filter(([key, value]) => Object.hasOwn(EFFECTS, key) && Number.isFinite(value) && value !== 0);
     if (!entries.length) return '';
     return `<section class="imported-effects-section"><div class="field-section">その他のステータス（常時特殊効果）</div>
-<div class="imported-effects-list">${entries.map(([key, value]) => `<span class="pill">${esc(EFFECTS[key])} ${nf(value)}</span>`).join('')}</div>
+<div class="imported-effects-list">${entries.map(([key, value]) => `<div class="imported-effect-item"><span class="pill">${esc(EFFECTS[key])} ${nf(value)}</span>${btn('削除', `remove-unit-effect:${key}`, 'small danger')}</div>`).join('')}</div>
 <p class="footnote">公式プロフィールから取得した特殊効果です。対応済みの効果は戦闘計算に反映します。変更は「固有の特殊効果を編集」から行えます。</p></section>`;
 }
 function importedProfileDetails(u) {
@@ -923,10 +924,53 @@ function openSkill(id, copy = false) {
     }
     $('#modal').showModal();
 }
+function unitConditionalPassiveEditor() {
+    const passives = modalDraft?.conditionalPassives || [];
+    const presetItems = [
+        '<option value="">Wiki掲載スキルを選択</option>',
+        ...CONDITIONAL_PASSIVE_TEMPLATES.map(p => `<option value="${esc(p.id)}">${esc(p.name)}（${esc(CONDITIONAL_KIND_OPTIONS[p.kind])}）</option>`),
+        '<optgroup label="数値を手動設定">',
+        ...Object.entries(CONDITIONAL_KIND_OPTIONS).map(([k,v]) => `<option value="custom-${k}">自由設定：${esc(v)}</option>`),
+        '</optgroup>'
+    ].join('');
+    const statOptions = Object.entries(STAT_LABELS);
+    const effectOptions = Object.entries(EFFECTS).filter(([k]) => CONDITIONAL_SUPPORTED_EFFECT_KEYS.includes(k));
+    const modifierEditor = (index, group, options, title) => {
+        const mod = passives[index]?.[group] || {};
+        const rows = Object.entries(mod).map(([key,val]) => `<div class="passive-editor-mod-row">
+            <select data-passive-mod-key="${index}:${group}:${esc(key)}" aria-label="${esc(title)}の種類">${options.map(([k,label]) => `<option value="${esc(k)}" ${k===key?'selected':''}>${esc(label)}</option>`).join('')}</select>
+            <input type="number" step="any" data-passive-mod="${index}:${group}:${esc(key)}" value="${esc(val)}" aria-label="${esc(title)}の補正値">
+            ${btn('削除',`remove-passive-mod:${index}:${group}:${key}`,'small danger')}</div>`).join('');
+        return `<div class="passive-editor-mods"><div class="passive-editor-group-heading">${esc(title)}</div>${rows}${options.some(([k])=>!Object.hasOwn(mod,k)) ? btn('＋ 追加',`add-passive-mod:${index}:${group}`,'small ghost'):''}</div>`;
+    };
+    return `<section class="passive-editor-section"><div class="field-section">条件付きパッシブ</div>
+        <p class="subtle">Wiki掲載の条件付きパッシブを選択し、補正値を必要に応じて編集できます。公式取得済みの渾身・時限は基礎値へ反映済み、手動追加は未反映として扱います。<a href="https://c01301.sakura.ne.jp/rev2_wiki/doku.php?id=%E3%83%91%E3%83%83%E3%82%B7%E3%83%96" target="_blank" rel="noopener noreferrer">Wikiのパッシブ一覧</a></p>
+        <div class="passive-preset-picker"><select id="unit-passive-template" aria-label="追加する条件付きパッシブ">${presetItems}</select>${btn('＋ パッシブを追加','add-unit-passive','small primary')}</div>
+        ${passives.length ? passives.map((p,index) => `<div class="passive-editor-card">
+            <div class="passive-editor-heading"><strong>${esc(p.name)}</strong><span class="subtle">${esc(CONDITIONAL_KIND_OPTIONS[p.kind]||p.kind)}</span>${btn('削除',`remove-draft-passive:${index}`,'small danger')}</div>
+            <div class="passive-editor-meta"><label>名前<input type="text" maxlength="200" data-passive-name="${index}" value="${esc(p.name)}"></label>
+            ${['accel','timed'].includes(p.kind) ? `<label>発動間隔・期限<input type="number" min="1" max="${p.kind==='accel'?20:9999}" step="1" data-passive-interval="${index}" value="${esc(p.interval)}"></label>` : ''}
+            <span class="passive-baseline-label">${p.baselineIncluded === false ? '手動追加（取得値に未反映）' : '公式取得値に反映済み'}</span></div>
+            ${p.note ? `<small class="subtle">${esc(p.note)}</small>` : ''}
+            ${modifierEditor(index,'modifiers',statOptions,'能力補正')}
+            ${modifierEditor(index,'effects',effectOptions,'その他のステータス補正')}
+        </div>`).join('') : '<p class="subtle">条件付きパッシブはありません。</p>'}
+    </section>`;
+}
+function syncUnitPassiveEditor() {
+    const items = modalDraft?.conditionalPassives;
+    if (!Array.isArray(items)) return;
+    document.querySelectorAll('#modal [data-passive-name]').forEach(el => {const p=items[Number(el.dataset.passiveName)]; if(p) p.name=el.value.trim();});
+    document.querySelectorAll('#modal [data-passive-interval]').forEach(el => {const p=items[Number(el.dataset.passiveInterval)]; if(p) p.interval=Number(el.value);});
+    document.querySelectorAll('#modal [data-passive-mod]').forEach(el => {
+        const [index,group,key]=el.dataset.passiveMod.split(':');
+        const p=items[Number(index)]; if(p && p[group]) p[group][key]=el.value===''?NaN:Number(el.value);
+    });
+}
 function renderModal() {
     if (modalMode === 'unit') {
         $('#modal').innerHTML = `<div class="modal-header"><h2>${esc(current().name)}の固有効果</h2>${btn('×', 'close-modal', 'ghost')}</div>\
-<div class="modal-form"><p class="subtle">数値を使わない効果は、選択するだけで有効になります。</p>${effectEditor('effects', EFFECTS, '固有の特殊効果')}</div>\
+<div class="modal-form"><p class="subtle">数値を使わない効果は、選択するだけで有効になります。</p>${effectEditor('effects', EFFECTS, '固有の特殊効果')}${unitConditionalPassiveEditor()}</div>\
 <div class="modal-footer">${btn('キャンセル', 'close-modal')}${btn('保存', 'save-unit-effects', 'primary')}</div>`;
         return;
     }
@@ -979,6 +1023,7 @@ function syncDraft() {
         const [key, k] = el.dataset.effectValue.split(':');
         modalDraft[key][k] = Number(el.value);
     });
+    if (modalMode === 'unit') syncUnitPassiveEditor();
     const b = $('[data-draft-bs]');
     if (b)
         modalDraft.bs = [...b.selectedOptions].map(o => o.value);
@@ -1028,7 +1073,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.17.29', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.17.30', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];
@@ -1371,20 +1416,77 @@ async function onAction(act) {
         renderModal();
         return;
     }
+    if (a === 'remove-unit-effect') {
+        if (!Object.hasOwn(EFFECTS, arg)) return;
+        if (!confirm(`特殊効果「${EFFECTS[arg]}」を削除しますか？`)) return;
+        delete u.effects[arg];
+        save(); render();
+        return;
+    }
+    if (a === 'remove-unit-passive') {
+        const i = Number(arg), p = u.conditionalPassives?.[i];
+        if (!Number.isInteger(i) || !p) return;
+        if (!confirm(`条件付きパッシブ「${p.name}」を削除しますか？`)) return;
+        const next = clone(u.conditionalPassives); next.splice(i,1);
+        Object.assign(u,applyPassiveEditor(u,next));
+        save(); render();
+        return;
+    }
+    if (a === 'add-unit-passive' && modalMode === 'unit') {
+        syncDraft();
+        const id = $('#unit-passive-template')?.value;
+        if (!id) { toast('Wiki掲載スキルまたは自由設定を選択してください。');return; }
+        if (modalDraft.conditionalPassives.length >= 50) { toast('条件付きパッシブは50件までです。');return; }
+        try {
+            modalDraft.conditionalPassives.push(id.startsWith('custom-') ? makeCustomPassive(id.slice(7)) : makePresetPassive(id));
+            renderModal();
+        } catch (err) { toast(err.message); }
+        return;
+    }
+    if (a === 'remove-draft-passive' && modalMode === 'unit') {
+        syncDraft();
+        const index = Number(arg);
+        if (Number.isInteger(index) && index >= 0 && index < modalDraft.conditionalPassives.length)
+            modalDraft.conditionalPassives.splice(index, 1);
+        renderModal(); return;
+    }
+    if ((a === 'add-passive-mod' || a === 'remove-passive-mod') && modalMode === 'unit') {
+        syncDraft();
+        const index=Number(arg), item=modalDraft.conditionalPassives?.[index];
+        const group=arg2;
+        if (!item || !['modifiers','effects'].includes(group)) return;
+        if (a === 'add-passive-mod') {
+            const labels=group==='modifiers'?STAT_LABELS:EFFECTS;
+            const key=Object.keys(labels).find(k=>!Object.hasOwn(item[group]||{},k));
+            if (key) (item[group]??={})[key]=1;
+        } else {
+            // action string includes the key as the fourth colon field
+            const key=act.split(':')[3];
+            if (key) delete item[group][key];
+        }
+        renderModal();return;
+    }
     if (a === 'unit-effects') {
         modalMode = 'unit';
-        modalDraft = { effects: clone(u.effects || {}) };
+        modalDraft = { effects: clone(u.effects || {}), conditionalPassives: clone(u.conditionalPassives || []) };
         renderModal();
         $('#modal').showModal();
         return;
     }
     if (a === 'save-unit-effects') {
         syncDraft();
-        u.effects = clone(modalDraft.effects);
-        for (const key of Object.keys(u.effects)) if (FLAG_EFFECTS.has(key)) u.effects[key] = 1;
+        if (!validConditionalPassives(modalDraft.conditionalPassives)) {
+            toast('条件付きパッシブの数値・名前・補正・間隔を確認してください。'); return;
+        }
+        const effects = clone(modalDraft.effects);
+        for (const key of Object.keys(effects)) if (FLAG_EFFECTS.has(key)) effects[key] = 1;
+        const updated=applyPassiveEditor(u, modalDraft.conditionalPassives, effects);
+        if (updated.maxHp < 1 || updated.maxAp < 0) {
+            toast('編集後のHP・APを確認してください。');return;
+        }
+        Object.assign(u,updated);
         $('#modal').close();
-        save();
-        render();
+        save(); render();
         return;
     }
     if (a === 'save-skill' || a === 'save-skill-only') {
@@ -1885,6 +1987,18 @@ document.addEventListener('change', e => {
             delete modalDraft.effects.bsHeal;
         renderModal();
         return;
+    }
+    if (el.matches('[data-passive-mod-key]') && modalMode === 'unit') {
+        syncDraft();
+        const [index,group,old]=el.dataset.passiveModKey.split(':');
+        const item=modalDraft.conditionalPassives?.[Number(index)];
+        if (!item || !['modifiers','effects'].includes(group) || !item[group]) return;
+        const labels=group==='modifiers'?STAT_LABELS:EFFECTS;
+        if (!Object.hasOwn(labels,el.value) || (el.value!==old && Object.hasOwn(item[group],el.value))) {
+            toast('同じ能力補正は1件だけ設定できます。');renderModal();return;
+        }
+        const value=item[group][old];delete item[group][old];item[group][el.value]=value;
+        renderModal();return;
     }
     if (el.matches('[data-effect-key]')) {
         syncDraft();
