@@ -1,10 +1,10 @@
-import { conditionalPassiveDescription } from './conditional-passives.js?v=1.17.25';
+import { conditionalPassiveDescription } from './conditional-passives.js?v=1.17.26';
 import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateConfig } from './model.js';
-import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js?v=1.17.25';
+import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js?v=1.17.26';
 import { deduplicateImportedSkills } from './skill-dedup.js';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
 import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js';
-import { elementLevel } from './element-bonus.js?v=1.17.25';
+import { elementLevel } from './element-bonus.js?v=1.17.26';
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -45,7 +45,7 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
     const option = (value, label, current) => `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${esc(label)}</option>`;
     function conditionalPreview(list) {
         if (!Array.isArray(list) || !list.length) return '';
-        return `<h3 class="import-section-title">条件付きパッシブ</h3><div class="conditional-passive-list">${list.map(p => {
+        return `<h3 class="import-section-title">自動検出した条件付きパッシブ（${list.length}件）</h3><div class="conditional-passive-list">${list.map(p => {
             const info = conditionalPassiveDescription(p, STAT_LABELS);
             return `<div class="conditional-passive-item"><strong>${esc(p.name)}</strong><span>${esc(info.heading)}</span><small>${info.values.map(esc).join(' / ')}</small></div>`;
         }).join('')}</div>`;

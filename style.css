@@ -3033,7 +3033,7 @@ h1 {
 .conditional-passive-item>span{font-size:.88em}
 .conditional-passive-item>small{flex-basis:100%;font-size:.88em;line-height:1.65}
 
-/* v1.17.25: compact, single-location data management */
+/* v1.17.26: compact, single-location data management */
 #data-management-panel{scroll-margin-top:75px}
 .data-management-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .data-management-unit{margin:5px 0 12px}
@@ -3058,3 +3058,6 @@ h1 {
 .effective-stat small{font-size:10px;color:var(--muted)}
 .imported-effects-list,.passive-effect-preview{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
 @media(max-width:700px){.data-management-actions button{flex:1 1 130px}.passive-preview-filters{width:100%}.passive-preview-filters label{flex:1 1 auto}.passive-preview-filters select{max-width:160px}}
+
+/* Numeric official-import status retains its baseline; computed passive status is adjacent. */
+.stat-passive-effective{display:block;margin-top:4px;font-size:11px;line-height:1.5;color:var(--muted);font-variant-numeric:tabular-nums}

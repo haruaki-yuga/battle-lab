@@ -34,18 +34,26 @@ const statAliases = Object.freeze({
 });
 
 export function parseConditionalPassive(raw, category = 'パッシヴ') {
+    // GraphQL's display_effects holds the official passive modifier string.
+    // Some official skills write the interval as 〖加速+5〗 rather than 〖加速5〗.
+    // Retain the interval sign as part of the marker, not as an additional bonus.
     const original = String(raw?.display_effects ?? '').normalize('NFKC').replace(/\s+/g, '');
     const tags = [...original.matchAll(/[〖【]([^〗】]+)[〗】]/g)].map(m => m[1]);
     const conditions = tags.map(tag => {
         if (tag === '渾身') return { kind: 'full', interval: null };
         if (tag === '底力') return { kind: 'low', interval: null };
-        const accel = /^加速([1-9]\d*)$/.exec(tag);
+        const accel = /^加速\+?([1-9]\d*)$/.exec(tag);
         if (accel) return { kind: 'accel', interval: Number(accel[1]) };
-        const timed = /^時限([1-9]\d*)$/.exec(tag);
+        const timed = /^時限\+?([1-9]\d*)$/.exec(tag);
         return timed ? { kind: 'timed', interval: Number(timed[1]) } : null;
     }).filter(Boolean);
-    if (!conditions.length) return { entry: null, warning: null };
     const name = String(raw?.name || '(名称なし)').trim();
+    if (!conditions.length) {
+        const suspicious = tags.find(tag => /^(加速|時限|渾身|底力)/.test(tag));
+        return {entry: null, warning: suspicious
+            ? `${name}：条件付きパッシブ「${suspicious}」の書式を認識できません。公式の効果文を確認してください`
+            : null};
+    }
     if (conditions.length !== 1 ||
         (conditions[0].kind === 'accel' && conditions[0].interval > 20) ||
         (conditions[0].kind === 'timed' && conditions[0].interval > 9999))
@@ -69,13 +77,20 @@ export function parseConditionalPassive(raw, category = 'パッシヴ') {
 }
 
 export function readConditionalPassives(skills) {
-    const entries = [], warnings = [];
+    const entries = [], warnings = [], seenSkillIds = new Set();
     for (const [category, list] of [
         ['パッシヴ', skills?.p], ['クラス', skills?.classes], ['エスプリ', skills?.esprits]
     ]) {
         for (const raw of Array.isArray(list) ? list : []) {
             const { entry, warning } = parseConditionalPassive(raw, category);
-            if (entry) entries.push(entry);
+            if (entry) {
+                // The same equipped passive can be surfaced in more than one
+                // GraphQL section.  Count it once, but let different IDs stack.
+                if (!entry.sourceSkillId || !seenSkillIds.has(entry.sourceSkillId)) {
+                    entries.push(entry);
+                    if (entry.sourceSkillId) seenSkillIds.add(entry.sourceSkillId);
+                }
+            }
             if (warning) warnings.push(warning);
         }
     }
