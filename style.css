@@ -3024,3 +3024,11 @@ h1 {
 .arena-share-dialog #share-export-status.is-error {color:#c4513e;}
 .arena-share-dialog #share-export-result {display:grid;gap:5px;}
 .arena-share-dialog #share-export-result[hidden] {display:none;}
+
+/* Conditional passive bonuses are deliberately separate from profile base stats. */
+.conditional-passive-section{margin:15px 0 19px}
+.conditional-passive-list{display:grid;gap:9px;margin:9px 0}
+.conditional-passive-item{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;padding:10px 12px;border:1px solid var(--line, #ccd2d9);border-radius:9px}
+.conditional-passive-item>strong{font-weight:650}
+.conditional-passive-item>span{font-size:.88em}
+.conditional-passive-item>small{flex-basis:100%;font-size:.88em;line-height:1.65}

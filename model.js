@@ -1,3 +1,4 @@
+import { validConditionalPassives } from './conditional-passives.js';
 import { CATALOG } from './catalog.js';
 import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.16';
 import { emptyElement, validElement } from './element-bonus.js?v=1.17.16';
@@ -360,6 +361,7 @@ export function freshUnit(overrides = {}) {
         normalRange: 'near',
         element: emptyElement(),
         effects: {},
+        conditionalPassives: [],
         initialBS: [],
         immunities: [],
         skills: ['wiki-001', 'wiki-041'],
@@ -533,6 +535,8 @@ export function validateConfig(c) {
         ])
             if (!Number.isFinite(u[k]))
                 errors.push(`${u.name}: ${k}は数値で指定してください。`);
+        if (u.conditionalPassives !== undefined && !validConditionalPassives(u.conditionalPassives))
+            errors.push(`${u.name}: 条件付きパッシブのデータが不正です。`);
         if (u.element !== undefined && !validElement(u.element))
             errors.push(`${u.name}: 属性と属性値を確認してください。`);
         if (u.maxHp < 1 || u.maxAp < 0 || u.mobility < 0)

@@ -1,3 +1,4 @@
+import { validConditionalPassives } from './conditional-passives.js';
 /** One character per JSON file. Unit identity, team and map position belong to the destination slot. */
 import { clone, STAT_LABELS, RANGES, BS_NAMES, validateConfig } from './model.js';
 import { exportUnitTactics, importUnitTactics, UNIT_TACTICS_FORMAT } from './unit-tactics-io.js';
@@ -7,7 +8,7 @@ import { emptyElement, validElement, highestElement, validElements } from './ele
 export const CHARACTER_FORMAT = 'rosuaka-unit-character';
 export const CHARACTER_FORMAT_VERSION = 1;
 const numericFields = [...Object.keys(STAT_LABELS), 'startHp', 'startAp'];
-const characterFields = ['name', ...numericFields, 'normalRange', 'element', 'effects', 'initialBS', 'immunities', 'importedProfile'];
+const characterFields = ['name', ...numericFields, 'normalRange', 'element', 'effects', 'conditionalPassives', 'initialBS', 'immunities', 'importedProfile'];
 const isPlainObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 export function exportUnitCharacter(config, unitId) {
@@ -47,6 +48,8 @@ function validateCharacter(data) {
     if (!(char.normalRange in RANGES)) throw Error('通常攻撃の射程が不正です。');
     if (!isPlainObject(char.effects) || Object.values(char.effects).some(n => typeof n !== 'number' || !Number.isFinite(n)))
         throw Error('固有の特殊効果が不正です。');
+    if (char.conditionalPassives !== undefined && !validConditionalPassives(char.conditionalPassives))
+        throw Error('条件付きパッシブのデータが不正です。');
     for (const field of ['initialBS', 'immunities']) {
         if (!Array.isArray(char[field]) || char[field].length > 100 || char[field].some(name => !BS_NAMES.includes(name)))
             throw Error(`${field} のBS指定が不正です。`);
@@ -63,8 +66,9 @@ export function importUnitCharacter(config, targetId, data) {
     const appliedTactics = importUnitTactics(config, targetId, data.tactics);
     const next = appliedTactics.config;
     const destination = next.units.find(item => item.id === targetId);
-    // Clear importedProfile if the file did not contain one, avoiding stale metadata.
+    // Clear optional imported fields when a legacy character JSON lacks them.
     delete destination.importedProfile;
+    destination.conditionalPassives = [];
     // Legacy character JSONs have no elements: do not retain the previous unit's values.
     destination.element = data.character.element !== undefined
         ? clone(data.character.element)

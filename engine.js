@@ -1,3 +1,4 @@
+import { conditionalPassiveModifier } from './conditional-passives.js';
 import { normalizeSettings, runSeed } from './run-settings.js';
 import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js';
 import { scoreDraw } from './battle-summary.js';
@@ -201,6 +202,11 @@ export class Battle {
     }
     stat(u, key) {
         let n = Number(u[key] || 0);
+        // Evaluate conditions against current HP. Avoid a circular dependency on
+        // conditional maxHp modifiers by measuring against the base/current buffs.
+        const maxHpForCondition = Math.max(1, Number(u.maxHp || 1) +
+            (u.bs.some(b => b.name === '無策') ? 0 : sumBuff(u.buffs.map(b => b.modifiers || {}), 'maxHp')));
+        n += conditionalPassiveModifier(u, key, this.turn, u.hp, maxHpForCondition);
         const bs = this.statuses(u);
         if (!bs.has('無策'))
             n += sumBuff(u.buffs.map(b => b.modifiers || {}), key);

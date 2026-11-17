@@ -1,4 +1,5 @@
 import { STAT_LABELS, EFFECTS, BS_NAMES, freshSkill, freshUnit, freshRule, clone, uid } from './model.js';
+import { readConditionalPassives } from './conditional-passives.js';
 import { extractMainCharacterElement, ELEMENT_ID_TO_KEY } from './element-bonus.js?v=1.17.16';
 import { findReusableImportedSkill } from './skill-dedup.js';
 import { normalizeLegacyBarrierSkill } from './barrier-rules.js';
@@ -259,6 +260,8 @@ export function parseCharacterData(data, sourceURL, at = new Date().toISOString(
         skills.push(parseActiveSkill(r, skills.length));
     }
     const references = [['常時補正', rawSkills.p], ['クラス', c.classes], ['エスプリ', c.esprits]].flatMap(([category, list]) => (list || []).map(r => ({ category, name: visibleText(r.name), original: visibleText(r.display_effects) })));
+    const conditional = readConditionalPassives({ p: rawSkills.p, classes: c.classes, esprits: c.esprits });
+    warnings.push(...conditional.warnings);
     const unsupported = skills.filter(s => !s.supported);
     if (unsupported.length)
         warnings.push(`${unsupported.length}件のスキルは未対応の効果があるため、自動セットされません。効果文を確認し、カスタムスキルで設定してください。`);
@@ -274,6 +277,7 @@ export function parseCharacterData(data, sourceURL, at = new Date().toISOString(
         element,
         effects,
         immunities,
+        conditionalPassives: conditional.entries,
         skills,
         references,
         otherStats,
@@ -353,6 +357,7 @@ export function createImportedUnit(profile, { team = 'A', normalRange = 'near', 
         specializedSkills,
         officialSkillIds,
         effects: clone(profile.effects),
+        conditionalPassives: clone(profile.conditionalPassives || []),
         immunities: clone(profile.immunities),
         rules: [freshRule({ action: 'effectiveAttack', moveMode: 'approach' }), freshRule({ conditions: [], action: 'carry', autoMove: false, target: 'self' })],
         importedProfile: {

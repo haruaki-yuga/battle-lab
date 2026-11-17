@@ -1,9 +1,10 @@
+import { conditionalPassiveDescription } from './conditional-passives.js';
 import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateConfig } from './model.js';
 import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js';
 import { deduplicateImportedSkills } from './skill-dedup.js';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
 import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js';
-import { elementLevel } from './element-bonus.js?v=1.17.22';
+import { elementLevel } from './element-bonus.js?v=1.17.23';
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -42,6 +43,13 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
     let state, controller, seq = 0;
     const button = (label, act, cls = '', disabled = false) => `<button data-import-action="${act}" class="${cls}" ${disabled ? 'disabled' : ''}>${label}</button>`;
     const option = (value, label, current) => `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${esc(label)}</option>`;
+    function conditionalPreview(list) {
+        if (!Array.isArray(list) || !list.length) return '';
+        return `<h3 class="import-section-title">条件付きパッシブ</h3><div class="conditional-passive-list">${list.map(p => {
+            const info = conditionalPassiveDescription(p, STAT_LABELS);
+            return `<div class="conditional-passive-item"><strong>${esc(p.name)}</strong><span>${esc(info.heading)}</span><small>${info.values.map(esc).join(' / ')}</small></div>`;
+        }).join('')}</div>`;
+    }
     function render() {
         const p = state.profile, config = getConfig(), target = config.units.find(u => u.id === state.replaceId), supported = p?.skills.filter(s => s.supported) || [];
         const tabs = `<div class="character-search-tabs" role="group" aria-label="キャラの探し方">
@@ -70,8 +78,8 @@ ${tabs}${lookupForm}${state.error ? `<div class="error-box import-feedback" role
 <span>${label}</span>\
 <strong>${p.stats[k] === undefined ? '未取得' : number(p.stats[k])}</strong>\
 </div>`).join('')}</div>\
-<h3 class="import-section-title">採用属性（最大値のみ）</h3><div class="import-element-list"><span>${p.element.key ? esc(p.element.key) : '未設定'} ${p.element.value} <small>Lv${elementLevel(p.element.value)}</small></span></div>\
-<div class="notice">公式プロフィールに表示された能力値を使用します。ステータス補正は再加算せず、闘技では属性相性によるダメージ増減のみを適用します。</div><h3 class="import-section-title">装備アクティブ <span class="rule-count">${supported.length} / ${p.skills.length} 件をセット可能</span>\
+${conditionalPreview(p.conditionalPassives)}<h3 class="import-section-title">採用属性（最大値のみ）</h3><div class="import-element-list"><span>${p.element.key ? esc(p.element.key) : '未設定'} ${p.element.value} <small>Lv${elementLevel(p.element.value)}</small></span></div>\
+<div class="notice">公式プロフィールに表示された能力値を基準にします。通常のステータス補正は再加算しません。条件付きパッシブはHP・ターン数に応じて戦闘中に反映し、属性相性はダメージ計算だけに適用します。</div><h3 class="import-section-title">装備アクティブ <span class="rule-count">${supported.length} / ${p.skills.length} 件をセット可能</span>\
 </h3>${p.skills.length ? p.skills.map(r => `<details class="import-skill">\
 <summary><span>${esc(r.name)}${r.baseName ? `<small>\
 元スキル：${esc(r.baseName)}</small>` : ''}</span>\
