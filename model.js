@@ -1,4 +1,4 @@
-import { validConditionalPassives } from './conditional-passives.js?v=1.17.30';
+import { validConditionalPassives } from './conditional-passives.js?v=1.18';
 import { CATALOG } from './catalog.js';
 import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.16';
 import { emptyElement, validElement } from './element-bonus.js?v=1.17.16';

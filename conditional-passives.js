@@ -193,32 +193,33 @@ export function conditionalPassiveEffectModifier(unit, effectKey, turn, hp, maxH
         (Number(p?.effects?.[effectKey]) || 0) * conditionMultiplier(p, turn, hp, maxHp), 0);
 }
 /**
- * Limit the preview controls to meaningful conditions for THIS unit.
- * - Turn choices are exactly the turns at which equipped 加速 skills accumulate.
- * - HP choices are only thresholds of equipped 渾身 / 底力 skills.
- * - 時限 expirations are displayed separately as read-only milestones, not
- *   mixed into the acceleration turn selector.
- * This is presentation state only; the battle engine remains authoritative.
+ * Preview only meaningful milestones without changing simulation turn logic.
+ * 0T previews the initial state. Select only moments when an accelerated
+ * stack grows or a timed bonus expires; otherwise hide the turn selector.
+ * HP selectors appear only for 渾身 / 底力 and include the 100% baseline.
  */
-export function conditionalPassivePreviewOptions(unit, requestedTurn = 1, requestedHp = 'start') {
+export function conditionalPassivePreviewOptions(unit, requestedTurn = 0, requestedHp = 'start') {
     const passives = Array.isArray(unit?.conditionalPassives) ? unit.conditionalPassives : [];
-    const accelerationTurns = [...new Set(passives
+    const accelMilestones = [...new Set(passives
         .filter(p => p?.kind === 'accel' && Number.isInteger(p.interval) && p.interval >= 1 && p.interval <= 20)
         .flatMap(p => Array.from({length: Math.floor(20 / p.interval)}, (_, i) => (i + 1) * p.interval)))].sort((a, b) => a - b);
-    const hpThresholds = [...new Set(passives.flatMap(p =>
-        p?.kind === 'full' ? [80] : p?.kind === 'low' ? [30] : []))].sort((a, b) => b - a);
+    const accelerationTurns = accelMilestones.length ? [0, ...accelMilestones] : [];
     const timedExpirations = [...new Set(passives
         .filter(p => p?.kind === 'timed' && Number.isInteger(p.interval) && p.interval >= 1 && p.interval < 20)
         .map(p => p.interval + 1))].sort((a, b) => a - b);
+    const elapsedTurns = accelMilestones.length || timedExpirations.length ? [...new Set([0, ...accelMilestones, ...timedExpirations])].sort((a, b) => a - b) : [];
+    const hpConditions = [...new Set(passives.flatMap(p =>
+        p?.kind === 'full' ? [80] : p?.kind === 'low' ? [30] : []))].sort((a, b) => b - a);
+    const hpThresholds = hpConditions.length ? [100, ...hpConditions] : [];
     const requestedTurnNumber = Number(requestedTurn);
-    const turn = accelerationTurns.length ?
-        (accelerationTurns.includes(requestedTurnNumber) ? requestedTurnNumber : accelerationTurns[0]) : 1;
+    const turn = elapsedTurns.length ?
+        (elapsedTurns.includes(requestedTurnNumber) ? requestedTurnNumber : 0) : 1;
     const requestedHpNumber = Number(requestedHp);
     const startHp = Number(unit?.startHp);
     const defaultHp = Number.isFinite(startHp) ? Math.min(100, Math.max(0, startHp)) : 100;
     const hpPct = hpThresholds.length ?
-        (hpThresholds.includes(requestedHpNumber) ? requestedHpNumber : hpThresholds[0]) : defaultHp;
-    return {turn, hpPct, accelerationTurns, hpThresholds, timedExpirations};
+        (hpThresholds.includes(requestedHpNumber) ? requestedHpNumber : 100) : defaultHp;
+    return {turn, hpPct, accelerationTurns, elapsedTurns, hpThresholds, timedExpirations};
 }
 
 /** Base imported values are not modified; provide a read-only effective preview. */

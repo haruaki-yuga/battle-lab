@@ -1,10 +1,10 @@
-import { conditionalPassiveDescription } from './conditional-passives.js?v=1.17.30';
+import { conditionalPassiveDescription } from './conditional-passives.js?v=1.18';
 import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateConfig } from './model.js';
-import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js?v=1.17.30';
+import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js?v=1.18';
 import { deduplicateImportedSkills } from './skill-dedup.js';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
 import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js';
-import { elementLevel } from './element-bonus.js?v=1.17.30';
+import { elementLevel } from './element-bonus.js?v=1.18';
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',

@@ -21,6 +21,20 @@ export const CONDITIONAL_PASSIVE_TEMPLATES = Object.freeze([
   { id:'rubi-maiden',name:'ルヴィメイデン',kind:'low',modifiers:{defense:-5,resist:-5,speed:6,evade:-10,drama:25}, note:'ザフィーアメイデン装備時のみ（装備条件は自動判定しません）' }
 ]);
 export const CONDITIONAL_KIND_OPTIONS = Object.freeze({full:'渾身（HP80%以上）',low:'底力（HP30%以下）',accel:'加速（指定ターンごと）',timed:'時限（指定ターン後消失）'});
+
+/**
+ * Skill definitions imported from the official profile, and named presets,
+ * are reference data. Only a user's explicit free-form entry may be edited.
+ * Older v1.18 named presets did not have `presetId`; recognise them by their
+ * catalogue name/kind without changing the stored modifiers.
+ */
+export function isFixedConditionalPassive(p) {
+    if (!p || typeof p !== 'object' || p.custom === true) return false;
+    if (CONDITIONAL_PASSIVE_TEMPLATES.some(t => t.id === p.presetId)) return true;
+    if (p.category === '手動追加' && p.baselineIncluded === false)
+        return CONDITIONAL_PASSIVE_TEMPLATES.some(t => t.name === p.name && t.kind === p.kind);
+    return p.sourceSkillId != null || p.baselineIncluded !== false;
+}
 const isIncluded = p => ['full','timed'].includes(p?.kind) && p.baselineIncluded !== false;
 const safeNumber = n => typeof n === 'number' && Number.isFinite(n) ? n : 0;
 /** When removing/editing official-included 渾身/時限, rebalance imported base values. */
@@ -49,11 +63,11 @@ export function applyPassiveEditor(unit, revised, editedEffects = unit.effects) 
 export function makePresetPassive(id) {
     const p = CONDITIONAL_PASSIVE_TEMPLATES.find(item=>item.id===id);
     if (!p) throw Error('Wiki掲載パッシブを選択してください。');
-    return { kind:p.kind, interval:p.interval??null, name:p.name, category:'手動追加',sourceSkillId:null,
+    return { kind:p.kind, interval:p.interval??null, name:p.name, presetId:p.id, category:'手動追加',sourceSkillId:null,
         baselineIncluded:false,modifiers:{...p.modifiers},effects:{},...(p.note?{note:p.note}:{}) };
 }
 export function makeCustomPassive(kind) {
     if (!Object.hasOwn(CONDITIONAL_KIND_OPTIONS,kind)) throw Error('パッシブ種別を選択してください。');
-    return {kind, interval:['accel','timed'].includes(kind)?5:null, name:'任意の条件付きパッシブ',
+    return {kind, interval:['accel','timed'].includes(kind)?5:null, name:'任意の条件付きパッシブ',custom:true,
         category:'手動追加',sourceSkillId:null,baselineIncluded:false,modifiers:{speed:1},effects:{}};
 }

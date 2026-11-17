@@ -3040,7 +3040,7 @@ h1 {
 .conditional-passive-item > .conditional-passive-state.is-active{color:#176045;background:#e3f3eb;border-color:#a3cbb6}
 .conditional-passive-item > .conditional-passive-state.is-inactive{opacity:1;color:#586b7b;background:#edf1f4;border-color:#ccd5dd}
 
-/* v1.17.30: compact, single-location data management */
+/* v1.18: compact, single-location data management */
 #data-management-panel{scroll-margin-top:75px}
 .data-management-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .data-management-unit{margin:5px 0 12px}
@@ -3075,7 +3075,7 @@ h1 {
 
 /* Numeric official-import status retains its baseline; computed passive status is adjacent. */
 .stat-passive-effective{display:block;margin-top:4px;font-size:11px;line-height:1.5;color:var(--muted);font-variant-numeric:tabular-nums}
-/* v1.17.30: editable conditional passives and independently removable effects */
+/* v1.18: editable conditional passives and independently removable effects */
 .imported-effect-item{display:inline-flex;align-items:center;gap:6px;border-radius:8px}
 .imported-effect-item .small{padding:3px 7px;font-size:.76rem}
 .conditional-passive-item > button{margin-left:3px}
@@ -3094,3 +3094,8 @@ h1 {
 .passive-editor-mod-row{display:grid;grid-template-columns:minmax(110px,1fr) minmax(68px,90px) auto;gap:8px;align-items:center;margin:5px 0}
 .passive-editor-mod-row select,.passive-editor-mod-row input{min-width:0;width:100%}
 @media(max-width:440px){.passive-editor-mod-row{grid-template-columns:minmax(85px,1fr) 72px auto;gap:4px}.passive-editor-mod-row button{padding:6px 5px}}
+
+/* v1.18: fixed named conditional passives are readable, not editable. */
+.passive-editor-static-values{display:flex;flex-wrap:wrap;gap:7px 9px}
+.passive-editor-static-item{border:1px solid var(--line,#ccd2d9);border-radius:7px;padding:5px 9px;background:var(--surface,transparent);font-variant-numeric:tabular-nums}
+.passive-editor-static-item strong{margin-left:4px}
