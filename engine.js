@@ -1,4 +1,4 @@
-import { conditionalPassiveModifier } from './conditional-passives.js';
+import { conditionalPassiveModifier, conditionalPassiveEffectModifier } from './conditional-passives.js?v=1.17.25';
 import { normalizeSettings, runSeed } from './run-settings.js';
 import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js';
 import { scoreDraw } from './battle-summary.js';
@@ -257,7 +257,9 @@ export class Battle {
     }
     effectRaw(u, key) {
         if (key === 'barrier') return this.barrierValue(u);
-        let n = u.passivesSuppressed ? 0 : Number(u.effects?.[key] || 0);
+        const maxHp = Math.max(1, Number(u.maxHp) || 1);
+        let n = u.passivesSuppressed ? 0 : Number(u.effects?.[key] || 0) +
+            conditionalPassiveEffectModifier(u, key, this.turn, u.hp, maxHp);
         if (!u.bs.some(b => b.name === '無策'))
             n += sumBuff(u.buffs.map(b => b.effects || {}), key);
         return n;

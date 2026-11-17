@@ -1,25 +1,26 @@
-import { conditionalPassiveDescription } from './conditional-passives.js';
+import { conditionalPassiveDescription, passiveStatusPreview } from './conditional-passives.js?v=1.17.25';
+import { deleteUnitSafely } from './unit-management.js?v=1.17.25';
 import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js';
-import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.23';
+import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.25';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.17.23';
+import { Battle, clamp } from './engine.js?v=1.17.25';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.17.25';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
-import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.23';
-import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.17.23';
-import { buildOfficialArenaActions } from './arena-share-export.js?v=1.17.23';
-import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.23';
+import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.25';
+import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.17.25';
+import { buildOfficialArenaActions } from './arena-share-export.js?v=1.17.25';
+import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.25';
 import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
-import { createCharacterImporter } from './character-ui.js?v=1.17.23';
+import { createCharacterImporter } from './character-ui.js?v=1.17.25';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
-import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.23';
+import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.25';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -125,6 +126,7 @@ let mapZoom = 1, mapRelations = false, mapMoveCircle = false, mapFocus = 'select
 const mobileExpandedRules = new Set([0]);
 let shareImportActions = null, shareImportTargetId = null, shareImportBusy = false;
 let shareExportTargetId = null, shareExportBusy = false;
+let passivePreviewTurn = 1, passivePreviewHp = 'start';
 let page = 'setup', selected = config.units[0].id, skillSearch = '', kindFilter = 'all', skillFilter = 'all', skillPage = 0, sim = null, frame = -1, logType = 'main', logTurn = 'all', logSearch = '', worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
 const $ = s => document.querySelector(s), app = $('#app');
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
@@ -203,12 +205,12 @@ function render() {
     const titles = { setup: '編成・ステータス', skills: 'スキルライブラリ', rules: 'キャラAI設定（β版）', sim: 'シミュレーション' };
     const mobileTitles = { setup: '編成', skills: 'スキル', rules: 'AI設定', sim: '戦闘' };
     const mobileNav = `<nav class="mobile-bottom-nav" aria-label="スマートフォン用メニュー">${Object.entries(mobileTitles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>`, `page:${k}`, page === k ? 'active' : '', `aria-label="${titles[k]}" ${page === k ? 'aria-current="page"' : ''}`)).join('')}</nav>`;
-    const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button><details class="mobile-file-menu"><summary>データ</summary><div class="mobile-file-menu-panel">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}${btn('不具合報告', 'open-bug-report')}</div></details></div>`;
+    const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer"><details class="desktop-data-tools"><summary>キャラデータ管理</summary><div class="desktop-data-tool-actions">${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div></details>${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.23</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.23</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.25</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.25</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
-<div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('キャラJSONを読み込む', 'import-character')}${btn('キャラJSONを書き出す', 'export-character')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
+<div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
     if (page === 'sim' && sim)
         bindReplay();
@@ -362,13 +364,39 @@ function openExpandedMap() {
     dlg.showModal();
     repaintExpandedMap();
 }
-function conditionalPassivesDisplay(list) {
+function conditionalPassivesDisplay(u) {
+    const list = u.conditionalPassives;
     if (!Array.isArray(list) || !list.length) return '';
-    return `<section class="conditional-passive-section" aria-label="条件付きパッシブ"><div class="field-section">条件付きパッシブ（戦闘中に変化）</div>
+    const hpPct = passivePreviewHp === 'start' ? u.startHp : Number(passivePreviewHp);
+    const preview = passiveStatusPreview(u, passivePreviewTurn, hpPct);
+    const keys = [...new Set(list.flatMap(p => Object.keys(p.modifiers || {})))];
+    const effectKeys = [...new Set(list.flatMap(p => Object.keys(p.effects || {})))];
+    const choices = (items, selected) => items.map(([v, label]) =>
+        `<option value="${v}" ${String(v) === String(selected) ? 'selected' : ''}>${label}</option>`).join('');
+    return `<section class="conditional-passive-section" aria-label="条件付きパッシブ"><div class="field-section">条件付きパッシブ</div>
 <div class="conditional-passive-list">${list.map(p => {
         const info = conditionalPassiveDescription(p, STAT_LABELS);
         return `<div class="conditional-passive-item"><strong>${esc(p.name)}</strong><span>${esc(info.heading)}</span><small>${info.values.map(esc).join(' / ')}</small></div>`;
-    }).join('')}</div><p class="footnote">渾身はHP80％以上、底力はHP30％以下で反映します。加速は経過ターンに応じて追加累積します。</p></section>`;
+    }).join('')}</div>
+<div class="passive-preview" aria-label="条件付きパッシブ適用後のステータス">
+<div class="passive-preview-head"><strong>戦闘中の実効値</strong><div class="passive-preview-filters">
+<label>ターン<select data-passive-preview-turn>${choices(Array.from({length:20}, (_,i) => [i+1, `T${i+1}`]), passivePreviewTurn)}</select></label>
+<label>HP<select data-passive-preview-hp>${choices([['start',`開始時（${nf(u.startHp)}%）`],[100,'100%'],[80,'80%'],[79,'79%'],[50,'50%'],[30,'30%'],[29,'29%']], passivePreviewHp)}</select></label>
+</div></div>
+${keys.length ? `<div class="effective-stat-grid">${keys.map(k => {
+    const delta = preview.stats[k] || 0, base = Number(u[k]) || 0;
+    return `<div class="effective-stat"><span>${esc(STAT_LABELS[k] || k)}</span><strong>${nf(base + delta)}</strong><small>基礎 ${nf(base)} ${delta >= 0 ? '+' : '−'} ${nf(Math.abs(delta))}</small></div>`;
+}).join('')}</div>` : ''}
+${effectKeys.length ? `<div class="passive-effect-preview">${effectKeys.map(k =>
+    `<span class="pill">${esc(EFFECTS[k] || k)} ${nf(preview.effects[k])}</span>`).join('')}</div>` : ''}
+</div><p class="footnote">基礎値は公式プロフィールの値を保持します。公式取込値には渾身・時限の補正が含まれ、底力・加速の補正は含まれません。渾身はHP80％未満、時限は期限後に差し引き、底力はHP30％以下、加速は所定ターンごとに加算します。</p></section>`;
+}
+function importedEffectsDisplay(u) {
+    const entries = Object.entries(u.effects || {}).filter(([key, value]) => Object.hasOwn(EFFECTS, key) && Number.isFinite(value) && value !== 0);
+    if (!entries.length) return '';
+    return `<section class="imported-effects-section"><div class="field-section">その他のステータス（常時特殊効果）</div>
+<div class="imported-effects-list">${entries.map(([key, value]) => `<span class="pill">${esc(EFFECTS[key])} ${nf(value)}</span>`).join('')}</div>
+<p class="footnote">公式プロフィールから取得した特殊効果です。対応済みの効果は戦闘計算に反映します。変更は「固有の特殊効果を編集」から行えます。</p></section>`;
 }
 function importedProfileDetails(u) {
     const p = u.importedProfile;
@@ -403,7 +431,7 @@ function setupPage() {
         'fumble',
         'drama'
     ].map(k => field(STAT_LABELS[k], input(k, u[k]))).join('')}${field('通常攻撃の射程', select(RANGES, u.normalRange, 'data-unit="normalRange"'))}</div>\
-${conditionalPassivesDisplay(u.conditionalPassives)}<div class="field-section">属性（ダメージ補正のみ）</div><div class="element-single">${field('属性', `<select data-element-key><option value="" ${!u.element?.key ? 'selected' : ''}>未設定</option>${ELEMENT_KEYS.map(k => `<option value="${k}" ${u.element?.key === k ? 'selected' : ''}>${k}</option>`).join('')}</select>`)}${field('属性値', `<input type="number" min="0" max="1000000" step="1" inputmode="numeric" data-element-value value="${u.element?.value ?? 0}" ${!u.element?.key ? 'disabled' : ''}>`)}<span class="element-level" data-element-level>Lv${elementLevel(u.element?.value)}</span></div>\
+${conditionalPassivesDisplay(u)}${importedEffectsDisplay(u)}<div class="field-section">属性（ダメージ補正のみ）</div><div class="element-single">${field('属性', `<select data-element-key><option value="" ${!u.element?.key ? 'selected' : ''}>未設定</option>${ELEMENT_KEYS.map(k => `<option value="${k}" ${u.element?.key === k ? 'selected' : ''}>${k}</option>`).join('')}</select>`)}${field('属性値', `<input type="number" min="0" max="1000000" step="1" inputmode="numeric" data-element-value value="${u.element?.value ?? 0}" ${!u.element?.key ? 'disabled' : ''}>`)}<span class="element-level" data-element-level>Lv${elementLevel(u.element?.value)}</span></div>\
 <details class="accordion"><summary>初期位置・開始HP/AP・特殊効果</summary><div class="fields four">${field('初期X座標 (m)', input('x', u.x))}${field('初期Y座標 (m)', input('y', u.y))}${field('開始HP (%)', input('startHp', u.startHp, 'min="0" max="100"'))}${field('開始AP (%)', input('startAp', u.startAp, 'min="0" max="100"'))}</div>\
 <div class="fields two" style="margin-top:15px">${field('開始時BS（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-bs>${BS_NAMES.map(b => `<option ${(u.initialBS || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}${field('BS耐性（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-immunity>${BS_NAMES.map(b => `<option ${(u.immunities || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}</div>\
 <div class="btnrow" style="margin-top:15px">${btn('固有の特殊効果を編集', 'unit-effects', 'small')}</div>\
@@ -418,9 +446,16 @@ ${conditionalPassivesDisplay(u.conditionalPassives)}<div class="field-section">�
 <span class="num">0${i + 1}</span>\
 <div>${esc(actionName(r, u))}<small>${r.conditions.length ? conditionSummary(r.conditions[0]) : '無条件'}</small>\
 </div></div>`).join('')}<div class="hint">\
-上のルールから順に判定し、実行できる最初の行動を選択します。</div></div></section><section class="panel"><div class="panel-body"><h3>データ管理</h3><p class="subtitle">\
-設定はブラウザに自動保存されます。</p><div class="unit-tactics-management"><h3>${esc(u.name)} のキャラクター設定</h3>\
-<p class="subtle">上部の「キャラJSON」で、このキャラの能力値とスキル・AIを1人ずつ入出力できます。</p><div class="unit-tactics-buttons">${btn('このキャラをJSONで書き出す', 'export-character', 'small')}${btn('このキャラにJSONを読み込む', 'import-character', 'small')}</div><p class="subtle">スキル・AIのみを移す場合：</p>${unitTacticsControls()}</div>${btn('初期編成に戻す', 'reset-config', 'small danger', 'style="margin-top:12px"')}</div>\
+上のルールから順に判定し、実行できる最初の行動を選択します。</div></div></section><section class="panel"><div class="panel-body" id="data-management-panel"><div class="data-management-heading"><h3>データ管理</h3><span class="subtle">自動保存中</span></div>
+<p class="subtle data-management-unit">対象：${esc(u.name)}</p>
+<details class="data-management-group" open><summary>キャラクターJSON</summary><div class="data-management-actions">
+${btn('書き出す', 'export-character', 'small')}${btn('読み込む', 'import-character', 'small')}</div>
+<p class="footnote">能力値・特殊効果・装備・AIをまとめて管理します。</p></details>
+<details class="data-management-group"><summary>スキル・AIのみ</summary><div class="data-management-actions">
+${btn('書き出す', 'export-unit-tactics', 'small')}${btn('読み込む', 'import-unit-tactics', 'small')}</div></details>
+<details class="data-management-group"><summary>公式アリーナAI</summary><div class="data-management-actions">
+${btn('アリーナ取込', 'import-arena-tactics', 'small')}${btn('共有コード読込', 'import-share-code', 'small')}${btn('共有コード発行', 'open-share-export', 'small')}</div></details>
+<div class="data-management-reset">${btn('初期編成に戻す', 'reset-config', 'small danger')}</div></div>\
 </section></aside></div>`;
 }
 const actionName = (r, u = current()) => r.action === 'skill' ? displayedSkillName(u, config.skills.find(s => s.id === r.skillId)) || 'スキル未選択' : ACTIONS[r.action];
@@ -964,7 +999,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.17.23', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.17.25', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];
@@ -1156,6 +1191,12 @@ function applyShareResponse() {
 async function onAction(act) {
     const [a, arg, arg2] = act.split(':');
     const u = current();
+    if (a === 'jump-data') {
+        page = 'setup';
+        render();
+        document.querySelector('#data-management-panel')?.scrollIntoView?.({behavior:'smooth',block:'start'});
+        return;
+    }
     if (a === 'toggle-mobile-rule') {
         const i = Number(arg), card = document.querySelector(`[data-mobile-rule="${i}"]`);
         if (!card) return;
@@ -1436,18 +1477,11 @@ async function onAction(act) {
             toast('各チームに1人以上必要です。');
             return;
         }
-        config.units = config.units.filter(v => v.id !== u.id);
-        for (const v of config.units)
-            for (const r of v.rules)
-                if (r.moveSubject === 'id' && r.moveUnitId === u.id)
-                    r.moveUnitId = v.id;
-                if (r.target === 'id' && r.targetUnitId === u.id)
-                    r.targetUnitId = v.id;
-                for (const c of [...r.conditions, ...(r.moveConditions || [])])
-                    if (c.type === 'who' && c.subject === 'id' && c.characterId === u.id)
-                        c.characterId = v.id;
-        arrangeInitialPositions(config.units);
-        selected = config.units[0].id;
+        const result = deleteUnitSafely(config, u.id);
+        selected = result.nextSelected;
+        if (!['all', 'selected'].includes(mapFocus) && !config.units.some(v => v.id === mapFocus)) mapFocus = 'selected';
+        sim = null; batch = null; frame = -1; selectedLogId = -1; errors = [];
+        if (result.disabledRules) toast(`参照先が削除されたAI ${result.disabledRules}件を無効にしました。`);
     }
     else if (a === 'add-rule') {
         if (u.rules.length >= ARENA_MAX_RULES) { toast('公式仕様では最大20件です。'); return; }
@@ -1578,6 +1612,15 @@ document.addEventListener('change', e => {
         mapFocus = el.value;
         repaintMaps();
         return;
+    }
+    if (el.matches('[data-passive-preview-turn]')) {
+        const n = Number(el.value);
+        if (Number.isInteger(n) && n >= 1 && n <= 20) passivePreviewTurn = n;
+        render(); return;
+    }
+    if (el.matches('[data-passive-preview-hp]')) {
+        passivePreviewHp = el.value;
+        render(); return;
     }
     if (el.matches('[data-element-key]')) {
         const key = el.value || null;

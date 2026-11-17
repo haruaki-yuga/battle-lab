@@ -3032,3 +3032,29 @@ h1 {
 .conditional-passive-item>strong{font-weight:650}
 .conditional-passive-item>span{font-size:.88em}
 .conditional-passive-item>small{flex-basis:100%;font-size:.88em;line-height:1.65}
+
+/* v1.17.25: compact, single-location data management */
+#data-management-panel{scroll-margin-top:75px}
+.data-management-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.data-management-unit{margin:5px 0 12px}
+.data-management-group{border:1px solid var(--line);border-radius:8px;margin:7px 0;background:var(--white)}
+.data-management-group>summary{padding:11px 12px;font-weight:650;cursor:pointer;list-style:revert}
+.data-management-group[open]>summary{border-bottom:1px solid var(--line)}
+.data-management-actions{display:flex;flex-wrap:wrap;gap:7px;padding:11px 12px 6px}
+.data-management-actions button{min-height:34px}
+.data-management-group .footnote{padding:3px 12px 11px}
+.data-management-reset{margin-top:15px;padding-top:12px;border-top:1px solid var(--line)}
+.sidebar-data-button{width:100%;margin-bottom:8px}
+.mobile-data-shortcut{min-height:36px;font-size:11px;padding:5px 10px}
+.passive-preview{border:1px solid var(--line);border-radius:9px;padding:12px;background:var(--white);margin:10px 0 7px}
+.passive-preview-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.passive-preview-filters{display:flex;flex-wrap:wrap;gap:7px}
+.passive-preview-filters label{display:flex;align-items:center;gap:5px;font-size:12px}
+.passive-preview-filters select{width:auto;max-width:185px;padding:5px 9px;min-height:31px}
+.effective-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
+.effective-stat{display:flex;flex-direction:column;padding:9px 10px;border:1px solid var(--line);border-radius:7px;gap:2px}
+.effective-stat span{font-size:11px;color:var(--muted)}
+.effective-stat strong{font-size:19px;font-variant-numeric:tabular-nums}
+.effective-stat small{font-size:10px;color:var(--muted)}
+.imported-effects-list,.passive-effect-preview{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
+@media(max-width:700px){.data-management-actions button{flex:1 1 130px}.passive-preview-filters{width:100%}.passive-preview-filters label{flex:1 1 auto}.passive-preview-filters select{max-width:160px}}

@@ -1,5 +1,5 @@
 import { STAT_LABELS, EFFECTS, BS_NAMES, freshSkill, freshUnit, freshRule, clone, uid } from './model.js';
-import { readConditionalPassives } from './conditional-passives.js';
+import { readConditionalPassives } from './conditional-passives.js?v=1.17.25';
 import { extractMainCharacterElement, ELEMENT_ID_TO_KEY } from './element-bonus.js?v=1.17.16';
 import { findReusableImportedSkill } from './skill-dedup.js';
 import { normalizeLegacyBarrierSkill } from './barrier-rules.js';
@@ -16,7 +16,27 @@ const statNames = {
     CT: 'critical',
     FB: 'fumble'
 };
-const effectNames = Object.fromEntries(Object.entries(EFFECTS).map(([k, v]) => [v, k]));
+const effectNames = Object.fromEntries(Object.entries(EFFECTS).map(([k, v]) => [v.normalize('NFKC').replace(/\s+/g, ''), k]));
+const normalizedLabel = value => visibleText(value).normalize('NFKC').replace(/\s+/g, '');
+// Only apply official sub-status entries whose names are implemented in the battle engine.
+// Unknown entries remain visible in the import report; never silently invent mechanics.
+export function readImportedStatusRows(rows) {
+    const stats = {}, effects = {}, otherStats = [], unknown = [];
+    for (const row of rows) {
+        if (!row || typeof row !== 'object') continue;
+        const name = normalizedLabel(row.name), abbr = normalizedLabel(row.abbr);
+        const numeric = Number(row.value);
+        const numericOK = row.value !== null && row.value !== '' && Number.isFinite(numeric) && Math.abs(numeric) <= 1e9;
+        const key = statNames[name] || statNames[abbr];
+        if (key) { if (numericOK) stats[key] = numeric; else unknown.push(name || abbr); continue; }
+        const effect = effectNames[name] || effectNames[abbr];
+        if (effect) { if (numericOK) effects[effect] = numeric; else unknown.push(name || abbr); continue; }
+        otherStats.push({name: name || abbr, value: row.value, type: row.type});
+        if (numericOK && numeric !== 0 && row.type !== 'ELEMENT' && name !== '活性限界値')
+            unknown.push(`${name || abbr} ${numeric}`);
+    }
+    return {stats, effects, otherStats, unknown};
+}
 const rangeNames = {
     至: 'touch',
     近: 'near',
@@ -222,30 +242,13 @@ export function parseCharacterData(data, sourceURL, at = new Date().toISOString(
     const element = extractMainCharacterElement(c.sub_status);
     if (!element)
         throw Error('7属性の属性ID・属性値が揃っていません。元属性を特定できないため読み込みを中止しました。');
-    const stats = {}, effects = {}, immunities = [], warnings = [], otherStats = [];
+    const {stats, effects, otherStats, unknown} = readImportedStatusRows(c.sub_status);
+    const immunities = [], warnings = [];
     if (element.value > 0 && c.sub_status.filter(row =>
-        row?.type === 'ELEMENT' && ELEMENT_ID_TO_KEY[row.id] && row.value === element.value).length > 1)
+        row?.type === 'ELEMENT' && ELEMENT_ID_TO_KEY[row.id] && Number(row.value) === element.value).length > 1)
         warnings.push(`属性値${element.value}が同率で複数あります。${element.key}を採用しました。必要なら設定欄で変更してください。`);
-    for (const row of c.sub_status) {
-        const name = visibleText(row.name), abbr = visibleText(row.abbr), key = statNames[name] || statNames[abbr];
-        if (key) {
-            if (finite(row.value))
-                stats[key] = row.value;
-            continue;
-        }
-        const effect = effectNames[name] || effectNames[abbr];
-        if (effect && finite(row.value)) {
-            effects[effect] = row.value;
-            continue;
-        }
-        if (row.type === 'ELEMENT' || name === '活性限界値') {
-            otherStats.push({ name, value: row.value });
-            continue;
-        }
-        // Retain unsupported passive/conditional effects for review rather than guessing.
-        if (row.value)
-            warnings.push(`常時効果「${name} ${row.value}」は自動反映に未対応です。`);
-    }
+    for (const label of unknown)
+        warnings.push(`その他のステータス「${label}」は戦闘への自動反映に未対応です。`);
     const missing = Object.keys(STAT_LABELS).filter(k => !finite(stats[k]));
     if (missing.length)
         warnings.push(`未取得の能力値：${missing.map(k => STAT_LABELS[k]).join('、')}`);

@@ -1,12 +1,29 @@
 /**
  * Official Lost Arcadia conditional passive parameters.
  * The character-profile sub_status values remain the imported base statistics.
- * 渾身/底力 grant their skill-defined modifiers while their HP condition holds.
- * 加速 grants one additional copy of the listed modifier at each Nth
- * battle turn (up to floor(20 / N) copies), relative to imported profile stats.
+ * Official imported sub_status values ALREADY CONTAIN the 渾身 and 時限
+ * modifiers.  Subtract one copy of 渾身 below 80% HP and one copy of 時限
+ * after X complete turns (from turn X+1).  At the start of battle,
+ * subtract neither one: they must NOT be counted twice.
+ * Official imported sub_status values DO NOT CONTAIN 底力 or 加速.
+ * Add 底力 at or below 30% HP and 加速 each Nth turn (up to 20/N times).
+ * Applies equally to numeric stats and supported extra sub_status effects.
  */
-export const PASSIVE_KIND_LABELS = Object.freeze({ accel: '加速', full: '渾身', low: '底力' });
+export const PASSIVE_KIND_LABELS = Object.freeze({ accel: '加速', full: '渾身', low: '底力', timed: '時限' });
 
+// Extra passive modifiers use the same keys as unit.effects / Battle.effectRaw.
+// Stateful effects (e.g. barrier) are deliberately excluded: they cannot be
+// accurately represented as a temporary numeric status without extra state.
+const effectAliases = Object.freeze({
+    再生: 'regen', 充填: 'charge', 能率: 'efficiency', ダメージ: 'dot', ロスト: 'lost',
+    摩耗: 'erosion', 'HP吸収': 'hpDrain', 'AP吸収': 'apDrain', 'HA吸収': 'haDrain',
+    攻勢BS回復: 'offensiveCleanse', 'BS回復': 'bsHeal', 'HP鎧': 'hpArmor',
+    'AP鎧': 'apArmor', 'BS鎧': 'bsArmor', 'BS緩和': 'bsEase',
+    追撃: 'pursuit', 邪道: 'evil', 鬼道: 'demon', 復讐: 'revenge',
+    巧妙: 'clever', 堅実: 'steady', 多重影: 'multiShadow',
+    スプラッシュ: 'splash', 弱点: 'weak', 曲射: 'curve', 重甲: 'heavy',
+    高速詠唱: 'fastCast', 'ブレイクガード': 'breakGuard', 光輝: 'radiance'
+});
 const statAliases = Object.freeze({
     HP: 'maxHp', AP: 'maxAp',
     主攻: 'main', 主攻撃力: 'main', 副攻: 'sub', 副攻撃力: 'sub',
@@ -22,27 +39,32 @@ export function parseConditionalPassive(raw, category = 'パッシヴ') {
     const conditions = tags.map(tag => {
         if (tag === '渾身') return { kind: 'full', interval: null };
         if (tag === '底力') return { kind: 'low', interval: null };
-        const match = /^加速([1-9]\d*)$/.exec(tag);
-        return match ? { kind: 'accel', interval: Number(match[1]) } : null;
+        const accel = /^加速([1-9]\d*)$/.exec(tag);
+        if (accel) return { kind: 'accel', interval: Number(accel[1]) };
+        const timed = /^時限([1-9]\d*)$/.exec(tag);
+        return timed ? { kind: 'timed', interval: Number(timed[1]) } : null;
     }).filter(Boolean);
     if (!conditions.length) return { entry: null, warning: null };
     const name = String(raw?.name || '(名称なし)').trim();
-    if (conditions.length !== 1 || (conditions[0].kind === 'accel' && conditions[0].interval > 20))
+    if (conditions.length !== 1 ||
+        (conditions[0].kind === 'accel' && conditions[0].interval > 20) ||
+        (conditions[0].kind === 'timed' && conditions[0].interval > 9999))
         return { entry: null, warning: `${name}：複数・範囲外の条件付きパッシブは未対応です` };
     const tokens = original.replace(/[〖【][^〗】]*[〗】]/g, '').replace(/[、，]/g, ',').split(',').filter(Boolean);
-    const modifiers = {};
+    const modifiers = {}, effects = {};
     for (const token of tokens) {
         const match = /^(.+?)([+-]\d+(?:\.\d+)?)$/.exec(token);
-        const key = statAliases[match?.[1]];
-        if (!match || !key || !Number.isFinite(Number(match[2])))
+        const key = statAliases[match?.[1]], effect = effectAliases[match?.[1]];
+        if (!match || (!key && !effect) || !Number.isFinite(Number(match[2])))
             return { entry: null, warning: `${name}：条件付きパッシブの未対応補正「${token}」を検出したため、自動反映しません` };
-        modifiers[key] = (modifiers[key] || 0) + Number(match[2]);
+        if (key) modifiers[key] = (modifiers[key] || 0) + Number(match[2]);
+        else effects[effect] = (effects[effect] || 0) + Number(match[2]);
     }
-    if (!Object.keys(modifiers).length)
+    if (!Object.keys(modifiers).length && !Object.keys(effects).length)
         return { entry: null, warning: `${name}：条件付きパッシブの能力補正を解析できません` };
     return { entry: {
         ...conditions[0], name, category,
-        sourceSkillId: raw?.id == null ? null : String(raw.id), modifiers
+        sourceSkillId: raw?.id == null ? null : String(raw.id), modifiers, effects
     }, warning: null };
 }
 
@@ -65,37 +87,70 @@ export function validConditionalPassives(value) {
         p && typeof p === 'object' && !Array.isArray(p) &&
         Object.hasOwn(PASSIVE_KIND_LABELS, p.kind) &&
         typeof p.name === 'string' && p.name.length > 0 && p.name.length <= 200 &&
-        (p.kind !== 'accel' || (Number.isInteger(p.interval) && p.interval >= 1 && p.interval <= 20)) &&
+        (!['accel', 'timed'].includes(p.kind) ||
+            (Number.isInteger(p.interval) && p.interval >= 1 &&
+             p.interval <= (p.kind === 'accel' ? 20 : 9999))) &&
         p.modifiers && typeof p.modifiers === 'object' && !Array.isArray(p.modifiers) &&
-        Object.keys(p.modifiers).length > 0 && Object.keys(p.modifiers).length <= 14 &&
+        Object.keys(p.modifiers).length <= 14 &&
         Object.keys(p.modifiers).every(key => Object.values(statAliases).includes(key)) &&
-        Object.values(p.modifiers).every(v => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6)
+        Object.values(p.modifiers).every(v => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6) &&
+        (p.effects === undefined || (p.effects && typeof p.effects === 'object' && !Array.isArray(p.effects) &&
+            Object.keys(p.effects).length <= 30 &&
+            Object.keys(p.effects).every(key => Object.values(effectAliases).includes(key)) &&
+            Object.values(p.effects).every(v => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6))) &&
+        (Object.keys(p.modifiers).length > 0 || Object.keys(p.effects || {}).length > 0)
     );
 }
 
-/** The cap and number of increments follow the official 20 / X rule. */
+/** Official thresholds and the maximum 20 / X acceleration increments. */
+function conditionMultiplier(p, turn, hp, maxHp) {
+    const ratio = maxHp > 0 ? hp / maxHp : 0;
+    // 渾身 is baked into the official imported value. Remove it only
+    // when its HP requirement is not met; never add it a second time.
+    if (p.kind === 'full') return ratio >= .8 - 1e-12 ? 0 : -1;
+    if (p.kind === 'low') return ratio <= .3 + 1e-12 ? 1 : 0;
+    // A timed modifier is already included in the imported base value. Remove
+    // it on the first turn AFTER X turns have elapsed (turn X+1).
+    if (p.kind === 'timed' && Number.isInteger(p.interval) && p.interval > 0)
+        return turn > p.interval ? -1 : 0;
+    if (p.kind === 'accel' && Number.isInteger(p.interval) && p.interval > 0)
+        return Math.min(Math.floor(20 / p.interval), Math.floor(Math.max(0, turn) / p.interval));
+    return 0;
+}
 export function conditionalPassiveModifier(unit, statKey, turn, hp, maxHp) {
-    if (unit.passivesSuppressed) return 0;
-    const list = unit.conditionalPassives;
-    if (!Array.isArray(list) || !list.length) return 0;
-    const healthRatio = maxHp > 0 ? hp / maxHp : 0;
-    let total = 0;
-    for (const p of list) {
-        const amount = Number(p?.modifiers?.[statKey]) || 0;
-        if (!amount) continue;
-        if (p.kind === 'full' && healthRatio >= .8 - 1e-12) total += amount;
-        else if (p.kind === 'low' && healthRatio <= .3 + 1e-12) total += amount;
-        else if (p.kind === 'accel' && Number.isInteger(p.interval) && p.interval > 0)
-            total += amount * Math.min(Math.floor(20 / p.interval), Math.floor(Math.max(0, turn) / p.interval));
+    if (!Array.isArray(unit.conditionalPassives)) return 0;
+    return unit.conditionalPassives.reduce((total, p) => total +
+        (Number(p?.modifiers?.[statKey]) || 0) *
+        (unit.passivesSuppressed ? (p?.kind === 'timed' || p?.kind === 'full' ? -1 : 0) : conditionMultiplier(p, turn, hp, maxHp)), 0);
+}
+export function conditionalPassiveEffectModifier(unit, effectKey, turn, hp, maxHp) {
+    if (unit.passivesSuppressed || !Array.isArray(unit.conditionalPassives)) return 0;
+    return unit.conditionalPassives.reduce((total, p) => total +
+        (Number(p?.effects?.[effectKey]) || 0) * conditionMultiplier(p, turn, hp, maxHp), 0);
+}
+/** Base imported values are not modified; provide a read-only effective preview. */
+export function passiveStatusPreview(unit, turn = 1, hpPct = unit.startHp ?? 100) {
+    const maxHp = Math.max(1, Number(unit.maxHp) || 1);
+    const hp = maxHp * Math.max(0, Math.min(100, Number(hpPct) || 0)) / 100;
+    const stats = {}, effects = {};
+    for (const p of Array.isArray(unit.conditionalPassives) ? unit.conditionalPassives : []) {
+        for (const key of Object.keys(p.modifiers || {}))
+            stats[key] = conditionalPassiveModifier(unit, key, turn, hp, maxHp);
+        for (const key of Object.keys(p.effects || {}))
+            effects[key] = (unit.passivesSuppressed ? 0 : (Number(unit.effects?.[key]) || 0)) +
+                conditionalPassiveEffectModifier(unit, key, turn, hp, maxHp);
     }
-    return total;
+    return {stats, effects};
 }
 
 export function conditionalPassiveDescription(passive, statLabels = {}) {
     const kind = PASSIVE_KIND_LABELS[passive.kind] || passive.kind;
     const heading = passive.kind === 'accel' ? `${kind}${passive.interval}（${passive.interval}ターン経過ごと）` :
+        passive.kind === 'timed' ? `${kind}${passive.interval}（${passive.interval}ターン経過後に消失）` :
         passive.kind === 'full' ? `${kind}（HP 80％以上）` : `${kind}（HP 30％以下）`;
     const values = Object.entries(passive.modifiers || {}).map(([key, value]) =>
         `${statLabels[key] || key}${value >= 0 ? '+' : ''}${value}`);
+    for (const [key, value] of Object.entries(passive.effects || {}))
+        values.push(`${Object.entries(effectAliases).find(([, k]) => k === key)?.[0] || key}${value >= 0 ? '+' : ''}${value}`);
     return { heading, values };
 }

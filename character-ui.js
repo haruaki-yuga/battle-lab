@@ -1,10 +1,10 @@
-import { conditionalPassiveDescription } from './conditional-passives.js';
+import { conditionalPassiveDescription } from './conditional-passives.js?v=1.17.25';
 import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateConfig } from './model.js';
-import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js';
+import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js?v=1.17.25';
 import { deduplicateImportedSkills } from './skill-dedup.js';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
 import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js';
-import { elementLevel } from './element-bonus.js?v=1.17.23';
+import { elementLevel } from './element-bonus.js?v=1.17.25';
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -79,14 +79,15 @@ ${tabs}${lookupForm}${state.error ? `<div class="error-box import-feedback" role
 <strong>${p.stats[k] === undefined ? '未取得' : number(p.stats[k])}</strong>\
 </div>`).join('')}</div>\
 ${conditionalPreview(p.conditionalPassives)}<h3 class="import-section-title">採用属性（最大値のみ）</h3><div class="import-element-list"><span>${p.element.key ? esc(p.element.key) : '未設定'} ${p.element.value} <small>Lv${elementLevel(p.element.value)}</small></span></div>\
-<div class="notice">公式プロフィールに表示された能力値を基準にします。通常のステータス補正は再加算しません。条件付きパッシブはHP・ターン数に応じて戦闘中に反映し、属性相性はダメージ計算だけに適用します。</div><h3 class="import-section-title">装備アクティブ <span class="rule-count">${supported.length} / ${p.skills.length} 件をセット可能</span>\
+<div class="notice">公式プロフィールの能力値を基準にします。通常の補正は重複加算しません。渾身・時限は取得値に含まれるため再加算しません。渾身はHP80％未満、時限は期限後に差し引き、底力・加速は発動時に加算します。属性相性はダメージ計算だけに適用します。</div><h3 class="import-section-title">装備アクティブ <span class="rule-count">${supported.length} / ${p.skills.length} 件をセット可能</span>\
 </h3>${p.skills.length ? p.skills.map(r => `<details class="import-skill">\
 <summary><span>${esc(r.name)}${r.baseName ? `<small>\
 元スキル：${esc(r.baseName)}</small>` : ''}</span>\
 <span class="pill ${r.supported ? 'green' : 'red'}">${r.supported ? `AP ${number(r.skill.ap)} · 行動値 ${number(r.skill.cost)}` : '未対応・セット対象外'}</span>\
 </summary><p class="source-quote">${esc(r.original)}</p>${r.issues.length ? `<p class="import-warning">\
 未対応：${r.issues.map(esc).join('、')}</p>` : ''}</details>`).join('') : '<p class="subtle">装備中のアクティブスキルはありません。</p>'}<h3 class="import-section-title">\
-その他のステータス</h3><div class="skill-tags">${Object.entries(p.effects).length ? Object.entries(p.effects).map(([k, v]) => `<span class="pill">${esc(EFFECTS[k])} ${number(v)}</span>`).join('') : '<span class="subtle">対応するその他のステータスはありません。</span>'}</div>${p.warnings.length ? `<div class="import-warning-box" role="status">\
+その他のステータス（戦闘計算に反映）</h3><div class="skill-tags">${Object.entries(p.effects).length ? Object.entries(p.effects).map(([k, v]) => `<span class="pill">${esc(EFFECTS[k] || k)} ${number(v)}</span>`).join('') : '<span class="subtle">対応するその他のステータスはありません。</span>'}</div>
+${p.otherStats?.some(r => r.type !== 'ELEMENT' && r.name !== '活性限界値' && Number(r.value)) ? `<p class="import-warning">自動反映できないその他の値：${p.otherStats.filter(r => r.type !== 'ELEMENT' && r.name !== '活性限界値' && Number(r.value)).map(r => esc(`${r.name} ${r.value}`)).join('、')}</p>` : ''}${p.warnings.length ? `<div class="import-warning-box" role="status">\
 <b>読み込み内容の確認</b><ul>${p.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>\
 </div>` : ''}<div class="import-destination fields two">\
 <label class="field"><span>反映先</span><select id="character-destination">${option('add', '新しいキャラとして追加', state.replaceId)}${config.units.map(u => option(u.id, `${u.name} を置き換える`, state.replaceId)).join('')}</select>\

@@ -326,3 +326,6 @@ html[data-theme="dark"] .skill-effect-chip { border-color: #506574; color: #d1e1
 @media (max-width: 700px) {
   html[data-theme="dark"] .skill-row-actions { border-top-color: #425666; }
 }
+
+html[data-theme="dark"] .data-management-group,html[data-theme="dark"] .passive-preview{background:#202933;border-color:#3d4b58}
+html[data-theme="dark"] .effective-stat{border-color:#3d4b58}
