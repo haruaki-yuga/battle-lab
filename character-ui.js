@@ -3,7 +3,7 @@ import { parseCharacterURL, parseCharacterData, createImportedUnit } from './cha
 import { deduplicateImportedSkills } from './skill-dedup.js';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
 import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js';
-import { elementLevel } from './element-bonus.js?v=1.17.21';
+import { elementLevel } from './element-bonus.js?v=1.17.22';
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -51,7 +51,7 @@ ${button('URLから取得', 'mode-url', state.mode === 'url' ? 'primary' : '', s
 <span>キャラクター詳細ページのURL</span><input type="url" id="character-source-url" value="${esc(state.url)}" placeholder="${urlPlaceholder}" required autocomplete="off">
 </label><div class="btnrow" style="margin-top:12px">${button(state.loading ? '読み込み中…' : '内容を取得', 'fetch', 'primary', state.loading)}</div></form>` :
 `<form id="character-name-form"><label class="field"><span>キャラクター名（一部でも検索できます）</span>
-<input type="search" id="character-search-name" value="${esc(state.nameQuery)}" maxlength="40" placeholder="例：春秋 佑河" required autocomplete="off">
+<input type="search" id="character-search-name" value="${esc(state.nameQuery)}" maxlength="40" placeholder="名前を入力" required autocomplete="off">
 </label><div class="btnrow" style="margin-top:12px">${button(state.loading ? '検索中…' : '名前で検索', 'search-name', 'primary', state.loading)}</div></form>`;
         const results = state.results === null ? '' : `<section class="character-search-results" aria-label="検索結果">
 <h3>検索結果 <span class="rule-count">${state.results.length}件${state.tooMany ? '以上' : ''}</span></h3>
@@ -59,9 +59,9 @@ ${state.tooMany ? '<p class="import-warning">候補が多いため一部のみ�
 ${state.results.length ? `<div class="character-search-result-list">${state.results.map(c=>
 `<div class="character-search-result"><div class="character-search-result-info"><strong>${esc(c.name)}</strong>
 <small>${esc(c.id)}${c.title ? ` / ${esc(c.title)}` : ''}</small></div>
-${button('このキャラを選択', 'select-character', '', false).replace('<button ', `<button data-character-id="${esc(c.id)}" `)}</div>`).join('')}</div>` : (!state.tooMany ? '<p class="subtle">一致するキャラクターが見つかりませんでした。</p>' : '')}</section>`;
+${button('このキャラを選択', 'select-character', '', false).replace('<button ', `<button data-character-id="${esc(c.id)}" `)}</div>`).join('')}</div>` : (!state.tooMany ? '<p class="subtle">一致するPCが見つかりませんでした。</p>' : '')}</section>`;
         dialog.innerHTML = `<div class="modal-header"><div><div class="eyebrow">CHARACTER SEARCH</div><h2 id="character-import-title">キャラ検索</h2></div>${button('×', 'close', 'ghost')}</div>
-<div class="modal-form"><p class="subtitle">公式サイトの公開キャラクターを探して、能力値・スキルを編成に読み込みます。</p>
+<div class="modal-form"><p class="subtitle">公式サイトのPCを名前で検索し、能力値・スキルを編成に読み込みます。URLからの取得も可能です。</p>
 ${tabs}${lookupForm}${state.error ? `<div class="error-box import-feedback" role="alert">${esc(state.error)}</div>` : ''}${state.loading ? `<p class="import-feedback" role="status">${state.mode === 'url' ? '公開プロフィールを取得しています…' : '名前を検索しています…'}</p>` : ''}${results}${p ? `<section class="import-preview">\
 <div class="import-profile-heading"><div><div class="eyebrow">${esc(p.characterId)}${Number.isFinite(p.level) ? ` / Lv. ${p.level}` : ''}</div>\
 <h3>${esc(p.name)}</h3>\
