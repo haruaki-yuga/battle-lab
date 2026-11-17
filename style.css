@@ -3035,8 +3035,12 @@ h1 {
 .conditional-passive-state{margin-left:auto;padding:2px 8px;border-radius:999px;font-weight:650;white-space:nowrap;background:var(--surface-soft,#eceff3);border:1px solid var(--line,#ccd2d9)}
 .conditional-passive-state.is-active{border-color:var(--line,#ccd2d9);background:var(--surface-soft,#e9eef2)}
 .conditional-passive-state.is-inactive{opacity:.7}
+/* State text must contrast with its own surface, including in dark mode. */
+.conditional-passive-item > .conditional-passive-state{color:#344a5b;background:#eaf0f4;border-color:#cbd6e0}
+.conditional-passive-item > .conditional-passive-state.is-active{color:#176045;background:#e3f3eb;border-color:#a3cbb6}
+.conditional-passive-item > .conditional-passive-state.is-inactive{opacity:1;color:#586b7b;background:#edf1f4;border-color:#ccd5dd}
 
-/* v1.17.28: compact, single-location data management */
+/* v1.17.29: compact, single-location data management */
 #data-management-panel{scroll-margin-top:75px}
 .data-management-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .data-management-unit{margin:5px 0 12px}
@@ -3054,6 +3058,13 @@ h1 {
 .passive-preview-filters{display:flex;flex-wrap:wrap;gap:7px}
 .passive-preview-filters label{display:flex;align-items:center;gap:5px;font-size:12px}
 .passive-preview-filters select{width:auto;max-width:185px;padding:5px 9px;min-height:31px}
+.passive-preview-context{font-size:12px;display:inline-flex;align-items:center;min-height:31px;padding:4px 9px;border-radius:6px;background:var(--paper);border:1px solid var(--line);color:var(--ink)}
+.passive-timed-timeline{border-top:1px solid var(--line);margin-top:12px;padding-top:10px;font-size:12px}
+.passive-timed-timeline > strong{font-size:12px}
+.passive-timed-steps{display:grid;gap:6px;margin-top:7px}
+.passive-timed-step{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px 13px;padding:6px 9px;border:1px solid var(--line);border-radius:6px}
+.passive-timed-step > strong{white-space:nowrap}
+.passive-timed-step > span{color:var(--muted)}
 .effective-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
 .effective-stat{display:flex;flex-direction:column;padding:9px 10px;border:1px solid var(--line);border-radius:7px;gap:2px}
 .effective-stat span{font-size:11px;color:var(--muted)}

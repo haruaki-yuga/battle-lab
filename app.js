@@ -1,26 +1,26 @@
-import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview } from './conditional-passives.js?v=1.17.28';
-import { deleteUnitSafely } from './unit-management.js?v=1.17.28';
+import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions } from './conditional-passives.js?v=1.17.29';
+import { deleteUnitSafely } from './unit-management.js?v=1.17.29';
 import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js';
-import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.28';
+import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.17.29';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.17.28';
+import { Battle, clamp } from './engine.js?v=1.17.29';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.17.28';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.17.29';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
-import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.28';
-import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.17.28';
-import { buildOfficialArenaActions } from './arena-share-export.js?v=1.17.28';
-import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.28';
+import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.17.29';
+import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.17.29';
+import { buildOfficialArenaActions } from './arena-share-export.js?v=1.17.29';
+import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.17.29';
 import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
-import { createCharacterImporter } from './character-ui.js?v=1.17.28';
+import { createCharacterImporter } from './character-ui.js?v=1.17.29';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
-import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.28';
+import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.17.29';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -208,7 +208,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.28</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.28</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.17.29</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.17.29</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -367,31 +367,45 @@ function openExpandedMap() {
 function conditionalPassivesDisplay(u) {
     const list = u.conditionalPassives;
     if (!Array.isArray(list) || !list.length) return '';
-    const hpPct = passivePreviewHp === 'start' ? u.startHp : Number(passivePreviewHp);
-    const preview = passiveStatusPreview(u, passivePreviewTurn, hpPct);
+    const selection = conditionalPassivePreviewOptions(u, passivePreviewTurn, passivePreviewHp);
+    const {turn, hpPct, accelerationTurns, hpThresholds, timedExpirations} = selection;
+    const preview = passiveStatusPreview(u, turn, hpPct);
     const keys = [...new Set(list.flatMap(p => Object.keys(p.modifiers || {})))];
     const effectKeys = [...new Set(list.flatMap(p => Object.keys(p.effects || {})))];
+    const timedKeys = [...new Set(list.filter(p => p.kind === 'timed').flatMap(p => Object.keys(p.modifiers || {})))];
+    const timedEffectKeys = [...new Set(list.filter(p => p.kind === 'timed').flatMap(p => Object.keys(p.effects || {})))];
     const choices = (items, selected) => items.map(([v, label]) =>
         `<option value="${v}" ${String(v) === String(selected) ? 'selected' : ''}>${label}</option>`).join('');
+    const turnControl = accelerationTurns.length > 1 ?
+        `<label>加速ターン<select data-passive-preview-turn aria-label="加速が発動するターン">${choices(accelerationTurns.map(t => [t, `T${t}`]), turn)}</select></label>` :
+        accelerationTurns.length ? `<span class="passive-preview-context">加速 T${turn}</span>` : '';
+    const hpControl = hpThresholds.length > 1 ?
+        `<label>HP条件<select data-passive-preview-hp aria-label="HPの発動条件">${choices(hpThresholds.map(p => [p, `${p}%`]), hpPct)}</select></label>` :
+        hpThresholds.length ? `<span class="passive-preview-context">HP ${hpPct}%</span>` : '';
+    const filters = turnControl || hpControl ? `<div class="passive-preview-filters">${turnControl}${hpControl}</div>` : '';
+    const timedComparison = timedExpirations.length ? `<div class="passive-timed-timeline" aria-label="時限の効果消失後の実効値">
+<strong>時限による変化</strong><div class="passive-timed-steps">${timedExpirations.map(expiry => {
+        const post = passiveStatusPreview(u, expiry, hpPct);
+        const statSummary = timedKeys.map(k => `${esc(STAT_LABELS[k] || k)} ${nf((Number(u[k]) || 0) + (post.stats[k] || 0))}`);
+        const effectSummary = timedEffectKeys.map(k => `${esc(EFFECTS[k] || k)} ${nf(post.effects[k] || 0)}`);
+        return `<div class="passive-timed-step"><strong>T${expiry}以降</strong><span>${[...statSummary, ...effectSummary].join(' / ')}</span></div>`;
+    }).join('')}</div></div>` : '';
     return `<section class="conditional-passive-section" aria-label="条件付きパッシブ"><div class="field-section">条件付きパッシブ</div>
 <div class="conditional-passive-list">${list.map(p => {
         const info = conditionalPassiveDescription(p, STAT_LABELS);
-        const state = conditionalPassiveState(u, p, passivePreviewTurn, hpPct);
+        const state = conditionalPassiveState(u, p, turn, hpPct);
         const next = p.kind === 'accel' && p.interval <= 20 ? `（T${p.interval}で1回目、T${Math.min(20, p.interval * 2)}で${p.interval * 2 <= 20 ? '2回目' : '上限'}）` : '';
         return `<div class="conditional-passive-item"><strong>${esc(p.name)}</strong><span>${esc(info.heading)} ${next}</span><span class="conditional-passive-state ${state.active ? 'is-active' : 'is-inactive'}">${esc(state.label)}</span><small>${info.values.map(esc).join(' / ')}</small></div>`;
     }).join('')}</div>
 <div class="passive-preview" aria-label="条件付きパッシブ適用後のステータス">
-<div class="passive-preview-head"><strong>戦闘中の実効値</strong><div class="passive-preview-filters">
-<label>ターン<select data-passive-preview-turn>${choices(Array.from({length:20}, (_,i) => [i+1, `T${i+1}`]), passivePreviewTurn)}</select></label>
-<label>HP<select data-passive-preview-hp>${choices([['start',`開始時（${nf(u.startHp)}%）`],[100,'100%'],[80,'80%'],[79,'79%'],[50,'50%'],[30,'30%'],[29,'29%']], passivePreviewHp)}</select></label>
-</div></div>
+<div class="passive-preview-head"><strong>戦闘中の実効値</strong>${filters}</div>
 ${keys.length ? `<div class="effective-stat-grid">${keys.map(k => {
     const delta = preview.stats[k] || 0, base = Number(u[k]) || 0;
     return `<div class="effective-stat"><span>${esc(STAT_LABELS[k] || k)}</span><strong>${nf(base + delta)}</strong><small>基礎 ${nf(base)} ${delta >= 0 ? '+' : '−'} ${nf(Math.abs(delta))}</small></div>`;
 }).join('')}</div>` : ''}
 ${effectKeys.length ? `<div class="passive-effect-preview">${effectKeys.map(k =>
     `<span class="pill">${esc(EFFECTS[k] || k)} ${nf(preview.effects[k])}</span>`).join('')}</div>` : ''}
-</div><p class="footnote">基礎値は公式プロフィールの値を保持します。公式取込値には渾身・時限の補正が含まれ、底力・加速の補正は含まれません。渾身はHP80％未満、時限は期限後に差し引き、底力はHP30％以下、加速は所定ターンごとに加算します。</p></section>`;
+${timedComparison}</div><p class="footnote">基礎値は公式プロフィールの値を保持します。公式取込値には渾身・時限の補正が含まれ、底力・加速の補正は含まれません。渾身はHP80％未満、時限は期限後に差し引き、底力はHP30％以下、加速は所定ターンごとに加算します。</p></section>`;
 }
 /** Keep the official imported baseline editable, but show its current effective value next to it. */
 function passiveAwareStatField(u, key, extra = '', label = STAT_LABELS[key]) {
@@ -399,11 +413,12 @@ function passiveAwareStatField(u, key, extra = '', label = STAT_LABELS[key]) {
     const relevant = Array.isArray(u.conditionalPassives) &&
         u.conditionalPassives.some(p => Number(p?.modifiers?.[key]));
     if (!relevant) return field(label, basic);
-    const hpPct = passivePreviewHp === 'start' ? u.startHp : Number(passivePreviewHp);
-    const delta = Number(passiveStatusPreview(u, passivePreviewTurn, hpPct).stats[key]) || 0;
+    const {turn, hpPct, accelerationTurns, hpThresholds} = conditionalPassivePreviewOptions(u, passivePreviewTurn, passivePreviewHp);
+    const delta = Number(passiveStatusPreview(u, turn, hpPct).stats[key]) || 0;
     const currentValue = Number(u[key]) || 0;
     const signed = delta >= 0 ? `+${nf(delta)}` : `−${nf(Math.abs(delta))}`;
-    return field(label, `${basic}<small class="stat-passive-effective">実効値 ${nf(currentValue + delta)}（補正 ${signed}／T${passivePreviewTurn}・HP${nf(hpPct)}%）</small>`);
+    const context = [accelerationTurns.length ? `T${turn}` : '', hpThresholds.length ? `HP${nf(hpPct)}%` : ''].filter(Boolean).join('・');
+    return field(label, `${basic}<small class="stat-passive-effective">実効値 ${nf(currentValue + delta)}（補正 ${signed}${context ? `／${context}` : ''}）</small>`);
 }
 function importedEffectsDisplay(u) {
     const entries = Object.entries(u.effects || {}).filter(([key, value]) => Object.hasOwn(EFFECTS, key) && Number.isFinite(value) && value !== 0);
@@ -1013,7 +1028,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.17.28', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.17.29', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];

@@ -1,4 +1,4 @@
-import { validConditionalPassives } from './conditional-passives.js?v=1.17.28';
+import { validConditionalPassives } from './conditional-passives.js?v=1.17.29';
 /** One character per JSON file. Unit identity, team and map position belong to the destination slot. */
 import { clone, STAT_LABELS, RANGES, BS_NAMES, validateConfig } from './model.js';
 import { exportUnitTactics, importUnitTactics, UNIT_TACTICS_FORMAT } from './unit-tactics-io.js';

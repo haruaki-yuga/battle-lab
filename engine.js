@@ -1,4 +1,4 @@
-import { conditionalPassiveModifier, conditionalPassiveEffectModifier } from './conditional-passives.js?v=1.17.28';
+import { conditionalPassiveModifier, conditionalPassiveEffectModifier } from './conditional-passives.js?v=1.17.29';
 import { normalizeSettings, runSeed } from './run-settings.js';
 import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js';
 import { scoreDraw } from './battle-summary.js';
