@@ -1806,6 +1806,19 @@ svg text {
   margin-bottom: 20px;
 }
 
+/* Character search — explicit query, disambiguated public profile list. */
+.character-search-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 18px; }
+.character-search-tabs button { flex:1; min-width:130px; }
+.character-import-modal input[type=search] { width:100%; font-size:15px; }
+.character-search-results { margin:20px 0 10px; border-top:1px solid var(--line,#dfe6dd); padding-top:12px; }
+.character-search-results h3 { margin:0 0 12px; font-size:16px; }
+.character-search-result-list { display:grid; gap:8px; max-height:340px; overflow-y:auto; }
+.character-search-result { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px; border:1px solid var(--line,#dfe6dd); border-radius:10px; }
+.character-search-result-info { min-width:0; display:grid; gap:3px; overflow-wrap:anywhere; }
+.character-search-result-info small { color:var(--muted,#667); font-size:12px; }
+.character-search-result button { flex-shrink:0; }
+@media(max-width:520px){.character-search-result{align-items:flex-start;flex-wrap:wrap}.character-search-result button{width:100%}}
+
 .character-import-modal input[type=url] {
   width: 100%;
   font-size: 13px;

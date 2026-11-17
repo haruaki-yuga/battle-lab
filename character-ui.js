@@ -2,7 +2,8 @@ import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateC
 import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js';
 import { deduplicateImportedSkills } from './skill-dedup.js';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
-import { elementLevel } from './element-bonus.js?v=1.17.16';
+import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js';
+import { elementLevel } from './element-bonus.js?v=1.17.21';
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -24,6 +25,15 @@ export function characterAPIEndpoint(value) {
         throw Error('Workerにはhttps://から始まる公開URLを指定してください。');
     return new URL('/character', u.origin).href;
 }
+export function characterSearchEndpoint(value) {
+    let url;
+    try { url = new URL(String(value || '').trim()); }
+    catch { throw Error('検索用WorkerのURLが設定されていません。'); }
+    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash ||
+        (url.pathname !== '/' && url.pathname !== ''))
+        throw Error('検索用Workerの設定を確認してください。');
+    return new URL('/character/search', url.origin).href;
+}
 export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
     const dialog = document.createElement('dialog');
     dialog.className = 'character-import-modal';
@@ -34,12 +44,25 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
     const option = (value, label, current) => `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${esc(label)}</option>`;
     function render() {
         const p = state.profile, config = getConfig(), target = config.units.find(u => u.id === state.replaceId), supported = p?.skills.filter(s => s.supported) || [];
-        dialog.innerHTML = `<div class="modal-header"><div><div class="eyebrow">CHARACTER IMPORT</div><h2 id="character-import-title">\
-キャラURLから読み込む</h2></div>${button('×', 'close', 'ghost')}</div>\
-<div class="modal-form"><p class="subtitle">公開中の能力値・装備アクティブスキル・その他のステータスを取得します。</p><form id="character-url-form"><label class="field">\
-<span>キャラクター詳細ページのURL</span><input type="url" id="character-source-url" value="${esc(state.url)}" placeholder="${urlPlaceholder}" required autocomplete="off">\
-</label><div class="btnrow" style="margin-top:12px">${button(state.loading ? '読み込み中…' : '内容を取得', 'fetch', 'primary', state.loading)}</div>\
-</form>${state.error ? `<div class="error-box import-feedback" role="alert">${esc(state.error)}</div>` : ''}${state.loading ? '<p class="import-feedback" role="status">公開ページから読み込んでいます…</p>' : ''}${p ? `<section class="import-preview">\
+        const tabs = `<div class="character-search-tabs" role="group" aria-label="キャラの探し方">
+${button('名前で検索', 'mode-name', state.mode === 'name' ? 'primary' : '', state.loading)}
+${button('URLから取得', 'mode-url', state.mode === 'url' ? 'primary' : '', state.loading)}</div>`;
+        const lookupForm = state.mode === 'url' ? `<form id="character-url-form"><label class="field">
+<span>キャラクター詳細ページのURL</span><input type="url" id="character-source-url" value="${esc(state.url)}" placeholder="${urlPlaceholder}" required autocomplete="off">
+</label><div class="btnrow" style="margin-top:12px">${button(state.loading ? '読み込み中…' : '内容を取得', 'fetch', 'primary', state.loading)}</div></form>` :
+`<form id="character-name-form"><label class="field"><span>キャラクター名（一部でも検索できます）</span>
+<input type="search" id="character-search-name" value="${esc(state.nameQuery)}" maxlength="40" placeholder="例：春秋 佑河" required autocomplete="off">
+</label><div class="btnrow" style="margin-top:12px">${button(state.loading ? '検索中…' : '名前で検索', 'search-name', 'primary', state.loading)}</div></form>`;
+        const results = state.results === null ? '' : `<section class="character-search-results" aria-label="検索結果">
+<h3>検索結果 <span class="rule-count">${state.results.length}件${state.tooMany ? '以上' : ''}</span></h3>
+${state.tooMany ? '<p class="import-warning">候補が多いため一部のみ表示しています。名前を詳しく入力してください。</p>' : ''}
+${state.results.length ? `<div class="character-search-result-list">${state.results.map(c=>
+`<div class="character-search-result"><div class="character-search-result-info"><strong>${esc(c.name)}</strong>
+<small>${esc(c.id)}${c.title ? ` / ${esc(c.title)}` : ''}</small></div>
+${button('このキャラを選択', 'select-character', '', false).replace('<button ', `<button data-character-id="${esc(c.id)}" `)}</div>`).join('')}</div>` : (!state.tooMany ? '<p class="subtle">一致するキャラクターが見つかりませんでした。</p>' : '')}</section>`;
+        dialog.innerHTML = `<div class="modal-header"><div><div class="eyebrow">CHARACTER SEARCH</div><h2 id="character-import-title">キャラ検索</h2></div>${button('×', 'close', 'ghost')}</div>
+<div class="modal-form"><p class="subtitle">公式サイトの公開キャラクターを探して、能力値・スキルを編成に読み込みます。</p>
+${tabs}${lookupForm}${state.error ? `<div class="error-box import-feedback" role="alert">${esc(state.error)}</div>` : ''}${state.loading ? `<p class="import-feedback" role="status">${state.mode === 'url' ? '公開プロフィールを取得しています…' : '名前を検索しています…'}</p>` : ''}${results}${p ? `<section class="import-preview">\
 <div class="import-profile-heading"><div><div class="eyebrow">${esc(p.characterId)}${Number.isFinite(p.level) ? ` / Lv. ${p.level}` : ''}</div>\
 <h3>${esc(p.name)}</h3>\
 </div><a href="${esc(p.sourceURL)}" target="_blank" rel="noopener noreferrer">\
@@ -66,9 +89,13 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
 取得日時：${esc(new Date(p.fetchedAt).toLocaleString('ja-JP'))} / 取得後の変更は再読み込みで反映</p>\
 </section>` : ''}</div>\
 <div class="modal-footer">${button('キャンセル', 'close')}${p ? button(target ? 'このキャラを置き換える' : '編成に追加する', 'apply', 'primary', state.loading || p.missing.length > 0) : ''}</div>`;
-        dialog.querySelector('#character-url-form').addEventListener('submit', e => {
+        dialog.querySelector('#character-url-form')?.addEventListener('submit', e => {
             e.preventDefault();
             fetchProfile();
+        });
+        dialog.querySelector('#character-name-form')?.addEventListener('submit', e => {
+            e.preventDefault();
+            searchName();
         });
         dialog.querySelectorAll('button').forEach(b => b.type = 'button');
     }
@@ -125,7 +152,60 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
             }
         }
     }
+    async function searchName() {
+        controller?.abort();
+        const turn = ++seq;
+        state.error = '';
+        state.results = null;
+        state.tooMany = false;
+        state.profile = null;
+        const name = state.nameQuery.trim();
+        if (!name || Array.from(name).length > 40) {
+            state.error = 'キャラクター名を1～40文字で入力してください。';
+            render();
+            return;
+        }
+        state.loading = true;
+        render();
+        controller = new AbortController();
+        const activeController = controller;
+        const timer = setTimeout(() => activeController.abort(), 20000);
+        try {
+            const endpoint = characterSearchEndpoint(ARENA_SHARED_WORKER_URL);
+            const response = await fetch(endpoint, {
+                method: 'POST', mode: 'cors', credentials: 'omit',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }), signal: activeController.signal
+            });
+            let data;
+            try { data = await response.json(); }
+            catch { throw Error('検索サーバーから正常な応答が返りませんでした。'); }
+            if (!response.ok || !Array.isArray(data.characters))
+                throw Error(data.error || '名前検索に失敗しました。');
+            if (turn === seq) {
+                state.results = data.characters.filter(c => /^r2p\d{6}$/.test(String(c?.id)) && typeof c.name === 'string');
+                state.tooMany = !!data.tooMany;
+            }
+        }
+        catch (error) {
+            if (turn === seq) state.error = error.name === 'AbortError' ?
+                '検索がタイムアウトしました。もう一度お試しください。' :
+                error instanceof TypeError ? '検索サーバーへ接続できません。Workerが更新されているか確認してください。' : error.message;
+        }
+        finally {
+            clearTimeout(timer);
+            if (turn === seq) {
+                state.loading = false;
+                render();
+            }
+        }
+    }
     dialog.addEventListener('input', e => {
+        if (e.target.id === 'character-search-name') {
+            state.nameQuery = e.target.value;
+            state.results = null;
+            state.tooMany = false;
+        }
         if (e.target.id === 'character-source-url') {
             state.url = e.target.value;
             if (state.profile || state.loading) {
@@ -169,6 +249,29 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
             seq++;
             controller?.abort();
             dialog.close();
+            return;
+        }
+        if (a === 'mode-url' || a === 'mode-name') {
+            seq++;
+            controller?.abort();
+            state.loading = false;
+            state.mode = a === 'mode-url' ? 'url' : 'name';
+            state.error = '';
+            state.profile = null;
+            state.results = null;
+            render();
+            return;
+        }
+        if (a === 'search-name') {
+            searchName();
+            return;
+        }
+        if (a === 'select-character') {
+            const id = b.dataset.characterId;
+            if (!/^r2p\d{6}$/.test(id || '') || !state.results?.some(c => c.id === id)) return;
+            state.url = `https://rev2.reversion.jp/character/detail/${id}`;
+            state.results = null;
+            fetchProfile();
             return;
         }
         if (a === 'fetch') {
@@ -217,6 +320,10 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
         const u = getCurrent();
         state = {
             url: u.importedProfile?.url || '',
+            mode: 'name',
+            nameQuery: '',
+            results: null,
+            tooMany: false,
             profile: null,
             error: '',
             loading: false,
