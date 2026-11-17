@@ -209,7 +209,7 @@ export function conditionalPassivePreviewOptions(unit, requestedTurn = 0, reques
         .map(p => p.interval + 1))].sort((a, b) => a - b);
     const elapsedTurns = accelMilestones.length || timedExpirations.length ? [...new Set([0, ...accelMilestones, ...timedExpirations])].sort((a, b) => a - b) : [];
     const hpConditions = [...new Set(passives.flatMap(p =>
-        p?.kind === 'full' ? [80] : p?.kind === 'low' ? [30] : []))].sort((a, b) => b - a);
+        p?.kind === 'full' ? [79] : p?.kind === 'low' ? [30] : []))].sort((a, b) => b - a);
     const hpThresholds = hpConditions.length ? [100, ...hpConditions] : [];
     const requestedTurnNumber = Number(requestedTurn);
     const turn = elapsedTurns.length ?
