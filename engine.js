@@ -1,5 +1,6 @@
 import { conditionalPassiveModifier, conditionalPassiveEffectModifier } from './conditional-passives.js?v=1.18';
 import { normalizeSettings, runSeed } from './run-settings.js';
+import { freshBattleStatistics, finishBattleStatistics, HIT_RANK_KEYS } from './battle-statistics.js';
 import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js';
 import { scoreDraw } from './battle-summary.js';
 import { selectDiskDestination } from './movement-disk.js';
@@ -182,10 +183,23 @@ export class Battle {
             u.hp = Math.floor(this.stat(u, 'maxHp') * u.startHp / 100);
             u.ap = Math.floor(this.stat(u, 'maxAp') * u.startAp / 100);
         }
+        this.combatStatistics = new Map(this.units.map(u => [u.id, freshBattleStatistics(u)]));
         this.snapshot('初期配置');
     }
-    d(sides = 100) {
-        return 1 + Math.floor(this.random() * sides);
+    d(sides = 100, unit = null) {
+        const result = 1 + Math.floor(this.random() * sides);
+        // Average only the 1d100 rolls whose owner is known; never include 1d6 or
+        // other differently-scaled dice in that denominator.
+        if (unit && sides === 100) {
+            this.tally(unit, 'diceSum', result);
+            this.tally(unit, 'diceCount');
+        }
+        return result;
+    }
+    tally(unit, key, value = 1) {
+        if (this.quiet || !unit) return;
+        const row = this.combatStatistics?.get(unit.id);
+        if (row && Object.hasOwn(row, key)) row[key] += value;
     }
     get(id) {
         return this.units.find(u => u.id === id);
@@ -303,6 +317,11 @@ export class Battle {
         const incoming = total - shield.blocked;
         const applied = Math.min(u.ap, incoming);
         u.ap = Math.max(0, u.ap - incoming);
+        if (applied > 0) {
+            this.tally(u, 'damageTakenAP', applied);
+            if (source && source.team !== u.team)
+                this.tally(source, 'damageGivenAP', applied);
+        }
         // AP overrun is handled by the caller according to the underlying effect (摩耗 only).
         return { total, before: shield.before, blocked: shield.blocked, applied, overflow: incoming - applied, left: shield.left, barrier: shield.left };
     }
@@ -347,7 +366,13 @@ export class Battle {
             if (remainder > 0 && isHp)
                 this.hurt(u, remainder, null, 0, 0, report, true, true);
             else {
-                if (remainder > 0) u.ap = Math.max(0, u.ap - remainder);
+                if (remainder > 0) {
+                    const chargedAP = Math.min(u.ap, remainder);
+                    u.ap = Math.max(0, u.ap - remainder);
+                    // ロスト is periodic AP damage, not a skill's AP cost.
+                    // Attribute it to the affected unit but never as outgoing damage.
+                    this.tally(u, 'damageTakenAP', chargedAP);
+                }
                 report();
             }
             return true;
@@ -379,9 +404,11 @@ export class Battle {
         return exempt ? base : Math.floor(base * (1 + this.suddenRound() * .3) + 1e-8);
     }
     roll(u, mods = {}, commit = true) {
-        const die = this.d(), fb = Math.max(0, this.stat(u, 'fumble') + Number(mods.fumble || 0));
+        const die = this.d(100, u), fb = Math.max(0, this.stat(u, 'fumble') + Number(mods.fumble || 0));
         const ct = this.stat(u, 'critical') + Number(mods.critical || 0);
         const fumble = die <= fb, critical = !fumble && die >= 100 - ct;
+        if (fumble) this.tally(u, 'fumbles');
+        if (critical) this.tally(u, 'criticals');
         if (critical && commit) {
             u.ctLoss += 10;
             u.luckLoss++;
@@ -477,6 +504,11 @@ export class Battle {
         const max = this.stat(u, type === 'hp' ? 'maxHp' : 'maxAp'), old = u[type];
         u[type] = Math.max(old, Math.min(max, Math.max(0, u[type] + Math.max(0, Math.floor(value)))));
         const gain = u[type] - old;
+        const credited = source || u;
+        if (gain > 0) {
+            this.tally(credited, type === 'hp' ? 'healGivenHP' : 'healGivenAP', gain);
+            this.tally(credited, 'healCount');
+        }
         if (source)
             source.healing += gain;
         return gain;
@@ -490,6 +522,16 @@ export class Battle {
         const hpDamage = n - shield.blocked;
         const actual = Math.min(Math.max(0, u.hp), hpDamage);
         u.hp -= hpDamage;
+        if (hpDamage > 0) {
+            this.tally(u, 'damageTakenHP', hpDamage);
+            const targetStats = this.combatStatistics?.get(u.id);
+            if (targetStats) targetStats.maxTakenHP = Math.max(targetStats.maxTakenHP, hpDamage);
+            if (source && source.team !== u.team) {
+                this.tally(source, 'damageGivenHP', hpDamage);
+                const sourceStats = this.combatStatistics?.get(source.id);
+                if (sourceStats) sourceStats.maxGivenHP = Math.max(sourceStats.maxGivenHP, hpDamage);
+            }
+        }
         if (source && source.team !== u.team) {
             // Only damage passing through the barrier counts toward dealt damage.
             // Preserve the prior overkill rule; never count absorbed damage.
@@ -498,10 +540,11 @@ export class Battle {
         }
         let outcome = null;
         if (u.hp <= 0) {
-            const d = this.d(), target = 100 - (this.stat(u, 'drama') / (1 + Math.max(0, lethal)) - dramaPenalty);
+            const d = this.d(100, u), target = 100 - (this.stat(u, 'drama') / (1 + Math.max(0, lethal)) - dramaPenalty);
             if (d >= target) {
                 u.hp = 1;
                 u.dramaCount++;
+                this.tally(u, 'drama');
                 outcome = {
                     type: 'drama',
                     message: `${u.name}はドラマで踏みとどまった`,
@@ -513,6 +556,7 @@ export class Battle {
             else {
                 u.hp = 0;
                 u.alive = false;
+                if (source && source.team !== u.team) this.tally(source, 'defeats');
                 u.pending = false;
                 u.doneTurn = true;
                 outcome = {
@@ -1136,7 +1180,7 @@ export class Battle {
             if (u.alive) this.applyUpkeep(u, 'lost');
             if (!u.alive)
                 continue;
-            const d1 = this.d(), d2 = this.d();
+            const d1 = this.d(100, u), d2 = this.d(100, u);
             const speed = this.stat(u, 'speed'), carried = u.carry;
             u.av = Math.max(0, Math.floor(speed + d1 + d2 + carried));
             // One self-contained entry: each die, their sum, speed, carry, and final AV.
@@ -1268,7 +1312,8 @@ export class Battle {
             logs: this.logs,
             frames: this.frames,
             warnings: this.warnings,
-            done: this.done
+            done: this.done,
+            ...(!this.quiet ? { statistics: finishBattleStatistics(this.combatStatistics, this.turn) } : {})
         };
     }
     execute(u, p) {
@@ -1324,6 +1369,7 @@ export class Battle {
         }
         u.actions++;
         u.totalActions++;
+        this.tally(u, 'actions');
         const side = ['focusAttack', 'focusDefense'].includes(a) || (p.s && this.effect(u, p.s, 'side'));
         u.av = Math.max(0, Math.floor(u.av / (side ? 1 : 2)));
         this.log('actionEnd', `${u.name}の残行動値 ${u.av}`, side ? '【副】により半減なし' : '行動後に残りを半減', u);
@@ -1399,6 +1445,7 @@ export class Battle {
             return;
         }
         this.log('skill', `${u.name}の${s.name}`, `対象：${targets.map(t => t.name).join('、')}`, u, target);
+        if (s.kind === 'attack') this.tally(u, 'attacks');
         if (s.kind !== 'attack') {
             const roll = this.roll(u, s.castMods);
             if (roll.fumble) {
@@ -1508,11 +1555,16 @@ export class Battle {
     }
     attack(u, original, s, depth = 0, split = 1, mad = false, hitIndex = 0, sharedAccuracy = null, preResolvedDefender = null) {
         const t = preResolvedDefender || this.coverRecipient(u, original, s);
-        if (t !== original)
+        if (t !== original) {
+            this.tally(t, 'covered');
+            this.tally(original, 'wasCovered');
             this.log('action', `${t.name}が${original.name}をかばう！`, '', t, original);
+        }
         this.counter(t, u, 'intercepts', depth);
         if (!u.alive)
             return;
+        this.tally(u, 'hitAttempts');
+        this.tally(t, 'incomingAttempts');
         if (sharedAccuracy && !sharedAccuracy.roll) {
             sharedAccuracy.roll = this.attackRoll(u, s);
         }
@@ -1532,22 +1584,27 @@ export class Battle {
         const sure = this.effect(u, s, 'sureHit');
         if (!mad && (dodge.critical || (!dodge.fumble && !attackRoll.critical && !sure && evade >= hit))) {
             t.evadeLoss += 10;
+            this.tally(t, 'dodged');
             this.log('miss', `${t.name}は${dodge.critical ? 'クリティカル' : ''}回避`, `命中 ${hit}（${sharedAccuracy ? '攻撃側共通' : '攻撃側'}1d100 ${attackRoll.die}） / 回避 ${evade}（対象別1d100 ${dodge.die}）`, u, t);
             this.counter(t, u, 'retaliations', depth);
             return;
         }
-        const rateDie = this.d();
+        const rateDie = this.d(100, u);
         let rate = mad ? 100 : (sure ? 25 : hit - evade) + rateDie;
         if (attackRoll.critical)
             rate = Math.max(50, rate);
         if (rate >= 150)
             rate = Math.max(100, rate - this.effectRaw(t, 'clever'));
         if (rate <= 0) {
+            this.tally(t, 'dodged');
             this.log('miss', `${t.name}は完全回避`, `ヒットレート ${rate}`, u, t);
             this.counter(t, u, 'retaliations', depth);
             return;
         }
         let rank = rate < 50 ? 0 : rate < 100 ? 1 : rate < 150 ? 2 : rate < 200 ? 3 : 4;
+        this.tally(u, 'hitLanded');
+        if (this.combatStatistics?.has(u.id))
+            this.combatStatistics.get(u.id).hitRanks[HIT_RANK_KEYS[rank]]++;
         const names = [
             'グレイズ',
             'ライト',
@@ -1567,15 +1624,16 @@ export class Battle {
         let subD = rank >= 2 ? sub * (rank === 2 ? 1 : rank === 3 ? 1 + calcDie / 200 : 1 + calcDie / 100) : 0;
         const defense = this.stat(t, 'defense') - this.effect(u, s, 'evil'), defRoll = mad ? { critical: false, fumble: false, die: 0 } : this.roll(t);
         let defended = !mad && defense >= 0 && (defRoll.critical || !defRoll.fumble && defRoll.die >= 100 - defense);
+        this.tally(t, defended ? 'defenseSuccess' : 'defenseFailure');
         let reduction = defended ? clamp(70 + (this.effectRaw(t, 'heavy')) - this.effect(u, s, 'weak') * 20 - (defRoll.critical ? 0 : main * .003), 0, 100) / 100 : 0;
         if (attackRoll.critical) {
-            const four = this.d() + this.d() + this.d() + this.d();
+            const four = this.d(100, u) + this.d(100, u) + this.d(100, u) + this.d(100, u);
             subD = sub * Math.max(100, Math.max(120, four) * (1 - defense * .0015)) / 100;
         }
         if (defended) {
             m *= 1 - reduction;
             if (attackRoll.critical || rank === 3)
-                subD *= 1 - Math.max(0, reduction * 100 - this.d()) / 100;
+                subD *= 1 - Math.max(0, reduction * 100 - this.d(100, t)) / 100;
             else if (rank !== 4)
                 subD *= 1 - reduction;
         }
@@ -1595,7 +1653,7 @@ export class Battle {
         let total = (m + subD + extra) * elementFactor;
         let euphoriaFactor = 1;
         if (this.statuses(t).has('恍惚')) {
-            euphoriaFactor = 1 + (this.d() + 30) / 100;
+            euphoriaFactor = 1 + (this.d(100, u) + 30) / 100;
             total *= euphoriaFactor;
             t.bs = t.bs.filter(b => b.name !== '恍惚');
         }
@@ -1660,7 +1718,7 @@ export class Battle {
             u.cleanHits++;
         const erosion = Math.max(0, this.effect(u, s, 'erosion') - this.effectRaw(t, 'apArmor'));
         if (erosion) {
-            const apResult = this.apDamage(t, erosion);
+            const apResult = this.apDamage(t, erosion, u);
             const apBarrier = this.barrierLog(t.name, { ...apResult, incoming: apResult.total }, 'AP');
             if (apResult.overflow) {
                 // The sudden-death increase is applied once to the original AP damage.
@@ -1758,7 +1816,7 @@ export class Battle {
             if (roll.fumble)
                 count = Math.max(count, 1 + Math.ceil(roll.fb / 10));
             count = Math.min(100, count);
-            const doubled = res < 0 && this.d() < Math.min(101, -res);
+            const doubled = res < 0 && this.d(100, t) < Math.min(101, -res);
             const duration = 3 * (doubled ? 2 : 1);
             const added = Array.from({ length: count }, () => ({ name, remaining: duration, source: u.id, durationDoubled: doubled }));
             pending.push(...added);
@@ -1776,6 +1834,8 @@ export class Battle {
                 this.log('bs', `${t.name}は${name}に抵抗`, `${roll.die} / 抵抗 ${res}`, u, t);
             } else {
                 const added = result.added;
+                this.tally(u, 'bsInflicted');
+                this.tally(t, 'bsReceived');
                 const active = t.bs.filter(b => b.name === name && b.remaining > 0);
                 this.log('bs', `${t.name}にBS付与：${labels(added)}`, `新規：${labels(added)} / 現在：${labels(active)} / 抵抗 ${res} / 1d100 ${roll.die}`, u, t, [{ kind: 'status', label: `追加：${labels(added)}` }]);
             }

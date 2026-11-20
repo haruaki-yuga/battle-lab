@@ -484,6 +484,28 @@ export function sampleConfig() {
         skills: CATALOG.map(s => JSON.parse(JSON.stringify(s)))
     };
 }
+/** Allocate monotonically increasing names for newly added blank team units.
+ * Names of existing user-created/imported characters are not modified.
+ * The counter is part of the formation data so deleting a unit does not reuse its number.
+ */
+export function allocateDefaultUnitName(config, team) {
+    if (!['A', 'B'].includes(team)) throw Error('チームが不正です。');
+    const prefix = `チーム${team}のキャラクター`;
+    const highestInTeam = (config.units || []).reduce((highest, unit) => {
+        if (unit.team !== team || typeof unit.name !== 'string') return highest;
+        if (unit.name === prefix) return Math.max(highest, 1); // Legacy unsuffixed default.
+        if (!unit.name.startsWith(prefix)) return highest;
+        const rest = unit.name.slice(prefix.length);
+        return /^[1-9]\d*$/.test(rest) ? Math.max(highest, Number(rest)) : highest;
+    }, 0);
+    if (!config.defaultUnitCounters || typeof config.defaultUnitCounters !== 'object')
+        config.defaultUnitCounters = {A:0, B:0};
+    const stored = Number(config.defaultUnitCounters[team]);
+    const next = Math.max(highestInTeam, Number.isSafeInteger(stored) && stored >= 0 ? stored : 0) + 1;
+    config.defaultUnitCounters[team] = next;
+    return `${prefix}${next}`;
+}
+
 export const clone = o => JSON.parse(JSON.stringify(o));
 export function validateConfig(c) {
     const errors = [];

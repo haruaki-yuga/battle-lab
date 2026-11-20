@@ -3129,3 +3129,96 @@ h1 {
 .character-slot-text small{font-size:11px;color:var(--muted);}
 .character-slot-actions{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:5px;}
 .character-slot-actions button{font-size:12px;padding:5px 9px;min-height:31px;}
+
+/* v1.18.4 — Compact, selection-based character slots */
+.character-slots-compact{padding:12px;display:grid;gap:9px;min-width:0}
+.slot-select-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
+.slot-select-field{display:grid;min-width:0;gap:5px;color:var(--ink);font-size:12px;font-weight:650}
+.slot-select-field select{width:100%;max-width:none;min-width:0;height:38px;min-height:38px;box-sizing:border-box;padding:6px 9px;font-size:14px;font-weight:500;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:6px;}
+.slot-selected-info{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:7px 9px;background:var(--paper);border:1px solid var(--line);border-radius:6px;min-width:0}
+.slot-selected-info strong{font-size:12px;overflow-wrap:anywhere}
+.slot-selected-info span{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.character-slots-compact .character-slot-actions{display:flex;align-items:center;justify-content:flex-start;gap:6px;flex-wrap:wrap;}
+.character-slots-compact .character-slot-actions button{min-height:34px;padding:6px 11px;font-size:12px}
+.slot-small-note{margin:0;font-size:11px;line-height:1.55;color:var(--muted)}
+
+/* v1.18.4 — Actual-screen, topic-based page manual */
+#modal.manual-dialog{width:min(1080px,95vw);max-height:min(93vh,940px);background:var(--white);color:var(--ink);overscroll-behavior:contain}
+.manual-dialog .guide-header{background:var(--white);align-items:flex-start;gap:12px}
+.manual-dialog .guide-header h2{font-size:20px;margin:5px 0}
+.manual-dialog .guide-header p{line-height:1.6;max-width:850px;margin:5px 0 0}
+.manual-dialog .guide-layout{display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr);min-height:360px;}
+.manual-dialog .guide-toc{min-width:0;max-height:calc(93vh - 170px);overflow:auto;padding:12px;border-right:1px solid var(--line);background:var(--paper)}
+.manual-dialog .guide-toc-heading{display:flex;align-items:center;justify-content:space-between;font-weight:750;padding:7px 8px 12px;gap:8px}
+.manual-dialog .guide-toc-heading small{font-weight:500;color:var(--muted);font-size:11px}
+.manual-dialog .guide-nav-button{display:flex;align-items:center;gap:9px;text-align:left;width:100%;min-height:38px;margin:2px 0;padding:7px 9px;border-radius:6px;color:var(--ink);font-size:12px;line-height:1.45;background:transparent;border:1px solid transparent;white-space:normal}
+.manual-dialog .guide-nav-button .guide-index{color:var(--muted);font-variant-numeric:tabular-nums;font-size:10px;font-weight:750;flex:0 0 auto}
+.manual-dialog .guide-nav-button.is-current{color:var(--green);background:var(--green-light);border-color:var(--line);font-weight:750}
+.manual-dialog .guide-nav-button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.manual-dialog .guide-article{padding:17px 22px 25px;min-width:0;outline:none;}
+.manual-dialog .guide-topic-header h3{font-size:19px;line-height:1.4;margin:6px 0 14px;color:var(--ink)}
+.manual-dialog .guide-shot{margin:0 0 16px;background:var(--paper);padding:10px;border-radius:10px;border:1px solid var(--line);}
+.manual-dialog .guide-shot a{display:block;text-align:center;}
+.manual-dialog .guide-shot img{display:block;margin:0 auto;max-width:100%;max-height:360px;object-fit:contain;cursor:zoom-in;border-radius:4px;border:1px solid var(--line);background:#fff;}
+.manual-dialog .guide-shot figcaption{margin:7px 2px 0;color:var(--muted);font-size:11px;line-height:1.6;}
+.manual-dialog .guide-steps{list-style:none;margin:0;padding:0;counter-reset:guide-step;display:grid;gap:10px}
+.manual-dialog .guide-steps li{position:relative;padding:10px 12px 10px 42px;border:1px solid var(--line);border-radius:8px;font-size:13px;line-height:1.7;background:var(--white);color:var(--ink);counter-increment:guide-step}
+.manual-dialog .guide-steps li::before{content:counter(guide-step);position:absolute;left:10px;top:11px;width:23px;height:23px;display:grid;place-items:center;background:var(--green-light);color:var(--green);font-size:12px;font-weight:800;border-radius:50%}
+.manual-dialog .guide-note{margin:13px 0 0;font-size:12px;line-height:1.7;background:var(--paper);border:1px solid var(--line);padding:12px;border-radius:8px;color:var(--ink)}
+.manual-dialog .guide-footer{align-items:center;justify-content:space-between;background:var(--white);color:var(--muted);font-size:11px;}
+.manual-dialog .guide-topic-mobile{display:none}
+
+/* v1.18.5 — per-character combat statistics and read-only official Arena logs */
+.battle-stats-panel, .official-battle-panel {margin:16px 0;overflow:hidden}
+.battle-stats-head,.official-battle-summary {display:flex;align-items:center;gap:12px;cursor:pointer;padding:13px 18px;list-style:none;min-height:48px}
+.battle-stats-head::-webkit-details-marker,.official-battle-summary::-webkit-details-marker,.unit-stats-summary::-webkit-details-marker{display:none}
+.battle-stats-head strong,.official-battle-summary strong{font-size:14px;flex:1}
+.battle-stats-head span:not(.stat-chevron),.official-battle-summary span{font-size:12px;color:var(--muted)}
+.stat-chevron{font-size:19px;font-weight:700;color:var(--muted);transition:transform .2s}
+details[open] > summary > .stat-chevron {transform:rotate(180deg)}
+.battle-stats-body {border-top:1px solid var(--line);padding:12px;display:grid;gap:9px}
+.unit-stats-detail {border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--white)}
+.unit-stats-summary {display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:9px 12px;min-height:44px}
+.unit-stats-summary strong{font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat-team{border:1px solid var(--green);border-radius:5px;padding:1px 5px;font-size:10px;font-weight:750;white-space:nowrap}
+.stat-team.enemy{border-color:var(--red);color:var(--red)}
+.stat-summary-data{font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap}
+.stat-primary{display:none}
+.stat-full{display:none;border-top:1px solid var(--line);padding:10px 12px;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.unit-stats-detail[open] .stat-full{display:grid}
+.stat-group{min-width:0}.stat-group h4{font-size:12px;color:var(--muted);margin:0 0 6px;font-weight:700}
+.stat-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.stat-metric{display:flex;justify-content:space-between;align-items:center;min-width:0;padding:5px 8px;gap:8px;border-radius:7px;background:var(--paper);font-size:11px}
+.stat-metric span{color:var(--muted)}.stat-metric strong{font-size:12px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;text-align:right}
+.battle-stats-body .footnote{font-size:11px;margin:5px 0 0}
+.official-battle-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.official-battle-controls .field{flex:1 1 280px;min-width:0}
+.official-battle-controls button{flex-shrink:0}
+.official-battle-result{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:14px;margin-top:12px}
+.official-result-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.official-result-head strong{font-size:15px}.official-result-head a{font-size:12px}
+.official-unit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.official-team{border:1px solid var(--line);border-radius:9px;padding:8px;min-width:0}
+.official-team h4{font-size:12px;margin:0 0 6px}
+.official-unit{border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;padding:6px 0;font-size:11px}
+.official-unit strong{min-width:0;overflow-wrap:anywhere}.official-unit span{color:var(--muted);font-variant-numeric:tabular-nums}
+.official-delta{border:1px solid var(--line);border-radius:9px;padding:10px 12px}.official-delta>summary{cursor:pointer;font-weight:650}
+.official-delta-row{padding:8px 0;display:grid;gap:2px;border-bottom:1px solid var(--line)}
+.official-delta-row:last-of-type{border-bottom:0}.official-delta-row small{color:var(--muted)}
+.official-log-title{display:flex;align-items:center;flex-wrap:wrap;gap:10px}.official-log-title strong{margin-right:auto}
+.official-log-title .field{width:160px}.official-log-title .field span{font-size:10px}
+.official-log-list{border:1px solid var(--line);border-radius:10px;max-height:480px;overflow:auto;overscroll-behavior:contain}
+.official-log-row{display:flex;align-items:start;gap:9px;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;overflow-wrap:anywhere}
+.official-log-row:last-child{border-bottom:0}.official-log-row.state{opacity:.78;background:var(--paper)}
+.official-log-turn{font-variant-numeric:tabular-nums;color:var(--muted);font-size:11px;flex:0 0 31px}
+.official-log-text{min-width:0;flex:1}.official-log-text strong{color:var(--ink)}.official-log-text small{display:block;color:var(--muted);font-size:10px}
+@media(max-width:760px){
+ .battle-stats-head,.official-battle-summary{padding:9px 11px;min-height:42px}
+ .battle-stats-body{padding:7px;gap:7px}.unit-stats-summary{padding:7px 9px;flex-wrap:wrap}
+ .unit-stats-summary strong{font-size:12px}.stat-summary-data{font-size:10px}
+ .unit-stats-detail[open] .stat-full{grid-template-columns:1fr;padding:8px;gap:7px}
+ .stat-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-metric{padding:5px;font-size:10px}
+ .official-battle-controls{gap:6px}.official-battle-controls .field{flex-basis:100%}
+ .official-unit-grid{gap:6px}.official-team{padding:6px}.official-unit{font-size:10px}
+ .official-log-list{max-height:60vh}.official-log-row{padding:6px 7px;font-size:11px}
+}

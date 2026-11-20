@@ -1,16 +1,19 @@
-import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.3';
-import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.3&edit=1';
-import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.3&edit=1';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.5';
+import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
+import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
+import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
 import { deleteUnitSafely } from './unit-management.js?v=1.18';
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.4';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.18';
+import { Battle, clamp } from './engine.js?v=1.18.5';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
+import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.5';
+import { loadOfficialArenaViaWorker } from './official-arena-log.js?v=1.18.5';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
 import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18';
-import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.3';
+import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.4';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
 import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18';
 import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.18';
@@ -82,16 +85,17 @@ const GRANT_STAT_LABELS = Object.fromEntries(Object.entries(STAT_LABELS).filter(
 function makeSample() {
     const c = sampleConfig();
     c.name = '新しい対戦';
+    c.defaultUnitCounters = { A: 1, B: 1 };
     c.units = [freshUnit({
             id: 'a1',
-            name: 'チームAのキャラクター',
+            name: 'チームAのキャラクター1',
             team: 'A',
             x: -10,
             y: 0,
             skills: []
         }), freshUnit({
             id: 'b1',
-            name: 'チームBのキャラクター',
+            name: 'チームBのキャラクター1',
             team: 'B',
             x: 10,
             y: 0,
@@ -109,12 +113,13 @@ catch {
     config = makeSample();
 }
 migrateLegacyDemoSkills(config);
-// Update the original default team B character name in previously saved formations.
-// Other user-created names and character identifiers are left untouched.
+// Upgrade only the original blank default unit names in existing saved formations.
+// All other user-edited names remain unchanged.
 for (const unit of config.units) {
-    if (unit.team === 'B' && ['b1', 'b2'].includes(unit.id) && unit.name === 'トリックスター') {
-        unit.name = 'チームBのキャラクター';
-    }
+    if (unit.team === 'A' && unit.id === 'a1' && unit.name === 'チームAのキャラクター')
+        unit.name = 'チームAのキャラクター1';
+    if (unit.team === 'B' && unit.id === 'b1' && ['チームBのキャラクター', 'トリックスター'].includes(unit.name))
+        unit.name = 'チームBのキャラクター1';
 }
 cleanWebConfiguration(config);
 normalizeMoveModes(config);
@@ -129,12 +134,17 @@ let mapZoom = 1, mapRelations = false, mapMoveCircle = false, mapFocus = 'select
 const mobileExpandedRules = new Set([0]);
 let shareImportActions = null, shareImportTargetId = null, shareImportBusy = false;
 let shareExportTargetId = null, shareExportBusy = false;
-let passivePreviewTurn = 0, passivePreviewHp = 'start', slotsExpanded = false;
+let passivePreviewTurn = 0, passivePreviewHp = 'start', slotsExpanded = false, selectedSlotIndex = 0;
+let guideTopicId = ''; // Within each page, keep the selected manual topic until navigation
 const savedUi = readUiState(typeof sessionStorage === 'undefined' ? null : sessionStorage, config.units.map(u => u.id));
 let page = savedUi.page, selected = savedUi.selected, skillSearch = savedUi.skillSearch, kindFilter = savedUi.kindFilter, skillFilter = savedUi.skillFilter, skillPage = savedUi.skillPage, sim = readReplayState(typeof sessionStorage === 'undefined' ? null : sessionStorage, Battle), frame = savedUi.frame, logType = savedUi.logType, logTurn = savedUi.logTurn, logSearch = savedUi.logSearch, worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
 selectedLogId = savedUi.selectedLogId;
 logScrollTop = savedUi.logScrollTop;
 let lastReplayRef = sim, lastReplayTurn = sim?.turn ?? -1;
+const OFFICIAL_BATTLE_STATE_KEY = 'battle-lab-official-arena-log-v1';
+let officialArena = (() => { try { return JSON.parse(sessionStorage.getItem(OFFICIAL_BATTLE_STATE_KEY) || 'null'); } catch { return null; } })();
+let officialArenaUrl = officialArena?.id ? `https://rev2.reversion.jp/arena/battle/${officialArena.id}` : '';
+let officialArenaTurn = 'all', officialArenaLoading = false;
 let initialRestoreScrollY = savedUi.scrollY;
 function persistUi() {
     writeUiState(typeof sessionStorage === 'undefined' ? null : sessionStorage, {
@@ -150,6 +160,7 @@ function persistUi() {
 }
 
 const $ = s => document.querySelector(s), app = $('#app');
+$('#modal')?.addEventListener('close', () => $('#modal')?.classList.remove('manual-dialog')); // Escape also resets help-only styling.
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -224,60 +235,30 @@ const unitTacticsControls = (showArenaActions = true) => {
 };
 
 const helpButton = () => btn('?', 'page-help', 'small ghost help-button', 'aria-label="このページの使い方" title="このページの使い方"');
-const svgDataUri = svg => `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg.replace(/\n\s*/g, ''))}`;
-function pageHelpFigure(kind) {
-    const defs = {
-        setup: {
-            title: '編成・ステータス',
-            caption: 'チームを選び、ステータスや固有効果を調整します。',
-            steps: [
-                { title: 'チームを選ぶ', body: '左のA・右のBから編集したいユニットを選びます。' },
-                { title: 'ステータスを確認', body: 'HP・AP・主攻・副攻などを必要に応じて入力します。' },
-                { title: '固有効果を編集', body: '特殊効果や条件付きパッシブは「編集」から追加・削除できます。' },
-                { title: 'キャラスロットで保存・復元', body: '「キャラスロット」から10枠に保存。元キャラを削除した後も、A/Bへステータス・スキル・AIごと復元できます。ブラウザ内に保存されます。' },
-                { title: '次へ進む', body: 'キャラAI設定やシミュレーションへ移動して確認します。' }
-            ],
-            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300"><rect width="560" height="300" rx="24" fill="#0f172a"/><rect x="20" y="20" width="520" height="44" rx="14" fill="#1e293b"/><text x="38" y="48" font-size="20" fill="#e2e8f0" font-family="sans-serif">編成・ステータス</text><rect x="20" y="84" width="245" height="68" rx="16" fill="#1d4ed8" opacity=".25"/><rect x="295" y="84" width="245" height="68" rx="16" fill="#dc2626" opacity=".22"/><text x="38" y="112" font-size="16" fill="#f8fafc" font-family="sans-serif">1 チームA/Bから選択</text><text x="38" y="134" font-size="12" fill="#cbd5e1" font-family="sans-serif">左右のユニットカードをタップ</text><rect x="20" y="170" width="340" height="102" rx="16" fill="#111827" stroke="#334155"/><text x="38" y="198" font-size="16" fill="#f8fafc" font-family="sans-serif">2 ステータス入力</text><text x="38" y="220" font-size="12" fill="#cbd5e1" font-family="sans-serif">基礎値・位置・固有効果を調整</text><rect x="380" y="170" width="160" height="42" rx="12" fill="#0ea5e9" opacity=".3"/><text x="398" y="197" font-size="14" fill="#f8fafc" font-family="sans-serif">3 固有効果を編集</text><rect x="380" y="228" width="160" height="42" rx="12" fill="#22c55e" opacity=".3"/><text x="398" y="255" font-size="14" fill="#f8fafc" font-family="sans-serif">4 キャラスロット</text></svg>`
-        },
-        skills: {
-            title: 'スキルライブラリ',
-            caption: '一覧検索、複製編集、ユニットへのセットを行えます。',
-            steps: [
-                { title: '検索と絞り込み', body: '名前、カテゴリ、種別で目的のスキルを探します。' },
-                { title: '詳細を開く', body: 'カードを押すと効果説明を確認できます。' },
-                { title: '複製して編集', body: '公式スキルを元にカスタムスキルを作れます。' },
-                { title: 'ユニットにセット', body: '選択中のキャラへスキルを割り当てます。' }
-            ],
-            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300"><rect width="560" height="300" rx="24" fill="#0f172a"/><rect x="20" y="20" width="520" height="44" rx="14" fill="#1e293b"/><text x="38" y="48" font-size="20" fill="#e2e8f0" font-family="sans-serif">スキルライブラリ</text><rect x="20" y="82" width="520" height="46" rx="14" fill="#111827" stroke="#334155"/><text x="36" y="111" font-size="15" fill="#f8fafc" font-family="sans-serif">1 検索 / 絞り込み</text><rect x="20" y="146" width="160" height="120" rx="16" fill="#111827" stroke="#334155"/><rect x="200" y="146" width="160" height="120" rx="16" fill="#111827" stroke="#334155"/><rect x="380" y="146" width="160" height="120" rx="16" fill="#111827" stroke="#334155"/><text x="36" y="172" font-size="14" fill="#93c5fd" font-family="sans-serif">2 詳細を開く</text><text x="216" y="172" font-size="14" fill="#86efac" font-family="sans-serif">3 複製して編集</text><text x="396" y="172" font-size="14" fill="#fcd34d" font-family="sans-serif">4 キャラにセット</text></svg>`
-        },
-        rules: {
-            title: 'キャラAI設定',
-            caption: '行動条件・対象・行動内容を並べて戦術を作ります。',
-            steps: [
-                { title: 'ユニットを選ぶ', body: '対象キャラを選び、AI設定の編集先を決めます。' },
-                { title: '行動行を追加', body: '条件・対象・行動を1行ずつ定義します。' },
-                { title: '優先順を確認', body: '上から順番に評価されるため、並び順が重要です。' },
-                { title: '保存 / 共有', body: '書き出しや読み込み、共有コードの利用ができます。' }
-            ],
-            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300"><rect width="560" height="300" rx="24" fill="#0f172a"/><rect x="20" y="20" width="520" height="44" rx="14" fill="#1e293b"/><text x="38" y="48" font-size="20" fill="#e2e8f0" font-family="sans-serif">キャラAI設定</text><rect x="20" y="82" width="520" height="52" rx="14" fill="#111827" stroke="#334155"/><text x="38" y="113" font-size="15" fill="#f8fafc" font-family="sans-serif">1 編集するキャラを選択</text><rect x="20" y="152" width="520" height="32" rx="10" fill="#1d4ed8" opacity=".25"/><rect x="20" y="192" width="520" height="32" rx="10" fill="#0ea5e9" opacity=".22"/><rect x="20" y="232" width="520" height="32" rx="10" fill="#22c55e" opacity=".2"/><text x="36" y="173" font-size="14" fill="#bfdbfe" font-family="sans-serif">2 条件 → 対象 → 行動 を並べる</text><text x="36" y="213" font-size="14" fill="#bae6fd" font-family="sans-serif">3 上の行ほど優先順位が高い</text><text x="36" y="253" font-size="14" fill="#bbf7d0" font-family="sans-serif">4 保存・読み込み・共有コードを使える</text></svg>`
-        },
-        sim: {
-            title: 'シミュレーション',
-            caption: '戦闘を実行し、ログ・マップ・ユニット状態を確認します。',
-            steps: [
-                { title: '条件を決める', body: '乱数モードと再現用シードを必要に応じて設定します。' },
-                { title: '戦闘を実行', body: '1ターン進める / 最後まで実行で挙動を確認します。' },
-                { title: 'ログを読む', body: 'TEAM A / TEAM Bの状態、戦闘ログ、マップを見比べます。' },
-                { title: '結果を再現', body: '固定シードを使うと同じ条件で再実行できます。' }
-            ],
-            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300"><rect width="560" height="300" rx="24" fill="#0f172a"/><rect x="20" y="20" width="520" height="44" rx="14" fill="#1e293b"/><text x="38" y="48" font-size="20" fill="#e2e8f0" font-family="sans-serif">シミュレーション</text><rect x="20" y="82" width="520" height="54" rx="14" fill="#111827" stroke="#334155"/><text x="38" y="113" font-size="15" fill="#f8fafc" font-family="sans-serif">1 乱数 / シード / 実行ボタン</text><rect x="20" y="154" width="250" height="116" rx="16" fill="#111827" stroke="#334155"/><rect x="290" y="154" width="250" height="116" rx="16" fill="#111827" stroke="#334155"/><text x="38" y="181" font-size="14" fill="#93c5fd" font-family="sans-serif">2 TEAM A / TEAM B の状態</text><text x="308" y="181" font-size="14" fill="#fcd34d" font-family="sans-serif">3 戦闘ログとマップ</text></svg>`
-        }
-    };
-    return defs[kind] || defs.setup;
+function guideTopicHtml(kind, topic) {
+    const guide = PAGE_GUIDES[kind];
+    const defaultImages = {setup:'setup-overview.webp',skills:'skills-overview.webp',rules:'rules-overview.webp',sim:'sim-overview.webp'};
+    const image = topic.image || defaultImages[kind];
+    // The overview screenshot is illustrative when an individual topic has no screenshot.
+    const imageLabel = topic.image ? (topic.imageNote || '操作画面') : '参考画面（ページ全体）';
+    return `<article class="guide-article" id="guide-article" tabindex="-1"><div class="guide-topic-header"><div class="eyebrow">${esc(guide.title)}</div><h3>${esc(topic.title)}</h3></div>`+
+        (image ? `<figure class="guide-shot"><a href="help_images/${esc(image)}" target="_blank" rel="noopener noreferrer" title="画像を拡大して表示"><img src="help_images/${esc(image)}" alt="${esc(imageLabel)}" loading="lazy"></a><figcaption>${esc(imageLabel)}（画像を押すと拡大）</figcaption></figure>` : '')+
+        `<ol class="guide-steps">${topic.steps.map(step=>`<li>${esc(step)}</li>`).join('')}</ol>`+
+        (topic.note ? `<p class="guide-note">${esc(topic.note)}</p>` : '')+`</article>`;
+}
+function renderPageHelp(kind = page) {
+    const guide=PAGE_GUIDES[kind] || PAGE_GUIDES.setup;
+    if (!guide.topics.some(t=>t.id===guideTopicId)) guideTopicId=guide.topics[0].id;
+    const topic=guide.topics.find(t=>t.id===guideTopicId) || guide.topics[0];
+    const toc=guide.topics.map((t,i)=>btn(`<span class="guide-index">${String(i+1).padStart(2,'0')}</span><span>${esc(t.title)}</span>`,`guide-topic:${t.id}`,`guide-nav-button ${t.id===guideTopicId?'is-current':''}`,t.id===guideTopicId?'aria-current="true"':'')).join('');
+    $('#modal').classList.add('manual-dialog');
+    $('#modal').innerHTML=`<div class="modal-header guide-header"><div><div class="eyebrow">ページ別マニュアル</div><h2>${esc(guide.title)}</h2><p class="subtle">${esc(guide.lead)}</p></div>${btn('×','close-modal','ghost','aria-label="マニュアルを閉じる"')}</div>`+
+        `<div class="guide-layout"><nav class="guide-toc" aria-label="${esc(guide.title)}の使い方・目次"><div class="guide-toc-heading">目次 <small>${guide.topics.length}項目</small></div>${toc}</nav><label class="guide-topic-mobile">内容を選択 ${select(Object.fromEntries(guide.topics.map(t=>[t.id,t.title])),guideTopicId,'data-guide-topic-select aria-label="マニュアル項目の選択"')}</label>${guideTopicHtml(kind,topic)}</div>`+
+        `<div class="modal-footer guide-footer"><span>目次から詳しい使い方を選択できます</span>${btn('閉じる','close-modal','primary')}</div>`;
 }
 function openPageHelp(targetPage = page) {
-    const help = pageHelpFigure(targetPage);
-    $('#modal').innerHTML = `<div class="modal-header"><div><div class="eyebrow">PAGE GUIDE</div><h2>${esc(help.title)}</h2><p class="subtle">${esc(help.caption)}</p></div>${btn('×', 'close-modal', 'ghost', 'aria-label="閉じる"')}</div><div class="modal-form help-doc"><figure class="help-hero"><img src="${svgDataUri(help.svg)}" alt="${esc(help.title)}の使い方イメージ"><figcaption>${esc(help.caption)}</figcaption></figure><div class="help-sections">${help.steps.map((step, index) => `<section class="help-section"><div class="help-step-no">${index + 1}</div><div><h3>${esc(step.title)}</h3><p>${esc(step.body)}</p></div></section>`).join('')}</div></div><div class="modal-footer">${btn('閉じる', 'close-modal', 'primary')}</div>`;
+    guideTopicId = PAGE_GUIDES[targetPage]?.topics[0]?.id || '';
+    renderPageHelp(targetPage);
     $('#modal').showModal();
 }
 function render() {
@@ -288,7 +269,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.3</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.3</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.5</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.5</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -508,13 +489,19 @@ function importedProfileDetails(u) {
 }
 function characterSlotsPanel() {
     const slots = readCharacterSlots(typeof localStorage === 'undefined' ? null : localStorage);
-    const rows = slots.map((slot, i) => {
-        const count = String(i + 1).padStart(2, '0');
-        const title = slot ? esc(slot.name) : '空きスロット';
-        const detail = slot ? `<small>元チーム ${esc(slot.team)}・装備 ${slot.snapshot?.tactics?.skills?.length || 0}種・AI ${slot.snapshot?.tactics?.rules?.length || 0}件</small>` : '<small>未保存</small>';
-        return `<div class="character-slot ${slot ? 'is-occupied' : 'is-empty'}" data-character-slot="${i}"><div class="character-slot-info"><span class="character-slot-number">${count}</span><div class="character-slot-text"><strong>${title}</strong>${detail}</div></div><div class="character-slot-actions">${btn(slot ? '上書き保存' : 'このキャラを保存', `slot-save:${i}`, 'small')}${slot ? `${btn('Aへ読込', `slot-load:${i}:A`, 'small primary')}${btn('Bへ読込', `slot-load:${i}:B`, 'small')}${btn('空にする', `slot-clear:${i}`, 'small danger')}` : ''}</div></div>`;
-    }).join('');
-    return `<details class="data-management-group character-slots-details" id="character-slots-panel" ${slotsExpanded ? 'open' : ''}><summary>キャラスロット（${slots.filter(Boolean).length}/${CHARACTER_SLOT_COUNT}）</summary><p class="footnote">選択中のキャラを保存できます。元キャラを削除してもスロットは残り、A/Bへ新しいユニットとして復元できます。ブラウザ内保存のため別端末とは同期しません。</p><div class="character-slots-list">${rows}</div></details>`;
+    const safeIndex = Number.isInteger(selectedSlotIndex) && selectedSlotIndex>=0 && selectedSlotIndex<CHARACTER_SLOT_COUNT ? selectedSlotIndex : 0;
+    const saved = slots[safeIndex];
+    const slotOptions = Object.fromEntries(slots.map((entry,i) => [String(i), `${String(i+1).padStart(2,'0')}｜${entry ? entry.name : '空きスロット'}`]));
+    const selectedUnitOptions = Object.fromEntries(config.units.map(unit => [unit.id, `${unit.team}｜${unit.name}`]));
+    const description = saved ? `<div class="slot-selected-info"><strong>${esc(saved.name)}</strong><span>元チーム ${esc(saved.team)} ／ 装備 ${saved.snapshot?.tactics?.skills?.length || 0}種 ／ AI ${saved.snapshot?.tactics?.rules?.length || 0}件</span></div>` : '<div class="slot-selected-info"><strong>空きスロット</strong><span>選択中のキャラを保存できます</span></div>';
+    return `<details class="data-management-group character-slots-details" id="character-slots-panel" ${slotsExpanded ? 'open' : ''}><summary>キャラスロット（${slots.filter(Boolean).length}/${CHARACTER_SLOT_COUNT}）</summary>`+
+        `<div class="character-slots-compact"><div class="slot-select-grid"><label class="slot-select-field"><span>キャラ選択（保存元）</span>${select(selectedUnitOptions, selected, 'data-slot-unit-select aria-label="保存元のキャラ選択"')}</label>`+
+        `<label class="slot-select-field"><span>キャラスロット</span>${select(slotOptions, String(safeIndex), 'data-character-slot-select aria-label="キャラスロット番号"')}</label></div>`+
+        description+`<div class="character-slot-actions">${btn(saved?'上書き保存':'このキャラを保存',`slot-save:${safeIndex}`,'small')}`+
+        `${btn('Aへ読込',`slot-load:${safeIndex}:A`,'small primary',saved?'':'disabled title="空のスロットは読み込めません"')}`+
+        `${btn('Bへ読込',`slot-load:${safeIndex}:B`,'small',saved?'':'disabled title="空のスロットは読み込めません"')}`+
+        `${btn('空にする',`slot-clear:${safeIndex}`,'small danger',saved?'':'disabled title="すでに空です"')}</div>`+
+        `<p class="slot-small-note">スロットは編成から独立して保存されます。キャラを削除しても復元可能です（ブラウザ内保存・端末間同期なし）。</p></div></details>`;
 }
 function setupPage() {
     const u = current();
@@ -776,11 +763,48 @@ function ruleCard(r, i, u) {
  <p class="rule-help">${focusAction ? (r.splitMovement ? '集中は自身に適用します。移動基準を「個別に指定」、優先を「移動優先」、自動位置取りを「する」にすると、対象への位置取り後に集中します（通常移動は機動力×10m、行動値＋40）。' : '集中は自身に適用し、位置取りを行いません。') : (r.autoMove || r.action === 'move' ? '通常移動は機動力×10m（行動値＋40）。射程外なら追加で最大30m、10mごとに行動値＋10・＋15・＋20を累積加算。なお射程に届かない場合は移動のみ。' : '現在位置で実行します。')}${!focusAction && r.splitMovement && r.moveTargetMode === 'individual' ? ' 行使優先は現在位置で行動できる場合に移動を省略します。移動優先は移動基準への位置取りを先に試みます。' : ''}${r.action === 'effectiveAttack' ? ' 実行可能な攻撃の概算威力を比較します。' : ''}</p>
  </div></article>`;
 }
+
+function officialBattlePanel() {
+    const loaded = officialArena;
+    return `<details class="panel official-battle-panel" ${loaded ? 'open' : ''}>
+      <summary class="official-battle-summary"><strong>公式闘技場ログをURLで表示</strong><span class="subtle">公開済みの戦闘結果を読み込む</span></summary>
+      <div class="panel-body">
+        <div class="official-battle-controls"><label class="field"><span>公式闘技場の対戦結果URL</span><input id="official-battle-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://rev2.reversion.jp/arena/battle/番号" value="${esc(officialArenaUrl)}"></label>${btn(officialArenaLoading ? '取得中…' : '取得して表示','load-official-battle','primary',officialArenaLoading?'disabled':'')}${loaded?btn('表示を消す','clear-official-battle','small ghost'):''}</div>
+        <p id="official-battle-status" class="subtle" role="status" aria-live="polite">${loaded?'公式ログを表示しています。ローカルのシミュレーション結果には影響しません。':'公開されている公式の対戦結果URLを入力してください。'}</p>
+        ${loaded ? officialBattleContent(loaded) : ''}
+      </div>
+    </details>`;
+}
+function officialBattleContent(battle) {
+    const allTurns = [...new Set(battle.logs.map(l => l.turn))].sort((a,b)=>a-b);
+    const chosen = officialArenaTurn === 'all' ? 'all' : Number(officialArenaTurn);
+    const activeLogs = battle.logs.filter(l => chosen === 'all' || l.turn === chosen);
+    const displayed = chosen === 'all' && activeLogs.length > 1000 ? activeLogs.slice(-1000) : activeLogs;
+    const selectedTurn = chosen === 'all' ? battle.lastTurn : chosen;
+    // Official state snapshots are not the local simulator's replay frames.
+    const stateMap = new Map();
+    for (const log of battle.logs) {
+        if (log.turn > selectedTurn) continue;
+        if (log.kind==='state' && log.entryId && log.snapshot) stateMap.set(log.entryId,log.snapshot);
+    }
+    const teams = battle.teams.map(team => `<div class="official-team"><h4>TEAM ${esc(team.id)} ${esc(team.name)}</h4>${team.members.map(u => {
+        const state=stateMap.get(u.id)||{hp:null,ap:null,maxHp:null,maxAp:null};
+        const hpPct=Number.isFinite(state.hp)&&Number.isFinite(state.maxHp)&&state.maxHp>0 ? ` (${(Math.max(0,state.hp)/state.maxHp*100).toFixed(1)}%)` : '';
+        return `<div class="official-unit"><strong>${esc(u.name)}</strong><span>HP ${state.hp===null?'—':nf(state.hp)}${hpPct} / AP ${state.ap===null?'—':nf(state.ap)}</span></div>`;
+    }).join('')}</div>`).join('');
+    const officialDeltaRows = battle.teams.flatMap(t=>t.members).map(u => `<div class="official-delta-row"><span>TEAM ${esc(u.team)}　${esc(u.name)}</span><small>被HP ${u.hasDeltaHP?nf(u.hpDamage):'—'} / 被AP ${u.hasDeltaAP?nf(u.apDamage):'—'} / 回HP ${u.hasDeltaHP?nf(u.hpHealing):'—'} / 回AP ${u.hasDeltaAP?nf(u.apHealing):'—'}</small></div>`).join('');
+    return `<div class="official-battle-result"><div class="official-result-head"><div><strong>${esc(battle.name)}</strong><div class="subtle">公式ログ / ${battle.counts.entries.toLocaleString('ja-JP')}件・${battle.counts.turns}T</div></div><a href="https://rev2.reversion.jp/arena/battle/${encodeURIComponent(battle.id)}" target="_blank" rel="noopener noreferrer">公式ページを開く ↗</a></div>
+        <div class="official-unit-grid">${teams}</div>
+        <details class="official-delta"><summary>公式ログで確認できるHP/AP増減（参考）</summary>${officialDeltaRows}<p class="footnote">公式の状態記録に残る増減値から集計しています。攻撃元を判定できない項目は、ローカル戦闘の与ダメージ統計には含めません。</p></details>
+        <div class="official-log-title"><strong>公式戦闘ログ</strong><label class="field"><span>ターン</span>${select({all:'全ターン',...Object.fromEntries(allTurns.map(t=>[t,`第${t}ターン`]))}, officialArenaTurn,'id="official-battle-turn" aria-label="公式ログのターン"')}</label><span class="subtle">${activeLogs.length}件</span></div>
+        <div class="official-log-list">${displayed.map(log=>`<div class="official-log-row ${log.kind==='state'?'state':''}"><span class="official-log-turn">T${String(log.turn).padStart(2,'0')}</span><span class="official-log-text"><strong>${esc(log.actorName)}</strong>${log.actorName?'：':''}${esc(log.text)}${log.roll?`<small>出目 ${esc(log.roll)}</small>`:''}</span></div>`).join('') || '<p class="subtle">該当するログがありません。</p>'}</div>
+        ${activeLogs.length>displayed.length?`<p class="footnote">表示負荷を減らすため全ターン表示は最新1000件です。ターンを指定すると、そのターンのログを確認できます。</p>`:''}</div>`;
+}
 function simPage() {
     const result = sim?.result();
     const stale = sim && JSON.stringify(config) !== JSON.stringify(sim.config);
     const a = config.units.filter(u => u.team === 'A').length, b = config.units.filter(u => u.team === 'B').length;
-    return `<div class="sim-page-heading"><div class="sim-page-title"><h1>シミュレーション</h1><p class="subtitle">実行ごとに乱数を自動で更新します。</p></div><div class="sim-settings"><div class="sim-settings-fields">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('ターン制限', '<div class="fixed-turns">サドンデス込 25T</div>')}</div><div class="sim-settings-actions">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div></div></div>${stale ? '<div class="notice">設定が変更されています。表示中の結果は変更前のものです。次の実行時に初期状態から再計算します。</div>' : ''}${batchPanel()}${!sim ? `<div class="result-grid">\
+    return `<div class="sim-page-heading"><div class="sim-page-title"><h1>シミュレーション</h1><p class="subtitle">実行ごとに乱数を自動で更新します。</p></div><div class="sim-settings"><div class="sim-settings-fields">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('ターン制限', '<div class="fixed-turns">サドンデス込 25T</div>')}</div><div class="sim-settings-actions">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div></div></div>${stale ? '<div class="notice">設定が変更されています。表示中の結果は変更前のものです。次の実行時に初期状態から再計算します。</div>' : ''}${officialBattlePanel()}${batchPanel()}${!sim ? `<div class="result-grid">\
 <section class="panel"><div class="panel-head"><h2>対戦プレビュー</h2>${pill(`${a} vs ${b}`, 'green')}</div>\
 <div class="panel-body">${map(config.units, true)}</div>\
 </section><section class="empty-state"><div class="big-icon">${icon('sim')}</div>${btn('シミュレーション実行', 'run', 'primary')}<p class="footnote">\
@@ -818,7 +842,7 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
 </strong><span>${r.done ? 'シミュレーション終了' : '次のターンへ進行可能'}</span>\
 </div><div class="kpi"><small>与ダメージ</small><div class="kpi-team-stats">${teamRows('damage')}</div>\
 <span class="kpi-hint">敵チームへ与えたダメージ</span></div><div class="kpi"><small>クリーンヒット以上</small><div class="kpi-team-stats">${teamRows('cleanHits')}</div>\
-<span class="kpi-hint">クリーン・ハード・スマッシュの合計</span></div></div>${tiePanel}${r.warnings.length ? `<div class="notice">${r.warnings.map(esc).join('<br>')}</div>` : ''}<div class="result-grid replay-layout">\
+<span class="kpi-hint">クリーン・ハード・スマッシュの合計</span></div></div>${renderCombatStatistics(r.statistics,r.turns)}${tiePanel}${r.warnings.length ? `<div class="notice">${r.warnings.map(esc).join('<br>')}</div>` : ''}<div class="result-grid replay-layout">\
 <aside class="replay-sidebar"><section class="panel"><div class="panel-head"><h2>対戦プレビュー</h2></div><div class="panel-body"><p id="replay-label" class="replay-label">\
 </p><div id="replay-map"></div><div class="btnrow" style="margin-top:13px"><span class="subtle">初期</span><input id="frame-range" type="range" min="0" max="${r.frames.length - 1}" value="${frame}" aria-label="リプレイ時点" style="flex:1;width:150px">\
 <span class="subtle">最新</span></div></div></section><section class="panel">\
@@ -1444,6 +1468,37 @@ async function onAction(act) {
         selectLog(Number(arg));
         return;
     }
+    if (a === 'load-official-battle') {
+        if (officialArenaLoading) return;
+        const input = $('#official-battle-url');
+        const url = input?.value?.trim() || '';
+        officialArenaUrl = url;
+        officialArenaLoading = true;
+        if (input) input.disabled = true;
+        const status=$('#official-battle-status');
+        if (status) status.textContent='公式ログを取得しています…';
+        try {
+            const next = await loadOfficialArenaViaWorker(url, ARENA_SHARED_WORKER_URL);
+            officialArena = next;
+            officialArenaTurn = 'all';
+            try {
+                const payload=JSON.stringify(next);
+                if (payload.length < 2500000) sessionStorage.setItem(OFFICIAL_BATTLE_STATE_KEY,payload);
+                else sessionStorage.removeItem(OFFICIAL_BATTLE_STATE_KEY);
+            } catch { /* Browser storage can be disabled; viewing remains possible. */ }
+            render();
+            toast('公開公式ログを読み込みました。');
+        } catch(e) {
+            if (input) input.disabled = false;
+            if (status) status.textContent=e.message||'公式ログの取得に失敗しました。';
+        } finally { officialArenaLoading=false; }
+        return;
+    }
+    if (a === 'clear-official-battle') {
+        officialArena=null;officialArenaTurn='all';officialArenaUrl='';
+        try { sessionStorage.removeItem(OFFICIAL_BATTLE_STATE_KEY); } catch { /* ignore */ }
+        render();return;
+    }
     if (a === 'character-import') {
         openCharacterImport();
         return;
@@ -1510,6 +1565,14 @@ async function onAction(act) {
         openPageHelp(page);
         return;
     }
+    if (a === 'guide-topic') {
+        const guide=PAGE_GUIDES[page];
+        if (!guide?.topics.some(t=>t.id===arg)) return;
+        guideTopicId=arg;
+        renderPageHelp(page);
+        document.querySelector('#guide-article')?.focus({preventScroll:true});
+        return;
+    }
     if (a === 'page') {
         page = arg;
         errors = [];
@@ -1523,6 +1586,7 @@ async function onAction(act) {
         return;
     }
     if (a === 'close-modal') {
+        $('#modal').classList.remove('manual-dialog');
         $('#modal').close();
         return;
     }
@@ -1714,7 +1778,7 @@ async function onAction(act) {
             return;
         }
         const v = freshUnit({
-            name: `${arg === 'A' ? '味方' : '敵'}ユニット ${config.units.filter(x => x.team === arg).length + 1}`,
+            name: allocateDefaultUnitName(config, arg),
             team: arg,
             x: arg === 'A' ? -10 : 10,
             y: 0
@@ -1870,6 +1934,21 @@ document.addEventListener('toggle', e => {
 }, true);
 document.addEventListener('change', e => {
     const el = e.target, u = current();
+    if (el.matches('[data-guide-topic-select]')) {
+        if (!PAGE_GUIDES[page]?.topics.some(t=>t.id===el.value)) return;
+        guideTopicId=el.value; renderPageHelp(page); return;
+    }
+    if (el.matches('[data-character-slot-select]')) {
+        const n=Number(el.value);
+        if (!Number.isInteger(n) || n<0 || n>=CHARACTER_SLOT_COUNT) return;
+        selectedSlotIndex=n; slotsExpanded=true; render(); return;
+    }
+    if (el.matches('[data-slot-unit-select]')) {
+        if (config.units.some(item=>item.id===el.value)) {
+            selected=el.value; slotsExpanded=true; render();
+        }
+        return;
+    }
     if (el.matches('[data-map-relations]')) {
         mapRelations = el.checked;
         repaintMaps();
@@ -2097,6 +2176,15 @@ document.addEventListener('change', e => {
         skillPage = 0;
         render();
         return;
+    }
+    if (el.id === 'official-battle-turn') {
+        officialArenaTurn = el.value;
+        const panel = document.querySelector('.official-battle-panel');
+        if (panel) {
+            const keep = $('#official-battle-url')?.value;
+            if (keep) officialArenaUrl=keep;
+        }
+        render();return;
     }
     if (el.id === 'log-type') {
         logType = el.value;

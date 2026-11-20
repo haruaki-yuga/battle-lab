@@ -329,3 +329,29 @@
   .character-slot-actions{justify-content:flex-start;width:100%;}
   .character-slot-actions button{min-height:34px;}
 }
+
+/* v1.18.4 — Slot selectors use identical dimensions on small screens. */
+@media(max-width:700px){
+ .character-slots-compact{padding:9px;gap:8px}
+ .slot-select-grid{gap:7px;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .slot-select-field{font-size:10px}
+ .slot-select-field select{height:38px;min-height:38px;font-size:16px;padding:6px 6px}
+ .character-slots-compact .character-slot-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ .character-slots-compact .character-slot-actions button{width:100%;min-width:0;padding:7px 4px;font-size:11px}
+ #modal.manual-dialog{width:98vw;max-height:93dvh}
+ .manual-dialog .guide-header{padding:13px 15px}
+ .manual-dialog .guide-header h2{font-size:17px}
+ .manual-dialog .guide-layout{display:block;min-height:0}
+ .manual-dialog .guide-toc{display:none}
+ .manual-dialog .guide-topic-mobile{display:grid;gap:5px;padding:12px 14px 0;color:var(--ink);font-size:11px;font-weight:700}
+ .manual-dialog .guide-topic-mobile select{width:100%;min-width:0;min-height:39px;font-size:16px;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:6px 9px}
+ .manual-dialog .guide-article{padding:12px 14px 18px}
+ .manual-dialog .guide-topic-header h3{font-size:16px;margin:6px 0 11px}
+ .manual-dialog .guide-shot{padding:6px;margin-bottom:12px}
+ .manual-dialog .guide-shot img{max-height:230px}
+ .manual-dialog .guide-steps{gap:7px}
+ .manual-dialog .guide-steps li{font-size:12px;padding:8px 9px 8px 37px}
+ .manual-dialog .guide-steps li::before{left:7px;top:9px;width:21px;height:21px}
+ .manual-dialog .guide-footer{padding:12px 15px}
+ .manual-dialog .guide-footer span{display:none}
+}
