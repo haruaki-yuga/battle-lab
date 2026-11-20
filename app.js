@@ -1,5 +1,6 @@
-import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18&edit=4';
-import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18&edit=3';
+import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.3';
+import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.3&edit=1';
+import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.3&edit=1';
 import { deleteUnitSafely } from './unit-management.js?v=1.18';
 import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
@@ -9,6 +10,7 @@ import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
 import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18';
+import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.3';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
 import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18';
 import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.18';
@@ -127,8 +129,26 @@ let mapZoom = 1, mapRelations = false, mapMoveCircle = false, mapFocus = 'select
 const mobileExpandedRules = new Set([0]);
 let shareImportActions = null, shareImportTargetId = null, shareImportBusy = false;
 let shareExportTargetId = null, shareExportBusy = false;
-let passivePreviewTurn = 0, passivePreviewHp = 'start';
-let page = 'setup', selected = config.units[0].id, skillSearch = '', kindFilter = 'all', skillFilter = 'all', skillPage = 0, sim = null, frame = -1, logType = 'main', logTurn = 'all', logSearch = '', worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
+let passivePreviewTurn = 0, passivePreviewHp = 'start', slotsExpanded = false;
+const savedUi = readUiState(typeof sessionStorage === 'undefined' ? null : sessionStorage, config.units.map(u => u.id));
+let page = savedUi.page, selected = savedUi.selected, skillSearch = savedUi.skillSearch, kindFilter = savedUi.kindFilter, skillFilter = savedUi.skillFilter, skillPage = savedUi.skillPage, sim = readReplayState(typeof sessionStorage === 'undefined' ? null : sessionStorage, Battle), frame = savedUi.frame, logType = savedUi.logType, logTurn = savedUi.logTurn, logSearch = savedUi.logSearch, worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
+selectedLogId = savedUi.selectedLogId;
+logScrollTop = savedUi.logScrollTop;
+let lastReplayRef = sim, lastReplayTurn = sim?.turn ?? -1;
+let initialRestoreScrollY = savedUi.scrollY;
+function persistUi() {
+    writeUiState(typeof sessionStorage === 'undefined' ? null : sessionStorage, {
+        page, selected, skillSearch, kindFilter, skillFilter, skillPage,
+        frame, selectedLogId, logScrollTop, logType, logTurn, logSearch,
+        scrollY: initialRestoreScrollY ?? (typeof window === 'undefined' ? 0 : window.scrollY)
+    });
+    if (lastReplayRef !== sim || lastReplayTurn !== (sim?.turn ?? -1)) {
+        writeReplayState(typeof sessionStorage === 'undefined' ? null : sessionStorage, sim);
+        lastReplayRef = sim;
+        lastReplayTurn = sim?.turn ?? -1;
+    }
+}
+
 const $ = s => document.querySelector(s), app = $('#app');
 const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;',
@@ -202,16 +222,75 @@ const unitTacticsControls = (showArenaActions = true) => {
     const buttons = basicButtons + (showArenaActions ? arenaButtons : '');
     return `<div class="unit-tactics-buttons desktop-tactics-controls" role="group" aria-label="スキル・AI管理"><span class="unit-tactics-label">スキル・AI</span>${buttons}</div><details class="mobile-tactics-details"><summary>スキル・AI管理</summary><div class="mobile-tactics-actions">${buttons}</div></details>`;
 };
+
+const helpButton = () => btn('?', 'page-help', 'small ghost help-button', 'aria-label="このページの使い方" title="このページの使い方"');
+const svgDataUri = svg => `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg.replace(/\n\s*/g, ''))}`;
+function pageHelpFigure(kind) {
+    const defs = {
+        setup: {
+            title: '編成・ステータス',
+            caption: 'チームを選び、ステータスや固有効果を調整します。',
+            steps: [
+                { title: 'チームを選ぶ', body: '左のA・右のBから編集したいユニットを選びます。' },
+                { title: 'ステータスを確認', body: 'HP・AP・主攻・副攻などを必要に応じて入力します。' },
+                { title: '固有効果を編集', body: '特殊効果や条件付きパッシブは「編集」から追加・削除できます。' },
+                { title: 'キャラスロットで保存・復元', body: '「キャラスロット」から10枠に保存。元キャラを削除した後も、A/Bへステータス・スキル・AIごと復元できます。ブラウザ内に保存されます。' },
+                { title: '次へ進む', body: 'キャラAI設定やシミュレーションへ移動して確認します。' }
+            ],
+            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300"><rect width="560" height="300" rx="24" fill="#0f172a"/><rect x="20" y="20" width="520" height="44" rx="14" fill="#1e293b"/><text x="38" y="48" font-size="20" fill="#e2e8f0" font-family="sans-serif">編成・ステータス</text><rect x="20" y="84" width="245" height="68" rx="16" fill="#1d4ed8" opacity=".25"/><rect x="295" y="84" width="245" height="68" rx="16" fill="#dc2626" opacity=".22"/><text x="38" y="112" font-size="16" fill="#f8fafc" font-family="sans-serif">1 チームA/Bから選択</text><text x="38" y="134" font-size="12" fill="#cbd5e1" font-family="sans-serif">左右のユニットカードをタップ</text><rect x="20" y="170" width="340" height="102" rx="16" fill="#111827" stroke="#334155"/><text x="38" y="198" font-size="16" fill="#f8fafc" font-family="sans-serif">2 ステータス入力</text><text x="38" y="220" font-size="12" fill="#cbd5e1" font-family="sans-serif">基礎値・位置・固有効果を調整</text><rect x="380" y="170" width="160" height="42" rx="12" fill="#0ea5e9" opacity=".3"/><text x="398" y="197" font-size="14" fill="#f8fafc" font-family="sans-serif">3 固有効果を編集</text><rect x="380" y="228" width="160" height="42" rx="12" fill="#22c55e" opacity=".3"/><text x="398" y="255" font-size="14" fill="#f8fafc" font-family="sans-serif">4 キャラスロット</text></svg>`
+        },
+        skills: {
+            title: 'スキルライブラリ',
+            caption: '一覧検索、複製編集、ユニットへのセットを行えます。',
+            steps: [
+                { title: '検索と絞り込み', body: '名前、カテゴリ、種別で目的のスキルを探します。' },
+                { title: '詳細を開く', body: 'カードを押すと効果説明を確認できます。' },
+                { title: '複製して編集', body: '公式スキルを元にカスタムスキルを作れます。' },
+                { title: 'ユニットにセット', body: '選択中のキャラへスキルを割り当てます。' }
+            ],
+            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300"><rect width="560" height="300" rx="24" fill="#0f172a"/><rect x="20" y="20" width="520" height="44" rx="14" fill="#1e293b"/><text x="38" y="48" font-size="20" fill="#e2e8f0" font-family="sans-serif">スキルライブラリ</text><rect x="20" y="82" width="520" height="46" rx="14" fill="#111827" stroke="#334155"/><text x="36" y="111" font-size="15" fill="#f8fafc" font-family="sans-serif">1 検索 / 絞り込み</text><rect x="20" y="146" width="160" height="120" rx="16" fill="#111827" stroke="#334155"/><rect x="200" y="146" width="160" height="120" rx="16" fill="#111827" stroke="#334155"/><rect x="380" y="146" width="160" height="120" rx="16" fill="#111827" stroke="#334155"/><text x="36" y="172" font-size="14" fill="#93c5fd" font-family="sans-serif">2 詳細を開く</text><text x="216" y="172" font-size="14" fill="#86efac" font-family="sans-serif">3 複製して編集</text><text x="396" y="172" font-size="14" fill="#fcd34d" font-family="sans-serif">4 キャラにセット</text></svg>`
+        },
+        rules: {
+            title: 'キャラAI設定',
+            caption: '行動条件・対象・行動内容を並べて戦術を作ります。',
+            steps: [
+                { title: 'ユニットを選ぶ', body: '対象キャラを選び、AI設定の編集先を決めます。' },
+                { title: '行動行を追加', body: '条件・対象・行動を1行ずつ定義します。' },
+                { title: '優先順を確認', body: '上から順番に評価されるため、並び順が重要です。' },
+                { title: '保存 / 共有', body: '書き出しや読み込み、共有コードの利用ができます。' }
+            ],
+            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300"><rect width="560" height="300" rx="24" fill="#0f172a"/><rect x="20" y="20" width="520" height="44" rx="14" fill="#1e293b"/><text x="38" y="48" font-size="20" fill="#e2e8f0" font-family="sans-serif">キャラAI設定</text><rect x="20" y="82" width="520" height="52" rx="14" fill="#111827" stroke="#334155"/><text x="38" y="113" font-size="15" fill="#f8fafc" font-family="sans-serif">1 編集するキャラを選択</text><rect x="20" y="152" width="520" height="32" rx="10" fill="#1d4ed8" opacity=".25"/><rect x="20" y="192" width="520" height="32" rx="10" fill="#0ea5e9" opacity=".22"/><rect x="20" y="232" width="520" height="32" rx="10" fill="#22c55e" opacity=".2"/><text x="36" y="173" font-size="14" fill="#bfdbfe" font-family="sans-serif">2 条件 → 対象 → 行動 を並べる</text><text x="36" y="213" font-size="14" fill="#bae6fd" font-family="sans-serif">3 上の行ほど優先順位が高い</text><text x="36" y="253" font-size="14" fill="#bbf7d0" font-family="sans-serif">4 保存・読み込み・共有コードを使える</text></svg>`
+        },
+        sim: {
+            title: 'シミュレーション',
+            caption: '戦闘を実行し、ログ・マップ・ユニット状態を確認します。',
+            steps: [
+                { title: '条件を決める', body: '乱数モードと再現用シードを必要に応じて設定します。' },
+                { title: '戦闘を実行', body: '1ターン進める / 最後まで実行で挙動を確認します。' },
+                { title: 'ログを読む', body: 'TEAM A / TEAM Bの状態、戦闘ログ、マップを見比べます。' },
+                { title: '結果を再現', body: '固定シードを使うと同じ条件で再実行できます。' }
+            ],
+            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300"><rect width="560" height="300" rx="24" fill="#0f172a"/><rect x="20" y="20" width="520" height="44" rx="14" fill="#1e293b"/><text x="38" y="48" font-size="20" fill="#e2e8f0" font-family="sans-serif">シミュレーション</text><rect x="20" y="82" width="520" height="54" rx="14" fill="#111827" stroke="#334155"/><text x="38" y="113" font-size="15" fill="#f8fafc" font-family="sans-serif">1 乱数 / シード / 実行ボタン</text><rect x="20" y="154" width="250" height="116" rx="16" fill="#111827" stroke="#334155"/><rect x="290" y="154" width="250" height="116" rx="16" fill="#111827" stroke="#334155"/><text x="38" y="181" font-size="14" fill="#93c5fd" font-family="sans-serif">2 TEAM A / TEAM B の状態</text><text x="308" y="181" font-size="14" fill="#fcd34d" font-family="sans-serif">3 戦闘ログとマップ</text></svg>`
+        }
+    };
+    return defs[kind] || defs.setup;
+}
+function openPageHelp(targetPage = page) {
+    const help = pageHelpFigure(targetPage);
+    $('#modal').innerHTML = `<div class="modal-header"><div><div class="eyebrow">PAGE GUIDE</div><h2>${esc(help.title)}</h2><p class="subtle">${esc(help.caption)}</p></div>${btn('×', 'close-modal', 'ghost', 'aria-label="閉じる"')}</div><div class="modal-form help-doc"><figure class="help-hero"><img src="${svgDataUri(help.svg)}" alt="${esc(help.title)}の使い方イメージ"><figcaption>${esc(help.caption)}</figcaption></figure><div class="help-sections">${help.steps.map((step, index) => `<section class="help-section"><div class="help-step-no">${index + 1}</div><div><h3>${esc(step.title)}</h3><p>${esc(step.body)}</p></div></section>`).join('')}</div></div><div class="modal-footer">${btn('閉じる', 'close-modal', 'primary')}</div>`;
+    $('#modal').showModal();
+}
 function render() {
+    persistUi();
     const titles = { setup: '編成・ステータス', skills: 'スキルライブラリ', rules: 'キャラAI設定（β版）', sim: 'シミュレーション' };
     const mobileTitles = { setup: '編成', skills: 'スキル', rules: 'AI設定', sim: '戦闘' };
     const mobileNav = `<nav class="mobile-bottom-nav" aria-label="スマートフォン用メニュー">${Object.entries(mobileTitles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>`, `page:${k}`, page === k ? 'active' : '', `aria-label="${titles[k]}" ${page === k ? 'aria-current="page"' : ''}`)).join('')}</nav>`;
-    const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
+    const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.3</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.3</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
-<div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
+<div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
     if (page === 'sim' && sim)
         bindReplay();
@@ -427,9 +506,19 @@ function importedProfileDetails(u) {
 未セット：${esc(s.name)}<br>${esc(s.original)}<br>\
 未対応：${s.issues.map(esc).join('、')}</div>`).join('')}</details>`;
 }
+function characterSlotsPanel() {
+    const slots = readCharacterSlots(typeof localStorage === 'undefined' ? null : localStorage);
+    const rows = slots.map((slot, i) => {
+        const count = String(i + 1).padStart(2, '0');
+        const title = slot ? esc(slot.name) : '空きスロット';
+        const detail = slot ? `<small>元チーム ${esc(slot.team)}・装備 ${slot.snapshot?.tactics?.skills?.length || 0}種・AI ${slot.snapshot?.tactics?.rules?.length || 0}件</small>` : '<small>未保存</small>';
+        return `<div class="character-slot ${slot ? 'is-occupied' : 'is-empty'}" data-character-slot="${i}"><div class="character-slot-info"><span class="character-slot-number">${count}</span><div class="character-slot-text"><strong>${title}</strong>${detail}</div></div><div class="character-slot-actions">${btn(slot ? '上書き保存' : 'このキャラを保存', `slot-save:${i}`, 'small')}${slot ? `${btn('Aへ読込', `slot-load:${i}:A`, 'small primary')}${btn('Bへ読込', `slot-load:${i}:B`, 'small')}${btn('空にする', `slot-clear:${i}`, 'small danger')}` : ''}</div></div>`;
+    }).join('');
+    return `<details class="data-management-group character-slots-details" id="character-slots-panel" ${slotsExpanded ? 'open' : ''}><summary>キャラスロット（${slots.filter(Boolean).length}/${CHARACTER_SLOT_COUNT}）</summary><p class="footnote">選択中のキャラを保存できます。元キャラを削除してもスロットは残り、A/Bへ新しいユニットとして復元できます。ブラウザ内保存のため別端末とは同期しません。</p><div class="character-slots-list">${rows}</div></details>`;
+}
 function setupPage() {
     const u = current();
-    return heading('BATTLE CONFIGURATION', '編成・ステータス', '', btn('キャラ検索', 'character-import') + btn(`${icon('sim', 'inline-icon')}実行画面へ`, 'page:sim', 'primary')) + teams() + `<div class="two-col">\
+    return heading('BATTLE CONFIGURATION', '編成・ステータス', '', btn('キャラ検索', 'character-import') + btn('キャラスロット', 'jump-slots', 'small') + btn(`${icon('sim', 'inline-icon')}実行画面へ`, 'page:sim', 'primary')) + teams() + `<div class="two-col">\
 <section class="panel"><div class="panel-head"><div><h2>${esc(u.name)} <span class="rule-count">\
 / TEAM ${u.team}</span>\
 </h2></div><div class="btnrow">${btn('複製', 'clone-unit', 'small')}${btn('削除', 'delete-unit', 'small danger')}</div>\
@@ -468,6 +557,7 @@ ${conditionalPassivesDisplay(u)}${importedEffectsDisplay(u)}<div class="field-se
 </div></div>`).join('')}<div class="hint">\
 上のルールから順に判定し、実行できる最初の行動を選択します。</div></div></section><section class="panel"><div class="panel-body" id="data-management-panel"><div class="data-management-heading"><h3>データ管理</h3><span class="subtle">自動保存中</span></div>
 <p class="subtle data-management-unit">対象：${esc(u.name)}</p>
+${characterSlotsPanel()}
 <details class="data-management-group" open><summary>キャラクターJSON</summary><div class="data-management-actions">
 ${btn('書き出す', 'export-character', 'small')}${btn('読み込む', 'import-character', 'small')}</div>
 <p class="footnote">能力値・特殊効果・装備・AIをまとめて管理します。</p></details>
@@ -793,7 +883,7 @@ function replayUnits(units) {
 </div><div class="replay-team-members">${members.map((u, index) => `<div class="combatant">\
 <span class="avatar ${team === 'B' ? 'enemy' : ''}">${team}${index + 1}</span>\
 <div><div class="name">${esc(u.name)} ${u.alive ? '' : pill('戦闘不能', 'red')}</div>\
-<div class="numbers"><span>HP ${nf(u.hp)} / ${nf(u.maxHp)}</span>\
+<div class="numbers"><span class="replay-hp-value">HP ${nf(u.hp)} / ${nf(u.maxHp)} <strong class="replay-hp-percent">(${u.maxHp > 0 ? (clamp(u.hp / u.maxHp * 100, 0, 100)).toFixed(1) : '0.0'}%)</strong></span>\
 <span>AP ${nf(u.ap)}</span>${u.barrier > 0 ? `<span class="replay-barrier">障壁 ${nf(u.barrier)}</span>` : ''}\
 </div><div class="hpbar"><i style="width:${clamp(u.hp / u.maxHp * 100, 0, 100)}%">\
 </i></div><div class="apbar"><i style="width:${u.maxAp ? clamp(u.ap / u.maxAp * 100, 0, 100) : 0}%">\
@@ -824,6 +914,7 @@ function selectLog(id) {
         return;
     selectedLogId = log.id;
     frame = log.frameIndex;
+    persistUi();
     paintReplay();
 }
 function syncMapToVisibleLog() {
@@ -854,11 +945,13 @@ function bindReplay() {
     scheduleMobileReplayMapVisibility();
     box.addEventListener('scroll', () => {
         logScrollTop = box.scrollTop;
+        persistUi();
         cancelAnimationFrame(logScrollFrame);
         logScrollFrame = requestAnimationFrame(syncMapToVisibleLog);
     }, { passive: true });
 }
 function refreshLogList() {
+    persistUi();
     const box = $('#log-entries');
     if (!box)
         return;
@@ -1263,6 +1356,49 @@ function applyShareResponse() {
 async function onAction(act) {
     const [a, arg, arg2] = act.split(':');
     const u = current();
+    if (a === 'jump-slots') {
+        page = 'setup'; slotsExpanded = true;
+        render();
+        document.getElementById('character-slots-panel')?.scrollIntoView({behavior:'smooth', block:'start'});
+        return;
+    }
+    if (a === 'slot-save') {
+        const index = Number(arg);
+        if (!Number.isInteger(index) || index < 0 || index >= CHARACTER_SLOT_COUNT) return;
+        const existing = readCharacterSlots(localStorage)[index];
+        if (existing && !confirm(`スロット${index + 1}の保存内容を「${u.name}」で上書きしますか？`)) return;
+        try {
+            saveCharacterSlot(localStorage,index,config,u.id);
+            slotsExpanded = true;
+            render(); toast(`スロット${index + 1}に「${u.name}」を保存しました。`);
+        } catch (e) { toast(e.message || 'スロットに保存できません。'); }
+        return;
+    }
+    if (a === 'slot-clear') {
+        const index = Number(arg);
+        if (!Number.isInteger(index) || index < 0 || index >= CHARACTER_SLOT_COUNT) return;
+        const existing = readCharacterSlots(localStorage)[index];
+        if (!existing || !confirm(`スロット${index + 1}「${existing.name}」を空にしますか？`)) return;
+        try {
+            clearCharacterSlot(localStorage,index); slotsExpanded = true;
+            render(); toast(`スロット${index + 1}を空にしました。`);
+        } catch (e) { toast(e.message || 'スロットを削除できません。'); }
+        return;
+    }
+    if (a === 'slot-load') {
+        const index = Number(arg), team = arg2;
+        if (!Number.isInteger(index) || index < 0 || index >= CHARACTER_SLOT_COUNT || !['A','B'].includes(team)) return;
+        try {
+            const restored = loadCharacterSlot(localStorage,index,config,team);
+            config = restored.config; selected = restored.unitId;
+            sim = null; batch = null; frame = -1; selectedLogId = -1; errors = [];
+            slotsExpanded = true; page = 'setup';
+            save(); render();
+            toast(`チーム${team}へ「${restored.unitName}」を復元しました（スキル${restored.skillCount}種・AI${restored.ruleCount}件）。`);
+            if (restored.warnings.length) toast(`一部のAI参照先が存在せず、${restored.warnings.length}件の確認が必要です。`);
+        } catch (e) { toast(e.message || 'スロットを読み込めません。'); }
+        return;
+    }
     if (a === 'jump-data') {
         page = 'setup';
         render();
@@ -1370,11 +1506,15 @@ async function onAction(act) {
         document.getElementById('bug-report-dialog')?.showModal();
         return;
     }
+    if (a === 'page-help') {
+        openPageHelp(page);
+        return;
+    }
     if (a === 'page') {
         page = arg;
         errors = [];
-        render();
         window.scrollTo(0, 0);
+        render();
         return;
     }
     if (a === 'unit') {
@@ -1725,6 +1865,9 @@ document.addEventListener('click', e => {
     if (b && !b.disabled)
         onAction(b.dataset.act);
 });
+document.addEventListener('toggle', e => {
+    if (e.target?.id === 'character-slots-panel') slotsExpanded = e.target.open;
+}, true);
 document.addEventListener('change', e => {
     const el = e.target, u = current();
     if (el.matches('[data-map-relations]')) {
@@ -2082,6 +2225,7 @@ document.addEventListener('input', e => {
     if (el.id === 'frame-range') {
         frame = Number(el.value);
         selectedLogId = -1;
+        persistUi();
         paintReplay();
         return;
     }
@@ -2205,3 +2349,20 @@ $('#arena-html-import').addEventListener('change', async (e) => {
 });
 save();
 render();
+// Restore the last viewport position after the chosen screen has been rendered.
+// Keep the scroll state on refresh, but not when navigating to a new screen.
+requestAnimationFrame(() => {
+    if (savedUi.scrollY > 0) {
+        window.scrollTo(0, savedUi.scrollY);
+        requestAnimationFrame(() => window.scrollTo(0, savedUi.scrollY));
+    }
+    initialRestoreScrollY = null;
+});
+window.addEventListener('scroll', () => {
+    // Updates are throttled by the browser; sessionStorage belongs to this tab only.
+    if (window.__battleLabUiScrollFrame) return;
+    window.__battleLabUiScrollFrame = requestAnimationFrame(() => {
+        window.__battleLabUiScrollFrame = 0;
+        persistUi();
+    });
+}, { passive: true });

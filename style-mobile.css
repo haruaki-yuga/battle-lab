@@ -237,3 +237,95 @@
   .mobile-tactics-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
   .mobile-tactics-actions button:last-child{grid-column:1/-1}
 }
+
+/* v1.18.1: dense two-column roster and replay status, preserving desktop styles. */
+@media (max-width:700px) {
+  .content{padding:10px 9px calc(22px + var(--mobile-nav-h) + env(safe-area-inset-bottom))}
+  .page-heading{gap:6px;margin-bottom:8px}
+  .page-heading h1{font-size:17px}
+  .page-heading>.btnrow button{min-height:32px;padding:5px 8px}
+  .panel-head{padding:8px 9px}
+  .panel-body{padding:9px}
+  .panel+.panel{margin-top:9px}
+  .two-col,.aside-grid{gap:9px}
+  /* Team A and Team B must remain side by side even on narrow phones. */
+  .teams{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:9px}
+  .team-strip{min-width:0;padding:7px 6px}
+  .team-title{gap:4px;margin:0 0 5px;font-size:10px}
+  .team-title b{font-size:10px;letter-spacing:0}
+  .team-title b span{display:none}
+  .team-title .subtle{font-size:9px;white-space:nowrap}
+  .team-strip .unit-row{display:grid;grid-template-columns:minmax(0,1fr) 28px;gap:4px;align-items:start}
+  .team-strip .unit-chip{grid-column:1;flex:initial;min-width:0;width:100%;min-height:31px;padding:4px 3px;gap:4px;border-radius:5px}
+  .team-strip .unit-chip>.avatar{width:19px;height:19px;flex:none;font-size:8px;border-radius:4px}
+  .team-strip .unit-chip>span:last-child{min-width:0}
+  .team-strip .unit-chip strong{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
+  .team-strip .unit-chip small{font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+  .team-strip .add-chip{grid-column:2;grid-row:1;min-width:0;width:28px;min-height:31px;padding:2px;font-size:15px}
+  /* Compact stat inputs without triggering iOS input auto-zoom (16px text). */
+  .fields,.fields.two,.fields.four{gap:6px 7px}
+  .field{gap:2px;font-size:10px}
+  .field input,.field select{box-sizing:border-box;height:34px;min-height:34px;padding:4px 6px;font-size:16px}
+  .field textarea{box-sizing:border-box;min-height:55px;padding:6px;font-size:16px}
+  .field-section{margin:11px 0 7px}
+  .meter-field{padding:6px 7px}
+  .meter-field input{min-height:28px;padding:0;font-size:18px}
+  .stat-passive-effective{font-size:9px;line-height:1.3;margin-top:2px}
+  .element-single{gap:6px}
+  /* No unused space in auto-position controls. */
+  .rule-body{padding:8px}
+  .rule-action{gap:7px;margin-top:8px;padding-top:8px}
+  .move-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,152px),1fr));gap:6px;padding:7px;margin-top:7px;align-items:start}
+  .move-options .field{min-width:0;max-width:none;width:100%}
+  .move-options select,.move-options input{width:100%;max-width:100%;min-height:33px;padding:5px 6px;font-size:16px}
+  .move-options .btnrow{min-width:0;display:flex;gap:4px;align-items:center}
+  .move-options .btnrow input{flex:1 1 0;min-width:0}
+  .movement-split{padding:8px;margin-top:8px}
+  .movement-split-body{padding-top:7px}
+  .rule-help{margin-top:6px}
+  /* Status cards: separate Team A (left) and Team B (right). */
+  .replay-sidebar .replay-teams,.replay-sidebar .combatants.replay-teams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:none;overflow:visible;padding:0;scrollbar-gutter:auto}
+  .replay-team{min-width:0;overflow:hidden;border-radius:6px}
+  .replay-team-head{padding:5px 6px;gap:3px;font-size:10px}
+  .replay-team-head span{display:none}
+  .replay-team-head small{font-size:9px}
+  .replay-team-members{padding:1px 5px}
+  .replay-team-members .combatant,.replay-sidebar .combatant{display:grid;grid-template-columns:20px minmax(0,1fr);align-items:start;gap:4px;padding:6px 0}
+  .replay-team-members .combatant .avatar{width:19px;height:19px;font-size:8px;border-radius:4px}
+  .replay-team-members .combatant .name{font-size:10px;line-height:1.3;overflow-wrap:anywhere}
+  .replay-team-members .combatant .numbers{display:flex;flex-wrap:wrap;justify-content:flex-start;column-gap:5px;row-gap:1px;font-size:9px;line-height:1.3}
+  .replay-hp-value{display:block;min-width:0}
+  .replay-hp-percent{font-size:9px;font-weight:700;white-space:nowrap;color:var(--ink)}
+  .replay-team-members .combatant .damage{grid-column:2;text-align:left;font-size:9px;line-height:1.1;margin-top:-2px}
+  .replay-team-members .combatant .damage small{display:inline;font-size:8px;margin-left:3px}
+  .replay-team-members .combatant p.subtle{font-size:8px;line-height:1.2;margin:3px 0}
+  .replay-team-members .combatant .hpbar{margin:3px 0}
+  .replay-team-members .combatant .apbar{margin:2px 0}
+  .replay-team-members .combatant .skill-tags{gap:2px}
+  .replay-team-members .combatant .skill-tags .pill{padding:1px 4px;font-size:8px}
+  .replay-sidebar .panel-body{padding:8px}
+}
+@media (max-width:360px){
+  .team-strip{padding:6px 4px}
+  .teams{gap:4px}
+  .team-strip .unit-chip>.avatar{display:none}
+  .replay-team-members .combatant,.replay-sidebar .combatant{grid-template-columns:16px minmax(0,1fr);gap:3px}
+  .replay-team-members .combatant .avatar{width:16px;height:16px;font-size:7px}
+}
+
+
+@media (max-width: 760px){
+  .mobile-top-tools .help-button{width:2rem;min-width:2rem;height:2rem;padding:0;}
+  .top-actions .help-button{display:none;}
+  .help-doc{max-width:100%;gap:14px;}
+  .help-hero{padding:10px;border-radius:14px;}
+  .help-section{padding:10px 12px;gap:10px;}
+  .help-step-no{width:24px;height:24px;font-size:.85rem;}
+}
+
+@media(max-width:700px){
+  .character-slots-list{gap:7px;}
+  .character-slot{padding:9px 10px;gap:8px;}
+  .character-slot-actions{justify-content:flex-start;width:100%;}
+  .character-slot-actions button{min-height:34px;}
+}
