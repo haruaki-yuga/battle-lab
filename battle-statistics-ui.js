@@ -1,41 +1,70 @@
-// Compact collapsible per-character summary built from engine event counters.
+// Shared detailed statistics presentation for local and official battle records.
+// Null values mean "unverifiable from this source", not zero.
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const num = n => Math.round(Number(n)||0).toLocaleString('ja-JP');
-const dec = n => Number.isFinite(n) ? Number(n).toFixed(1) : '—';
-const percent = n => Number.isFinite(n) ? `${Number(n).toFixed(1)}%` : '—';
+const num = n => n == null || !Number.isFinite(Number(n)) ? '—' : Math.round(Number(n)).toLocaleString('ja-JP');
+const dec = n => n == null || !Number.isFinite(Number(n)) ? '—' : Number(n).toFixed(1);
+const percent = n => n == null || !Number.isFinite(Number(n)) ? '—' : `${Number(n).toFixed(1)}%`;
 function metric(label,value,longLabel=label) {
     return `<div class="stat-metric" title="${esc(longLabel)}"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
 }
-function group(title,metrics){return `<div class="stat-group"><h4>${esc(title)}</h4><div class="stat-metrics">${metrics.join('')}</div></div>`;}
+const nMetric = (label,value,desc=label) => metric(label,num(value),desc);
+function group(title, metrics){return `<div class="stat-group"><h4>${esc(title)}</h4><div class="stat-metrics">${metrics.join('')}</div></div>`;}
+const sumKnown = (a,b) => a == null || b == null ? null : Number(a)+Number(b);
 function row(item) {
-    const hits=item.hitRanks||{};
-    const hitsLabel=['G','L','C','H','S'].map(k=>`${k}${num(hits[k])}`).join('：');
-    const primary=[metric('与HP',num(item.damageGivenHP),'相手へ与えたHPダメージ'),metric('被HP',num(item.damageTakenHP),'受けたHPダメージ'),
-        metric('与AP',num(item.damageGivenAP),'相手へ与えたAPダメージ'),metric('被AP',num(item.damageTakenAP),'受けたAPダメージ')];
+    const hits=item.hitRanks;
     const detail=[
       group('ダメージ',[
-        metric('与HP/T',dec(item.avgDamageGivenHP),'1ターン平均与HPダメージ'),metric('被HP/T',dec(item.avgDamageTakenHP),'1ターン平均被HPダメージ'),
-        metric('与AP/T',dec(item.avgDamageGivenAP),'1ターン平均与APダメージ'),metric('被AP/T',dec(item.avgDamageTakenAP),'1ターン平均被APダメージ'),
-        metric('最大与HP',num(item.maxGivenHP),'1回の最大与HPダメージ'),metric('最大被HP',num(item.maxTakenHP),'1回の最大被HPダメージ')]),
+        nMetric('総与ダメージ',sumKnown(item.damageGivenHP,item.damageGivenAP),'敵へ与えたHPとAPの合計'),
+        nMetric('総被ダメージ',sumKnown(item.damageTakenHP,item.damageTakenAP),'受けたHPとAPの合計'),
+        nMetric('与ダメ(HP)',item.damageGivenHP,'敵へ与えたHPダメージ'),
+        nMetric('与ダメ(AP)',item.damageGivenAP,'敵へ与えたAPダメージ'),
+        nMetric('被ダメ(HP)',item.damageTakenHP,'受けたHPダメージ'),
+        nMetric('被ダメ(AP)',item.damageTakenAP,'受けたAPダメージ'),
+        metric('1T平均与ダメ(HP)',dec(item.avgDamageGivenHP)),metric('1T平均与ダメ(AP)',dec(item.avgDamageGivenAP)),
+        metric('1T平均被ダメ(HP)',dec(item.avgDamageTakenHP)),metric('1T平均被ダメ(AP)',dec(item.avgDamageTakenAP)),
+        nMetric('最大与ダメ(HP)',item.maxGivenHP,'1回の最大与HPダメージ'),
+        nMetric('最大被ダメ(HP)',item.maxTakenHP,'1回の最大被HPダメージ')]),
+      group('回復',[
+        nMetric('総回復量(HP)',item.healGivenHP,'自身または味方へ実際に回復させたHP総量'),
+        nMetric('総回復量(AP)',item.healGivenAP,'自身または味方へ実際に回復させたAP総量'),
+        nMetric('被回復量(HP)',item.healReceivedHP,'自身が受けたHP回復の総量'),
+        nMetric('被回復量(AP)',item.healReceivedAP,'自身が受けたAP回復の総量')]),
       group('攻撃・命中',[
-        metric('攻撃',num(item.attacks),'攻撃スキルを仕掛けた回数'),metric('命中',num(item.hitLanded),'攻撃が回避されずに成立した回数'),
-        metric('命中率',percent(item.accuracyRate),'命中回数÷対象への攻撃試行数'),metric('ヒット段階',hitsLabel,'G:グレイズ L:ライト C:クリーン H:ハード S:スマッシュ')]),
-      group('回復・防御',[
-        metric('回HP',num(item.healGivenHP),'自分・味方を回復させたHP総量'),metric('回AP',num(item.healGivenAP),'自分・味方を回復させたAP総量'),
-        metric('回復数',num(item.healCount),'実際に回復量が発生した回数'),metric('回避',num(item.dodged),'敵の攻撃を回避した回数'),
-        metric('回避率',percent(item.dodgeRate),'回避数÷受けた攻撃試行数'),metric('防成',num(item.defenseSuccess),'防御判定に成功した回数'),
-        metric('防失',num(item.defenseFailure),'防御判定に失敗した回数')]),
+        nMetric('攻撃回数',item.attacks,'攻撃行動を実行した回数'),
+        nMetric('命中回数',item.hitLanded,'攻撃が回避されず命中した回数（複数対象は対象別）'),
+        metric('命中率',percent(item.accuracyRate),'命中回数÷攻撃試行数'),
+        nMetric('攻撃判定数',item.hitAttempts,'対象ごとに行った攻撃判定数')]),
+      group('ヒット段階',['G','L','C','H','S'].map((k,i)=>
+        metric(['グレイズ','ライト','クリーン','ハード','スマッシュ'][i],hits?.[k] == null ? '—' : `${num(hits[k])}回`,
+          ['グレイズ','ライト','クリーン','ハード','スマッシュ'][i]+'の命中回数'))),
+      group('回避・防御・抵抗',[
+        nMetric('回避数',item.dodged,'敵の攻撃を回避した回数'),
+        metric('回避率',percent(item.dodgeRate),'回避数÷受けた攻撃判定数'),
+        nMetric('防御成功',item.defenseSuccess,'防御判定に成功した回数'),
+        nMetric('防御失敗',item.defenseFailure,'防御判定に失敗した回数'),
+        nMetric('抵抗成功',item.resistSuccess,'BSの抵抗判定に成功した回数'),
+        nMetric('抵抗失敗',item.resistFailure,'BSの抵抗判定に失敗した回数')]),
       group('特殊判定・行動',[
-        metric('CT',num(item.criticals),'1d100判定でクリティカルした回数'),metric('FB',num(item.fumbles),'1d100判定でファンブルした回数'),
-        metric('BS付',num(item.bsInflicted),'BSの付与に成功した件数'),metric('BS被',num(item.bsReceived),'BSを付与された件数'),
-        metric('庇護',num(item.covered),'誰かを庇って攻撃を引き受けた回数'),metric('被庇',num(item.wasCovered),'誰かに庇われた回数'),
-        metric('ドラマ',num(item.drama),'ドラマ復活回数'),metric('出目平均',dec(item.diceAverage),'帰属を特定できる1d100の出目平均'),
-        metric('骰数',num(item.diceCount),'集計対象になった1d100の数'),metric('行動',num(item.actions),'実行した行動回数'),metric('撃破',num(item.defeats),'相手を戦闘不能にした回数')])
+        nMetric('CT回数',item.criticals,'1d100判定でクリティカルした回数'),
+        nMetric('FB回数',item.fumbles,'1d100判定でファンブルした回数'),
+        nMetric('BS付与成功回数',item.bsInflicted,'BS種別単位で付与に成功した回数'),
+        nMetric('BS被付与回数',item.bsReceived,'BS種別単位で付与された回数'),
+        nMetric('かばった回数',item.covered,'誰かへの攻撃をかばった回数'),
+        nMetric('かばわれた回数',item.wasCovered,'誰かにかばわれた回数'),
+        nMetric('ドラマ復活回数',item.drama,'ドラマ復活した回数'),
+        metric('1d100出目平均',dec(item.diceAverage),'所属の特定できる1d100出目の平均'),
+        nMetric('1d100判定数',item.diceCount,'集計対象1d100判定数'),
+        nMetric('行動回数',item.actions,'行動を実行した回数'),
+        nMetric('撃破数',item.defeats,'敵を戦闘不能にした回数')])
     ];
-    return `<details class="unit-stats-detail"><summary class="unit-stats-summary"><span class="stat-team ${item.team==='B'?'enemy':''}">TEAM ${esc(item.team)}</span><strong>${esc(item.name)}</strong><span class="stat-summary-data">与HP ${num(item.damageGivenHP)} · 被HP ${num(item.damageTakenHP)}</span><span class="stat-chevron" aria-hidden="true">⌄</span></summary><div class="stat-primary">${primary.join('')}</div><div class="stat-full">${detail.join('')}</div></details>`;
+    return `<details class="unit-stats-detail"><summary class="unit-stats-summary"><span class="stat-team ${item.team==='B'?'enemy':''}">TEAM ${esc(item.team)}</span><strong>${esc(item.name)}</strong><span class="stat-summary-data">与ダメ(HP) ${num(item.damageGivenHP)} · 被ダメ(HP) ${num(item.damageTakenHP)}</span><span class="stat-chevron" aria-hidden="true">⌄</span></summary><div class="stat-full">${detail.join('')}</div></details>`;
 }
-export function renderCombatStatistics(items,turns) {
+export function renderCombatStatistics(items,turns,options={}) {
     if (!Array.isArray(items) || !items.length) return '';
     const sorted=[...items].sort((a,b)=>String(a.team).localeCompare(String(b.team))||String(a.name).localeCompare(String(b.name),'ja'));
-    return `<details class="panel battle-stats-panel"><summary class="battle-stats-head"><strong>キャラ別・戦闘全体の統計</strong><span>${sorted.length}人 / ${num(turns)}T</span><span class="stat-chevron">⌄</span></summary><div class="battle-stats-body">${sorted.map(row).join('')}<p class="footnote">HP/APダメージは実際に障壁を抜けた値です。与ダメージは相手チームへの効果のみ集計し、1T平均は経過ターン数で除算します。命中段階は G（グレイズ）/L（ライト）/C（クリーン）/H（ハード）/S（スマッシュ）です。CT/FBは行使・回避・防御・BS抵抗などの1d100を集計し、出目平均も帰属先が判明した1d100のみを対象とします。</p></div></details>`;
+    const title=options.title||'キャラ別・戦闘全体の統計';
+    const note=options.official
+      ? '公式ログで明示された対象者のHP/AP増減だけを集計します。与ダメージ、回復の実施者、命中・抵抗等が不明な項目は「—」（集計不可）で、0回とは異なります。公式の実記録から算出可能な範囲だけを表示します。'
+      : 'HP/APダメージは障壁を通過した値です。与ダメージは敵チームへの効果のみ集計。1T平均は経過ターン数で除算します。BS付与はBSの種類単位、抵抗はBS判定単位です。';
+    return `<details class="panel battle-stats-panel"><summary class="battle-stats-head"><strong>${esc(title)}</strong><span>${sorted.length}人 / ${num(turns)}T</span><span class="stat-chevron">⌄</span></summary><div class="battle-stats-body">${sorted.map(row).join('')}<p class="footnote">${esc(note)}</p></div></details>`;
 }

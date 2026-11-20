@@ -359,6 +359,7 @@ export function freshUnit(overrides = {}) {
         x: -10,
         y: 0,
         normalRange: 'near',
+        normalBS: [],
         element: emptyElement(),
         effects: {},
         conditionalPassives: [],
@@ -561,6 +562,8 @@ export function validateConfig(c) {
             errors.push(`${u.name}: 条件付きパッシブのデータが不正です。`);
         if (u.element !== undefined && !validElement(u.element))
             errors.push(`${u.name}: 属性と属性値を確認してください。`);
+        if (u.normalBS !== undefined && (!Array.isArray(u.normalBS) || u.normalBS.some(bs => !BS_NAMES.includes(bs))))
+            errors.push(`${u.name}: 通常攻撃のBS指定が不正です。`);
         if (u.maxHp < 1 || u.maxAp < 0 || u.mobility < 0)
             errors.push(`${u.name}: HPは1以上、AP・機動力は0以上です。`);
         if (!Array.isArray(u.rules) || !Array.isArray(u.skills)) {

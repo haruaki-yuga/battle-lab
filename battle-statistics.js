@@ -5,12 +5,12 @@ export function freshBattleStatistics(unit) {
     return {
         id: unit.id, name: unit.name, team: unit.team,
         damageGivenHP: 0, damageGivenAP: 0, damageTakenHP: 0, damageTakenAP: 0,
-        healGivenHP: 0, healGivenAP: 0, healCount: 0,
+        healGivenHP: 0, healGivenAP: 0, healReceivedHP: 0, healReceivedAP: 0,
         attacks: 0, hitAttempts: 0, hitLanded: 0,
         hitRanks: { G: 0, L: 0, C: 0, H: 0, S: 0 },
         dodged: 0, incomingAttempts: 0, criticals: 0, fumbles: 0,
         bsInflicted: 0, bsReceived: 0,
-        defenseSuccess: 0, defenseFailure: 0,
+        defenseSuccess: 0, defenseFailure: 0, resistSuccess: 0, resistFailure: 0,
         covered: 0, wasCovered: 0, drama: 0,
         diceSum: 0, diceCount: 0,
         maxGivenHP: 0, maxTakenHP: 0, actions: 0, defeats: 0

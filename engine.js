@@ -1,7 +1,7 @@
 import { conditionalPassiveModifier, conditionalPassiveEffectModifier } from './conditional-passives.js?v=1.18';
 import { normalizeSettings, runSeed } from './run-settings.js';
-import { freshBattleStatistics, finishBattleStatistics, HIT_RANK_KEYS } from './battle-statistics.js';
-import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js';
+import { freshBattleStatistics, finishBattleStatistics, HIT_RANK_KEYS } from './battle-statistics.js?v=1.18.6';
+import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js?v=1.18.6';
 import { scoreDraw } from './battle-summary.js';
 import { selectDiskDestination } from './movement-disk.js';
 import { bsLogLabel } from './combat-log-format.js';
@@ -47,7 +47,7 @@ const normalSkill = u => ({
     subBonus: 0,
     hitBonus: 0,
     effects: {},
-    bs: [],
+    bs: Array.isArray(u.normalBS) ? u.normalBS : [],
     castMods: {}
 });
 const sumBuff = (items, key) => Math.max(0, ...items.map(x => Number(x[key] || 0))) + items.reduce((a, x) => a + Math.min(0, Number(x[key] || 0)), 0);
@@ -507,7 +507,7 @@ export class Battle {
         const credited = source || u;
         if (gain > 0) {
             this.tally(credited, type === 'hp' ? 'healGivenHP' : 'healGivenAP', gain);
-            this.tally(credited, 'healCount');
+            this.tally(u, type === 'hp' ? 'healReceivedHP' : 'healReceivedAP', gain);
         }
         if (source)
             source.healing += gain;
@@ -1809,9 +1809,11 @@ export class Battle {
             const roll = this.roll(t, {}, false);
             if (roll.critical) criticalRolls++;
             if (roll.critical || (!roll.fumble && roll.die >= 100 - res)) {
+                this.tally(t, 'resistSuccess');
                 results.push({ name, res, roll, resisted: true });
                 continue;
             }
+            this.tally(t, 'resistFailure');
             let count = res < 0 ? Math.min(5, Math.ceil(-res / 25)) : 1;
             if (roll.fumble)
                 count = Math.max(count, 1 + Math.ceil(roll.fb / 10));

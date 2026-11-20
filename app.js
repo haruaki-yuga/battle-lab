@@ -1,19 +1,19 @@
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.5';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.6';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
 import { deleteUnitSafely } from './unit-management.js?v=1.18';
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.4';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.6';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.18.5';
+import { Battle, clamp } from './engine.js?v=1.18.6';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
-import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.5';
-import { loadOfficialArenaViaWorker } from './official-arena-log.js?v=1.18.5';
+import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.6';
+import { loadOfficialArenaViaWorker, officialArenaStatistics } from './official-arena-log.js?v=1.18.6';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18';
-import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.4';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.6';
+import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.6';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
 import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18';
 import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.18';
@@ -237,14 +237,10 @@ const unitTacticsControls = (showArenaActions = true) => {
 const helpButton = () => btn('?', 'page-help', 'small ghost help-button', 'aria-label="このページの使い方" title="このページの使い方"');
 function guideTopicHtml(kind, topic) {
     const guide = PAGE_GUIDES[kind];
-    const defaultImages = {setup:'setup-overview.webp',skills:'skills-overview.webp',rules:'rules-overview.webp',sim:'sim-overview.webp'};
-    const image = topic.image || defaultImages[kind];
-    // The overview screenshot is illustrative when an individual topic has no screenshot.
-    const imageLabel = topic.image ? (topic.imageNote || '操作画面') : '参考画面（ページ全体）';
     return `<article class="guide-article" id="guide-article" tabindex="-1"><div class="guide-topic-header"><div class="eyebrow">${esc(guide.title)}</div><h3>${esc(topic.title)}</h3></div>`+
-        (image ? `<figure class="guide-shot"><a href="help_images/${esc(image)}" target="_blank" rel="noopener noreferrer" title="画像を拡大して表示"><img src="help_images/${esc(image)}" alt="${esc(imageLabel)}" loading="lazy"></a><figcaption>${esc(imageLabel)}（画像を押すと拡大）</figcaption></figure>` : '')+
+        (topic.intro ? `<p class="guide-intro">${esc(topic.intro)}</p>` : '')+
         `<ol class="guide-steps">${topic.steps.map(step=>`<li>${esc(step)}</li>`).join('')}</ol>`+
-        (topic.note ? `<p class="guide-note">${esc(topic.note)}</p>` : '')+`</article>`;
+        (topic.note ? `<p class="guide-note"><strong>覚えておきたいこと：</strong> ${esc(topic.note)}</p>` : '')+`</article>`;
 }
 function renderPageHelp(kind = page) {
     const guide=PAGE_GUIDES[kind] || PAGE_GUIDES.setup;
@@ -254,7 +250,7 @@ function renderPageHelp(kind = page) {
     $('#modal').classList.add('manual-dialog');
     $('#modal').innerHTML=`<div class="modal-header guide-header"><div><div class="eyebrow">ページ別マニュアル</div><h2>${esc(guide.title)}</h2><p class="subtle">${esc(guide.lead)}</p></div>${btn('×','close-modal','ghost','aria-label="マニュアルを閉じる"')}</div>`+
         `<div class="guide-layout"><nav class="guide-toc" aria-label="${esc(guide.title)}の使い方・目次"><div class="guide-toc-heading">目次 <small>${guide.topics.length}項目</small></div>${toc}</nav><label class="guide-topic-mobile">内容を選択 ${select(Object.fromEntries(guide.topics.map(t=>[t.id,t.title])),guideTopicId,'data-guide-topic-select aria-label="マニュアル項目の選択"')}</label>${guideTopicHtml(kind,topic)}</div>`+
-        `<div class="modal-footer guide-footer"><span>目次から詳しい使い方を選択できます</span>${btn('閉じる','close-modal','primary')}</div>`;
+        `<div class="modal-footer guide-footer"><span>目次から知りたい操作を選べます</span>${btn('閉じる','close-modal','primary')}</div>`;
 }
 function openPageHelp(targetPage = page) {
     guideTopicId = PAGE_GUIDES[targetPage]?.topics[0]?.id || '';
@@ -269,15 +265,15 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.5</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.5</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.6</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.6</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
     if (page === 'sim' && sim)
         bindReplay();
 }
-const heading = (eyebrow, title, subtitle, buttons = '') => `<div class="page-heading"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}</div>\
-<div class="btnrow">${buttons}</div>\
+const heading = (eyebrow, title, subtitle, buttons = '', actionClass = '') => `<div class="page-heading"> <div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}</div>\
+<div class="btnrow ${esc(actionClass)}">${buttons}</div>\
 </div>`;
 const pill = (text, cls = '') => `<span class="pill ${cls}">${esc(text)}</span>`;
 function teams() {
@@ -497,7 +493,7 @@ function characterSlotsPanel() {
     return `<details class="data-management-group character-slots-details" id="character-slots-panel" ${slotsExpanded ? 'open' : ''}><summary>キャラスロット（${slots.filter(Boolean).length}/${CHARACTER_SLOT_COUNT}）</summary>`+
         `<div class="character-slots-compact"><div class="slot-select-grid"><label class="slot-select-field"><span>キャラ選択（保存元）</span>${select(selectedUnitOptions, selected, 'data-slot-unit-select aria-label="保存元のキャラ選択"')}</label>`+
         `<label class="slot-select-field"><span>キャラスロット</span>${select(slotOptions, String(safeIndex), 'data-character-slot-select aria-label="キャラスロット番号"')}</label></div>`+
-        description+`<div class="character-slot-actions">${btn(saved?'上書き保存':'このキャラを保存',`slot-save:${safeIndex}`,'small')}`+
+        description+`<div class="character-slot-actions">${btn(saved?'上書き保存':'このキャラを保存',`slot-save:${safeIndex}`,'small slot-save-button')}`+
         `${btn('Aへ読込',`slot-load:${safeIndex}:A`,'small primary',saved?'':'disabled title="空のスロットは読み込めません"')}`+
         `${btn('Bへ読込',`slot-load:${safeIndex}:B`,'small',saved?'':'disabled title="空のスロットは読み込めません"')}`+
         `${btn('空にする',`slot-clear:${safeIndex}`,'small danger',saved?'':'disabled title="すでに空です"')}</div>`+
@@ -505,7 +501,7 @@ function characterSlotsPanel() {
 }
 function setupPage() {
     const u = current();
-    return heading('BATTLE CONFIGURATION', '編成・ステータス', '', btn('キャラ検索', 'character-import') + btn('キャラスロット', 'jump-slots', 'small') + btn(`${icon('sim', 'inline-icon')}実行画面へ`, 'page:sim', 'primary')) + teams() + `<div class="two-col">\
+    return heading('BATTLE CONFIGURATION', '編成・ステータス', '', btn('キャラ検索', 'character-import') + btn('キャラスロット', 'jump-slots', 'small') + btn(`${icon('sim', 'inline-icon')}実行画面へ`, 'page:sim', 'primary'), 'setup-quick-actions') + teams() + `<div class="two-col">\
 <section class="panel"><div class="panel-head"><div><h2>${esc(u.name)} <span class="rule-count">\
 / TEAM ${u.team}</span>\
 </h2></div><div class="btnrow">${btn('複製', 'clone-unit', 'small')}${btn('削除', 'delete-unit', 'small danger')}</div>\
@@ -527,6 +523,7 @@ function setupPage() {
         'fumble',
         'drama'
     ].map(k => passiveAwareStatField(u, k)).join('')}${field('通常攻撃の射程', select(RANGES, u.normalRange, 'data-unit="normalRange"'))}</div>\
+<details class="accordion normal-attack-bs"><summary>通常攻撃：命中時に付与するBS（${(u.normalBS || []).length}種類）</summary>${field('通常攻撃の命中時BS（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-normal-bs>${BS_NAMES.map(b => `<option ${(u.normalBS || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}<p class="footnote">選んだBSは通常攻撃の命中時、通常のBS抵抗判定後に付与されます。未指定ならBS効果なしです。</p></details>\
 ${conditionalPassivesDisplay(u)}${importedEffectsDisplay(u)}<div class="field-section">属性（ダメージ補正のみ）</div><div class="element-single">${field('属性', `<select data-element-key><option value="" ${!u.element?.key ? 'selected' : ''}>未設定</option>${ELEMENT_KEYS.map(k => `<option value="${k}" ${u.element?.key === k ? 'selected' : ''}>${k}</option>`).join('')}</select>`)}${field('属性値', `<input type="number" min="0" max="1000000" step="1" inputmode="numeric" data-element-value value="${u.element?.value ?? 0}" ${!u.element?.key ? 'disabled' : ''}>`)}<span class="element-level" data-element-level>Lv${elementLevel(u.element?.value)}</span></div>\
 <details class="accordion"><summary>初期位置・開始HP/AP・特殊効果</summary><div class="fields four">${field('初期X座標 (m)', input('x', u.x))}${field('初期Y座標 (m)', input('y', u.y))}${field('開始HP (%)', input('startHp', u.startHp, 'min="0" max="100"'))}${field('開始AP (%)', input('startAp', u.startAp, 'min="0" max="100"'))}</div>\
 <div class="fields two" style="margin-top:15px">${field('開始時BS（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-bs>${BS_NAMES.map(b => `<option ${(u.initialBS || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}${field('BS耐性（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-immunity>${BS_NAMES.map(b => `<option ${(u.immunities || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}</div>\
@@ -792,10 +789,9 @@ function officialBattleContent(battle) {
         const hpPct=Number.isFinite(state.hp)&&Number.isFinite(state.maxHp)&&state.maxHp>0 ? ` (${(Math.max(0,state.hp)/state.maxHp*100).toFixed(1)}%)` : '';
         return `<div class="official-unit"><strong>${esc(u.name)}</strong><span>HP ${state.hp===null?'—':nf(state.hp)}${hpPct} / AP ${state.ap===null?'—':nf(state.ap)}</span></div>`;
     }).join('')}</div>`).join('');
-    const officialDeltaRows = battle.teams.flatMap(t=>t.members).map(u => `<div class="official-delta-row"><span>TEAM ${esc(u.team)}　${esc(u.name)}</span><small>被HP ${u.hasDeltaHP?nf(u.hpDamage):'—'} / 被AP ${u.hasDeltaAP?nf(u.apDamage):'—'} / 回HP ${u.hasDeltaHP?nf(u.hpHealing):'—'} / 回AP ${u.hasDeltaAP?nf(u.apHealing):'—'}</small></div>`).join('');
     return `<div class="official-battle-result"><div class="official-result-head"><div><strong>${esc(battle.name)}</strong><div class="subtle">公式ログ / ${battle.counts.entries.toLocaleString('ja-JP')}件・${battle.counts.turns}T</div></div><a href="https://rev2.reversion.jp/arena/battle/${encodeURIComponent(battle.id)}" target="_blank" rel="noopener noreferrer">公式ページを開く ↗</a></div>
         <div class="official-unit-grid">${teams}</div>
-        <details class="official-delta"><summary>公式ログで確認できるHP/AP増減（参考）</summary>${officialDeltaRows}<p class="footnote">公式の状態記録に残る増減値から集計しています。攻撃元を判定できない項目は、ローカル戦闘の与ダメージ統計には含めません。</p></details>
+        ${renderCombatStatistics(officialArenaStatistics(battle), battle.counts.turns, {official:true, title:'公式ログ：キャラ別・戦闘全体の統計'})}
         <div class="official-log-title"><strong>公式戦闘ログ</strong><label class="field"><span>ターン</span>${select({all:'全ターン',...Object.fromEntries(allTurns.map(t=>[t,`第${t}ターン`]))}, officialArenaTurn,'id="official-battle-turn" aria-label="公式ログのターン"')}</label><span class="subtle">${activeLogs.length}件</span></div>
         <div class="official-log-list">${displayed.map(log=>`<div class="official-log-row ${log.kind==='state'?'state':''}"><span class="official-log-turn">T${String(log.turn).padStart(2,'0')}</span><span class="official-log-text"><strong>${esc(log.actorName)}</strong>${log.actorName?'：':''}${esc(log.text)}${log.roll?`<small>出目 ${esc(log.roll)}</small>`:''}</span></div>`).join('') || '<p class="subtle">該当するログがありません。</p>'}</div>
         ${activeLogs.length>displayed.length?`<p class="footnote">表示負荷を減らすため全ターン表示は最新1000件です。ターンを指定すると、そのターンのログを確認できます。</p>`:''}</div>`;
@@ -2012,6 +2008,11 @@ document.addEventListener('change', e => {
             u[k] = clamp(u[k], 0, 100);
         save();
         render();
+        return;
+    }
+    if (el.matches('[data-unit-normal-bs]')) {
+        u.normalBS = [...el.selectedOptions].map(o => o.value);
+        save();
         return;
     }
     if (el.matches('[data-unit-bs]')) {

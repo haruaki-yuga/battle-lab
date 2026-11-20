@@ -3157,10 +3157,6 @@ h1 {
 .manual-dialog .guide-nav-button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .manual-dialog .guide-article{padding:17px 22px 25px;min-width:0;outline:none;}
 .manual-dialog .guide-topic-header h3{font-size:19px;line-height:1.4;margin:6px 0 14px;color:var(--ink)}
-.manual-dialog .guide-shot{margin:0 0 16px;background:var(--paper);padding:10px;border-radius:10px;border:1px solid var(--line);}
-.manual-dialog .guide-shot a{display:block;text-align:center;}
-.manual-dialog .guide-shot img{display:block;margin:0 auto;max-width:100%;max-height:360px;object-fit:contain;cursor:zoom-in;border-radius:4px;border:1px solid var(--line);background:#fff;}
-.manual-dialog .guide-shot figcaption{margin:7px 2px 0;color:var(--muted);font-size:11px;line-height:1.6;}
 .manual-dialog .guide-steps{list-style:none;margin:0;padding:0;counter-reset:guide-step;display:grid;gap:10px}
 .manual-dialog .guide-steps li{position:relative;padding:10px 12px 10px 42px;border:1px solid var(--line);border-radius:8px;font-size:13px;line-height:1.7;background:var(--white);color:var(--ink);counter-increment:guide-step}
 .manual-dialog .guide-steps li::before{content:counter(guide-step);position:absolute;left:10px;top:11px;width:23px;height:23px;display:grid;place-items:center;background:var(--green-light);color:var(--green);font-size:12px;font-weight:800;border-radius:50%}
@@ -3222,3 +3218,19 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
  .official-unit-grid{gap:6px}.official-team{padding:6px}.official-unit{font-size:10px}
  .official-log-list{max-height:60vh}.official-log-row{padding:6px 7px;font-size:11px}
 }
+
+/* v1.18.6: stable three-button setup toolbar and slot actions */
+.page-heading>.setup-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(100%,390px);max-width:none;flex:0 0 auto}
+.page-heading>.setup-quick-actions button{width:100%;min-width:0;min-height:37px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:7px 5px;font-size:12px}
+.character-slots-compact .character-slot-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.character-slots-compact .character-slot-actions .slot-save-button{grid-column:1/-1;justify-self:start;min-width:0}
+.character-slots-compact .character-slot-actions button:not(.slot-save-button){width:100%;min-width:0;white-space:nowrap;padding:6px 4px}
+.normal-attack-bs{margin:10px 0 14px}
+.normal-attack-bs .field{margin-top:10px}
+.normal-attack-bs .footnote{margin:8px 0 1px}
+@media(max-width:1100px){.page-heading:has(>.setup-quick-actions){align-items:stretch;flex-wrap:wrap}.page-heading>.setup-quick-actions{flex:1 1 100%;width:100%}}
+@media(max-width:700px){.page-heading>.setup-quick-actions{width:100%;max-width:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.page-heading>.setup-quick-actions button{min-height:36px;padding:6px 3px;font-size:11px}.character-slots-compact .character-slot-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.character-slots-compact .character-slot-actions .slot-save-button{width:auto;grid-column:1/-1}.character-slots-compact .character-slot-actions button:not(.slot-save-button){font-size:11px;padding:7px 2px}}
+
+/* v1.18.6: image-free help */
+.manual-dialog .guide-intro{margin:0 0 17px;font-size:14px;line-height:1.85;color:var(--ink);}
+.manual-dialog .guide-note strong{font-weight:750;}

@@ -88,7 +88,27 @@ export function parseOfficialArenaResult(payload) {
     const lastTurn=Math.max(0,...logs.map(l=>l.turn));
     return {id:String(payload?.battleId ?? result.battle?.id ?? ''),
         name:safe(result.battle?.name,140) || '公式闘技場の戦闘ログ',teams,logs,lastTurn,
+        statistics: officialArenaStatistics({teams, lastTurn}),
         counts:{turns:lastTurn,entries:logs.length}, source:'official'};
+}
+// Official STATE records identify the affected member, but do not always
+// identify who dealt damage or performed healing. Unknown counters stay null,
+// never zero. Reuse the local battle-statistics presentation for both sources.
+export function officialArenaStatistics(battle) {
+    const turns = Math.max(1, Number(battle?.lastTurn ?? battle?.counts?.turns) || 1);
+    return (battle?.teams || []).flatMap(team => (team.members || []).map(u => ({
+        id: u.id, name: u.name, team: u.team,
+        damageGivenHP: null, damageGivenAP: null,
+        damageTakenHP: u.hasDeltaHP ? u.hpDamage : null,
+        damageTakenAP: u.hasDeltaAP ? u.apDamage : null,
+        healGivenHP: null, healGivenAP: null,
+        healReceivedHP: u.hasDeltaHP ? u.hpHealing : null,
+        healReceivedAP: u.hasDeltaAP ? u.apHealing : null,
+        avgDamageTakenHP: u.hasDeltaHP ? u.hpDamage / turns : null,
+        avgDamageTakenAP: u.hasDeltaAP ? u.apDamage / turns : null,
+        avgDamageGivenHP: null, avgDamageGivenAP: null,
+        hitRanks: null
+    })));
 }
 export async function loadOfficialArenaViaWorker(url, workerUrl, fetchImpl=fetch) {
     const id=officialArenaBattleId(url);

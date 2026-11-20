@@ -1,6 +1,6 @@
 import { validConditionalPassives } from './conditional-passives.js?v=1.18';
 /** One character per JSON file. Unit identity, team and map position belong to the destination slot. */
-import { clone, STAT_LABELS, RANGES, BS_NAMES, validateConfig } from './model.js';
+import { clone, STAT_LABELS, RANGES, BS_NAMES, validateConfig } from './model.js?v=1.18.6';
 import { exportUnitTactics, importUnitTactics, UNIT_TACTICS_FORMAT } from './unit-tactics-io.js';
 import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
 import { emptyElement, validElement, highestElement, validElements } from './element-bonus.js?v=1.17.16';
@@ -8,7 +8,7 @@ import { emptyElement, validElement, highestElement, validElements } from './ele
 export const CHARACTER_FORMAT = 'rosuaka-unit-character';
 export const CHARACTER_FORMAT_VERSION = 1;
 const numericFields = [...Object.keys(STAT_LABELS), 'startHp', 'startAp'];
-const characterFields = ['name', ...numericFields, 'normalRange', 'element', 'effects', 'conditionalPassives', 'initialBS', 'immunities', 'importedProfile'];
+const characterFields = ['name', ...numericFields, 'normalRange', 'normalBS', 'element', 'effects', 'conditionalPassives', 'initialBS', 'immunities', 'importedProfile'];
 const isPlainObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 export function exportUnitCharacter(config, unitId) {
@@ -50,7 +50,8 @@ function validateCharacter(data) {
         throw Error('固有の特殊効果が不正です。');
     if (char.conditionalPassives !== undefined && !validConditionalPassives(char.conditionalPassives))
         throw Error('条件付きパッシブのデータが不正です。');
-    for (const field of ['initialBS', 'immunities']) {
+    for (const field of ['normalBS', 'initialBS', 'immunities']) {
+        if (field === 'normalBS' && char[field] === undefined) continue; // v1.18.5以前のキャラJSONと互換
         if (!Array.isArray(char[field]) || char[field].length > 100 || char[field].some(name => !BS_NAMES.includes(name)))
             throw Error(`${field} のBS指定が不正です。`);
     }
@@ -68,6 +69,7 @@ export function importUnitCharacter(config, targetId, data) {
     const destination = next.units.find(item => item.id === targetId);
     // Clear optional imported fields when a legacy character JSON lacks them.
     delete destination.importedProfile;
+    destination.normalBS = []; // 旧JSONの取り込み時は既存の通常攻撃BSを引き継がない。
     destination.conditionalPassives = [];
     // Legacy character JSONs have no elements: do not retain the previous unit's values.
     destination.element = data.character.element !== undefined

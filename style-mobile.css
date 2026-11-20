@@ -347,11 +347,20 @@
  .manual-dialog .guide-topic-mobile select{width:100%;min-width:0;min-height:39px;font-size:16px;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:6px 9px}
  .manual-dialog .guide-article{padding:12px 14px 18px}
  .manual-dialog .guide-topic-header h3{font-size:16px;margin:6px 0 11px}
- .manual-dialog .guide-shot{padding:6px;margin-bottom:12px}
- .manual-dialog .guide-shot img{max-height:230px}
  .manual-dialog .guide-steps{gap:7px}
  .manual-dialog .guide-steps li{font-size:12px;padding:8px 9px 8px 37px}
  .manual-dialog .guide-steps li::before{left:7px;top:9px;width:21px;height:21px}
  .manual-dialog .guide-footer{padding:12px 15px}
  .manual-dialog .guide-footer span{display:none}
 }
+
+/* v1.18.6 mobile: load A/B/clear in one row, save on its own row. */
+@media(max-width:700px){
+ .character-slots-compact .character-slot-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .character-slots-compact .character-slot-actions .slot-save-button{grid-column:1/-1;width:max-content;max-width:100%}
+ .character-slots-compact .character-slot-actions button:not(.slot-save-button){font-size:11px;padding:7px 2px;white-space:nowrap;min-width:0}
+ .page-heading>.setup-quick-actions{max-width:none;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .page-heading>.setup-quick-actions button{font-size:11px;min-width:0;width:100%;padding:6px 3px;white-space:nowrap}
+}
+
+@media(max-width:700px){.manual-dialog .guide-intro{font-size:13px;line-height:1.8;margin-bottom:14px}}
