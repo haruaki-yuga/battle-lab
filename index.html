@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#f1f3f4">
     <meta name="description" content="ステータス、2026年11月14日までに実装されたスキル、条件付き行動を組み合わせるLost Arcadia戦闘検証ツール。">
-    <title>ロスアカ Battle Lab Web v1.18.19｜闘技趣味レーター</title>
+    <title>ロスアカ Battle Lab Web v1.18.20｜闘技趣味レーター</title>
     <script>
       // Apply saved appearance before styles render to avoid a light-mode flash.
       try { document.documentElement.dataset.theme = localStorage.getItem('battle-lab-theme') === 'dark' ? 'dark' : 'light'; }
       catch { document.documentElement.dataset.theme = 'light'; }
       document.querySelector('meta[name="theme-color"]')?.setAttribute('content', document.documentElement.dataset.theme === 'dark' ? '#151c24' : '#f1f3f4');
     </script>
-    <link rel="stylesheet" href="style.css?v=1.18.19&amp;reactions=2&amp;logfirst=1&amp;labels=0">
+    <link rel="stylesheet" href="style.css?v=1.18.20&amp;popupfree=1&amp;reactions=2&amp;logfirst=1&amp;labels=0">
     <link rel="stylesheet" href="style-simple.css?v=1.18">
-    <link rel="stylesheet" href="style-dark.css?v=1.18.19">
-    <link rel="stylesheet" href="style-mobile.css?v=1.18.19&amp;edit=1">
+    <link rel="stylesheet" href="style-dark.css?v=1.18.20">
+    <link rel="stylesheet" href="style-mobile.css?v=1.18.20&amp;edit=1">
     <link rel="stylesheet" href="update-notice.css?v=1.18">
     <link rel="stylesheet" href="bug-report.css?v=1.18">
     <link rel="stylesheet" href="element-bonus.css?v=1.18">
@@ -24,6 +24,17 @@
   <body>
     <div id="app"></div>
     <div id="toast" role="status"></div>
+    <!-- App-controlled confirmation: works even when JavaScript/browser popups are blocked. -->
+    <dialog id="app-confirm-dialog" class="app-confirm-dialog" aria-labelledby="app-confirm-title" aria-describedby="app-confirm-message">
+      <form method="dialog">
+        <h2 id="app-confirm-title" data-confirm-title>操作の確認</h2>
+        <p id="app-confirm-message" data-confirm-message></p>
+        <div class="app-confirm-actions">
+          <button type="submit" value="cancel" autofocus>キャンセル</button>
+          <button type="submit" value="confirm" class="primary" data-confirm-accept>続行する</button>
+        </div>
+      </form>
+    </dialog>
     <dialog id="update-notice" class="update-notice" aria-labelledby="update-notice-title" aria-describedby="update-notice-message">
       <div class="update-notice-content">
         <div class="update-notice-kicker">Battle Lab アップデート</div>
@@ -66,7 +77,7 @@
           <input id="bug-report-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="example@gmail.com">
         </label>
         <input type="hidden" name="_subject" value="【Battle Lab】不具合報告">
-        <input type="hidden" name="app_version" value="1.18.19">
+        <input type="hidden" name="app_version" value="1.18.20">
         <input type="hidden" name="browser_info" value="">
         <input type="hidden" name="reported_at" value="">
         <div class="bug-report-honeypot" aria-hidden="true"><label>連絡先<input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
@@ -118,8 +129,8 @@
     <input id="character-json-import" type="file" accept="application/json,.json" hidden>
     <input id="unit-tactics-import" type="file" accept="application/json,.json" hidden>
     <input id="arena-html-import" type="file" accept="text/html,.html,.htm" hidden>
-    <script type="module" src="app.js?v=1.18.19&amp;edit=2&amp;reactions=2&amp;logfirst=1&amp;labels=0"></script>
-    <script type="module" src="version-check.js?v=1.18.19"></script>
+    <script type="module" src="app.js?v=1.18.20&amp;edit=2&amp;popupfree=1&amp;reactions=2&amp;logfirst=1&amp;labels=0"></script>
+    <script type="module" src="version-check.js?v=1.18.20"></script>
     <script type="module" src="bug-report.js?v=1.18"></script>
   </body>
 </html>

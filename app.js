@@ -1,4 +1,5 @@
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.19&reactions=2&logfirst=1&labels=0';
+import { confirmInApp } from './in-app-confirm.js?v=1.18.20';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.20&reactions=2&logfirst=1&labels=0';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
@@ -23,7 +24,7 @@ import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js?v=1.18.19';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
-import { createCharacterImporter } from './character-ui.js?v=1.18.19';
+import { createCharacterImporter } from './character-ui.js?v=1.18.20';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
 import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.18';
@@ -281,7 +282,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.19</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.19</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.20</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.20</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && (sim || officialArena) ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -520,7 +521,7 @@ function importedProfileDetails(u) {
     const p = u.importedProfile;
     if (!p)
         return '';
-    return `<details class="accordion"><summary>読み込んだキャラクターの参照情報</summary><p class="footnote"><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${esc(p.characterId)} ↗</a>\
+    return `<details class="accordion"><summary>読み込んだキャラクターの参照情報</summary><p class="footnote"><a href="${esc(p.url)}" rel="noreferrer">${esc(p.characterId)} ↗</a>\
  / ${esc(new Date(p.fetchedAt).toLocaleString('ja-JP'))}</p>${(p.warnings || []).map(w => `<p class="import-warning">${esc(w)}</p>`).join('')}${(p.unsupported || []).map(s => `<div class="source-quote">\
 未セット：${esc(s.name)}<br>${esc(s.original)}<br>\
 未対応：${s.issues.map(esc).join('、')}</div>`).join('')}</details>`;
@@ -848,7 +849,7 @@ function officialBattleContent(battle) {
     const groupedLogs=officialArenaDisplayGroups(activeLogs,{mode:officialLogMode,members:battle.teams.flatMap(team=>team.members||[])});
     const visibleCount=groupedLogs.reduce((total,group)=>total+group.rows.length,0);
     const replay=battle.frames?.length ? (officialReplayFrame()||battle.frames.at(-1)) : null;
-    return `<div class="official-battle-result"><div class="official-result-head"><div><strong>${esc(battle.name)}</strong><div class="subtle">公式ログ / ${battle.counts.entries.toLocaleString('ja-JP')}件・${battle.counts.turns}T</div></div>${battle.sourceUrl?`<a href="${esc(battle.sourceUrl)}" target="_blank" rel="noopener noreferrer">公式ページを開く ↗</a>`:`<span class="subtle">JSONから取り込んだログ</span>`}</div>
+    return `<div class="official-battle-result"><div class="official-result-head"><div><strong>${esc(battle.name)}</strong><div class="subtle">公式ログ / ${battle.counts.entries.toLocaleString('ja-JP')}件・${battle.counts.turns}T</div></div>${battle.sourceUrl?`<a href="${esc(battle.sourceUrl)}" rel="noreferrer">公式ページを開く ↗</a>`:`<span class="subtle">JSONから取り込んだログ</span>`}</div>
         ${renderCombatStatistics(officialArenaStatistics(battle),battle.counts.turns,{official:true,title:'公式ログ：キャラ別・戦闘全体の統計'})}
         ${replay?`<div class="result-grid replay-layout official-replay-layout">
         <aside class="replay-sidebar official-replay-sidebar"><section class="panel"><div class="panel-head"><h2>公式戦闘マップ</h2>${pill('記録された位置・HP/AP','green')}</div><div class="panel-body"><p id="official-replay-label" class="replay-label"></p><div id="official-replay-map"></div>
@@ -1261,7 +1262,7 @@ function unitConditionalPassiveEditor() {
         return `<div class="passive-editor-mods"><div class="passive-editor-group-heading">${esc(title)}</div>${rows}${options.some(([k])=>!Object.hasOwn(mod,k)) ? btn('＋ 追加',`add-passive-mod:${index}:${group}`,'small ghost'):''}</div>`;
     };
     return `<section class="passive-editor-section"><div class="field-section">条件付きパッシブ</div>
-        <p class="subtle">名前付きスキルは固定値です。数値を変えたい場合は自由設定を使用してください。 <a href="https://c01301.sakura.ne.jp/rev2_wiki/doku.php?id=%E3%83%91%E3%83%83%E3%82%B7%E3%83%96" target="_blank" rel="noopener noreferrer">パッシブ一覧</a></p>
+        <p class="subtle">名前付きスキルは固定値です。数値を変えたい場合は自由設定を使用してください。 <a href="https://c01301.sakura.ne.jp/rev2_wiki/doku.php?id=%E3%83%91%E3%83%83%E3%82%B7%E3%83%96" rel="noreferrer">パッシブ一覧</a></p>
         <div class="passive-preset-picker"><select id="unit-passive-template" aria-label="追加する条件付きパッシブ">${presetItems}</select>${btn('＋ パッシブを追加','add-unit-passive','small primary')}</div>
         ${passives.length ? passives.map((p,index) => {
             const fixed = isFixedConditionalPassive(p);
@@ -1314,7 +1315,7 @@ function renderModal() {
    ${attacking ? field('迎撃・報復', select({ instant: '通常発動', intercept: '迎撃', retaliate: '報復' }, s.trigger, 'data-draft="trigger"')) : ''}
    ${!attacking ? '<p class="subtle">範囲回復・範囲付与は「識別」がない場合、敵味方両方に効果が及びます。</p>' : ''}
    ${effectEditor('effects', effectsList, 'このスキルの特殊効果')}
-   ${attacking ? `<div class="fields two" style="margin-top:15px">${field('命中時に与えるBS（複数選択可／基本3ターン）', `<select multiple class="multi-bs" data-draft-bs>${BS_NAMES.map(b => `<option ${(s.bs || []).includes(b) ? 'selected' : ''}>${b}</option>`).join('')}</select>`)}</div>` : ''}
+   ${attacking ? `<details class="accordion ak-bs-picker"><summary>命中時に与えるBS <span class="bs-count" data-draft-bs-count>（${(s.bs || []).length}種類）</span></summary><div class="normal-bs-checks">${BS_NAMES.map(b => `<label class="normal-bs-check"><input type="checkbox" value="${esc(b)}" data-draft-bs ${(s.bs || []).includes(b) ? 'checked' : ''}><span>${esc(b)}</span></label>`).join('')}</div><p class="footnote">チェックしたBSを命中時に付与判定します（基本3ターン）。複数選択でき、もう一度押すと解除できます。</p></details>` : ''}
    ${healing && s.kind === 'cleanse' ? '<p class="subtle">BS回復の成功率は、上記「BS回復」の効果量（%）で指定できます。</p>' : ''}
   </details>
   <details class="accordion"><summary>能力補正・付与・自分付与</summary>
@@ -1343,9 +1344,10 @@ function syncDraft() {
         modalDraft[key][k] = Number(el.value);
     });
     if (modalMode === 'unit') syncUnitPassiveEditor();
-    const b = $('[data-draft-bs]');
-    if (b)
-        modalDraft.bs = [...b.selectedOptions].map(o => o.value);
+    // AKのBSは通常攻撃と同じチェックボックス式。装備・保存の形式（bs配列）は従来どおり。
+    const bsPanel = $('#modal').querySelector('.ak-bs-picker');
+    if (bsPanel)
+        modalDraft.bs = [...bsPanel.querySelectorAll('[data-draft-bs]:checked')].map(box => box.value);
 }
 function download(name, data, type = 'application/json') {
     const blob = new Blob([typeof data === 'string' ? data : JSON.stringify(data, null, 2)], { type }), url = URL.createObjectURL(blob), a = document.createElement('a');
@@ -1459,7 +1461,7 @@ async function issueShareCode() {
         actions = buildOfficialArenaActions(config, unit.id, selectedIndices);
         if (!ARENA_SHARED_WORKER_URL) throw Error('共有AIの発行先が未設定です。');
     } catch(error) { return exportStatus(error.message,true); }
-    if (!confirm(`${actions.length}件の戦術を公式アリーナへ登録して共有コードを発行します。
+    if (!await confirmInApp(`${actions.length}件の戦術を公式アリーナへ登録して共有コードを発行します。
 発行後のコードは他の人も利用できます。続行しますか？`)) return;
     const button = $('#share-export-submit'), result = $('#share-export-result');
     shareExportBusy = true;
@@ -1570,7 +1572,7 @@ async function searchShareCode() {
     }
 }
 
-function applyShareResponse() {
+async function applyShareResponse() {
     if (!shareImportActions || !shareImportTargetId) return;
     try {
         const target = config.units.find(u => u.id === shareImportTargetId);
@@ -1578,7 +1580,7 @@ function applyShareResponse() {
         const mode = $('#share-import-mode')?.value || 'replace';
         const result = convertArenaSharedActions(shareImportActions, config, target.id, {mode});
         const summary = `「${target.name}」のAIに${result.ruleCount}件を${mode === 'replace' ? '置き換え' : '追加'}ます。\n未解決の指定スキル：${result.unresolvedSkills}件\n無効のルール：${result.disabledCount}件\n能力値・装備スキル・他キャラの設定は変更しません。\n\n続行しますか？`;
-        if (!confirm(summary)) return;
+        if (!await confirmInApp(summary)) return;
         config = result.config;
         arenaImportReport = {unitId: target.id, ruleCount: result.ruleCount, warnings: result.warnings};
         selected = target.id; page = 'rules';
@@ -1600,7 +1602,7 @@ async function onAction(act) {
         const picked=CHALLENGES.find(c=>c.id===arg);
         if (!picked || challenge()) return;
         const keepA=config.units.filter(x=>x.team==='A');
-        if (keepA.length>picked.teamALimit && !confirm(`このチャレンジは${picked.teamALimit}人までです。選択中のキャラを残して参加し、その他の編成は一時保存しますか？`))return;
+        if (keepA.length>picked.teamALimit && !await confirmInApp(`このチャレンジは${picked.teamALimit}人までです。選択中のキャラを残して参加し、その他の編成は一時保存しますか？`))return;
         try {
             const result=startChallenge(config,arg,current().id);
             config=result.config;selected=result.selectedId;page='setup';sim=null;batch=null;frame=-1;selectedLogId=-1;errors=[];
@@ -1610,7 +1612,7 @@ async function onAction(act) {
     }
     if (a === 'challenge-end') {
         if (!challenge())return;
-        if (!confirm('チャレンジを終了し、選択前の通常編成を復元しますか？'))return;
+        if (!await confirmInApp('チャレンジを終了し、選択前の通常編成を復元しますか？'))return;
         try {
             config=endChallenge(config);selected=config.units[0].id;page='setup';sim=null;batch=null;frame=-1;selectedLogId=-1;errors=[];
             $('#modal')?.close();save();render();toast('通常編成に戻しました。');
@@ -1629,7 +1631,7 @@ async function onAction(act) {
         const index = Number(arg);
         if (!Number.isInteger(index) || index < 0 || index >= CHARACTER_SLOT_COUNT) return;
         const existing = readCharacterSlots(localStorage)[index];
-        if (existing && !confirm(`スロット${index + 1}の保存内容を「${u.name}」で上書きしますか？`)) return;
+        if (existing && !await confirmInApp(`スロット${index + 1}の保存内容を「${u.name}」で上書きしますか？`)) return;
         try {
             saveCharacterSlot(localStorage,index,config,u.id);
             slotsExpanded = true;
@@ -1641,7 +1643,7 @@ async function onAction(act) {
         const index = Number(arg);
         if (!Number.isInteger(index) || index < 0 || index >= CHARACTER_SLOT_COUNT) return;
         const existing = readCharacterSlots(localStorage)[index];
-        if (!existing || !confirm(`スロット${index + 1}「${existing.name}」を空にしますか？`)) return;
+        if (!existing || !await confirmInApp(`スロット${index + 1}「${existing.name}」を空にしますか？`)) return;
         try {
             clearCharacterSlot(localStorage,index); slotsExpanded = true;
             render(); toast(`スロット${index + 1}を空にしました。`);
@@ -1883,7 +1885,7 @@ async function onAction(act) {
     }
     if (a === 'remove-unit-effect') {
         if (!Object.hasOwn(EFFECTS, arg)) return;
-        if (!confirm(`特殊効果「${EFFECTS[arg]}」を削除しますか？`)) return;
+        if (!await confirmInApp(`特殊効果「${EFFECTS[arg]}」を削除しますか？`)) return;
         delete u.effects[arg];
         save(); render();
         return;
@@ -1891,7 +1893,7 @@ async function onAction(act) {
     if (a === 'remove-unit-passive') {
         const i = Number(arg), p = u.conditionalPassives?.[i];
         if (!Number.isInteger(i) || !p) return;
-        if (!confirm(`条件付きパッシブ「${p.name}」を削除しますか？`)) return;
+        if (!await confirmInApp(`条件付きパッシブ「${p.name}」を削除しますか？`)) return;
         const next = clone(u.conditionalPassives); next.splice(i,1);
         Object.assign(u,applyPassiveEditor(u,next));
         save(); render();
@@ -1992,7 +1994,7 @@ async function onAction(act) {
         }
         const count = config.units.flatMap(v => v.rules).filter(r => r.action === 'skill' && r.skillId === id).length;
         const notice = count ? `「${skill.name}」を削除しますか？\nこのスキルを使うキャラAI設定 ${count}件は通常攻撃に変更されます。` : `「${skill.name}」を削除しますか？`;
-        if (!confirm(notice))
+        if (!await confirmInApp(notice))
             return;
         const result = deleteCustomSkill(config, id);
         if (!result.ok) {
@@ -2167,7 +2169,7 @@ async function onAction(act) {
     }
     else if (a === 'reset-config') {
         if (challenge()) {challengeInvalidMove('チャレンジを終了してから編成を初期化してください。');return;}
-        if (!confirm('現在の設定を初期編成に戻します。必要なら先に設定を書き出してください。'))
+        if (!await confirmInApp('現在の設定を初期編成に戻します。必要なら先に設定を書き出してください。'))
             return;
         config = makeSample();
         selected = config.units[0].id;
@@ -2283,6 +2285,14 @@ document.addEventListener('change', e => {
             u[k] = clamp(u[k], 0, 100);
         save();
         render();
+        return;
+    }
+    if (el.matches('[data-draft-bs]') && modalMode === 'skill' && modalDraft) {
+        const bsPanel = $('#modal').querySelector('.ak-bs-picker');
+        if (!bsPanel) return;
+        modalDraft.bs = [...bsPanel.querySelectorAll('[data-draft-bs]:checked')].map(box => box.value);
+        const count = bsPanel.querySelector('[data-draft-bs-count]');
+        if (count) count.textContent = `（${modalDraft.bs.length}種類）`;
         return;
     }
     if (el.matches('[data-unit-normal-bs]')) {
@@ -2658,7 +2668,7 @@ $('#character-json-import').addEventListener('change', async (e) => {
         if (!target) throw Error('読み込み先のキャラクターが見つかりません。');
         if (!allowUnit(target)) throw Error('チャレンジの敵キャラクターは変更できません。');
         const result = importUnitCharacter(config, targetId, payload);
-        if (!confirm(`選択中の「${target.name}」を「${result.name}」の設定で置き換えます。\n能力値・固有効果・開始時BS・装備スキル・AIを読み込みます。\nチーム・初期座標と他のキャラクターは変更しません。\n続行しますか？`)) return;
+        if (!await confirmInApp(`選択中の「${target.name}」を「${result.name}」の設定で置き換えます。\n能力値・固有効果・開始時BS・装備スキル・AIを読み込みます。\nチーム・初期座標と他のキャラクターは変更しません。\n続行しますか？`)) return;
         config = normalizeSettings(cleanWebConfiguration(result.config));
         normalizeMoveModes(config);
         selected = targetId;
@@ -2693,7 +2703,7 @@ $('#unit-tactics-import').addEventListener('change', async (e) => {
         const outcome = importUnitTactics(config, targetId, payload);
         cleanWebConfiguration(outcome.config);
         normalizeMoveModes(outcome.config);
-        if (!confirm(`「${target.name}」の現在の装備スキルとキャラAIルールを置き換えます。\n元ファイル：${payload.sourceUnit.name || '名前なし'}\nスキル ${outcome.skillCount} 件 / AIルール ${outcome.ruleCount} 件\n\n能力値やチーム、他キャラの設定は変更されません。続行しますか？`))
+        if (!await confirmInApp(`「${target.name}」の現在の装備スキルとキャラAIルールを置き換えます。\n元ファイル：${payload.sourceUnit.name || '名前なし'}\nスキル ${outcome.skillCount} 件 / AIルール ${outcome.ruleCount} 件\n\n能力値やチーム、他キャラの設定は変更されません。続行しますか？`))
             return;
         config = outcome.config;
         sim = null;
@@ -2734,7 +2744,7 @@ $('#arena-html-import').addEventListener('change', async (e) => {
             ambiguous.length ? `同名スキルが複数で特定できない：${ambiguous.join('、')}` : '',
             drafts.length ? `未設定のアクセルカレイド：${drafts.join('、')}（性能を編集するまで行動は無効）` : ''
         ].filter(Boolean).map(x => '\n' + x).join('');
-        if (!confirm(`「${destination.name}」に公式アリーナの戦法を適用します。\n元データ：${outcome.source}\nAI ${outcome.ruleCount}行（「上記のどの条件も満たさない場合」以降は除外）\n未対応スキルの行 ${outcome.unresolved.length}行${details}\n\n現在のAIルールを置き換えます。該当スキルは装備に追加し、その他の装備、能力値、チームは保持します。続行しますか？`))
+        if (!await confirmInApp(`「${destination.name}」に公式アリーナの戦法を適用します。\n元データ：${outcome.source}\nAI ${outcome.ruleCount}行（「上記のどの条件も満たさない場合」以降は除外）\n未対応スキルの行 ${outcome.unresolved.length}行${details}\n\n現在のAIルールを置き換えます。該当スキルは装備に追加し、その他の装備、能力値、チームは保持します。続行しますか？`))
             return;
         config = outcome.config;
         arenaImportReport = { unitId, ruleCount: outcome.ruleCount, warnings: outcome.warnings };

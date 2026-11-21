@@ -1,6 +1,6 @@
 // Battle Lab update notification (static-hosting friendly).
 // Increase CURRENT_VERSION and version.json together for each release.
-const CURRENT_VERSION = '1.18.19';
+const CURRENT_VERSION = '1.18.20';
 const CHECK_INTERVAL_MS = 60_000;
 const REMIND_AFTER_MS = 30 * 60_000;
 

@@ -3361,3 +3361,19 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 .log-load-more{padding:14px 10px 18px;text-align:center;}
 .log-load-more button{width:min(100%,340px);padding:10px 15px;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);font-weight:700;cursor:pointer;}
 .log-load-more button:hover{background:var(--green-light);}
+
+/* v1.18.20: AK creation/editing reuses the familiar normal-attack BS checkbox grid. */
+.ak-bs-picker{margin-top:15px}
+.ak-bs-picker .bs-count{font-weight:500;color:var(--muted)}
+.ak-bs-picker .normal-bs-checks{max-height:265px}
+.ak-bs-picker .footnote{margin:8px 10px 10px}
+
+/* v1.18.20: confirmation inside the page; never depend on browser JS popups. */
+.app-confirm-dialog { width:min(480px,calc(100vw - 32px)); max-height:min(82vh,680px); box-sizing:border-box; padding:0; color:var(--ink); background:var(--paper,#fff); }
+.app-confirm-dialog::backdrop { background:rgb(10 16 28 / 55%); }
+.app-confirm-dialog form { padding:20px; }
+.app-confirm-dialog h2 { font-size:19px; margin:0 0 12px; }
+.app-confirm-dialog [data-confirm-message] { margin:0 0 18px; font-size:14px; line-height:1.75; white-space:pre-wrap; overflow-wrap:anywhere; max-height:55vh; overflow-y:auto; }
+.app-confirm-actions { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+.app-confirm-actions button { min-width:96px; }
+@media(max-width:440px) { .app-confirm-dialog form { padding:16px; } .app-confirm-actions button { flex:1; } }

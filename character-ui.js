@@ -73,7 +73,7 @@ ${button('このキャラを選択', 'select-character', '', false).replace('<bu
 ${tabs}${lookupForm}${state.error ? `<div class="error-box import-feedback" role="alert">${esc(state.error)}</div>` : ''}${state.loading ? `<p class="import-feedback" role="status">${state.mode === 'url' ? '公開プロフィールを取得しています…' : '名前を検索しています…'}</p>` : ''}${results}${p ? `<section class="import-preview">\
 <div class="import-profile-heading"><div><div class="eyebrow">${esc(p.characterId)}${Number.isFinite(p.level) ? ` / Lv. ${p.level}` : ''}</div>\
 <h3>${esc(p.name)}</h3>\
-</div><a href="${esc(p.sourceURL)}" target="_blank" rel="noopener noreferrer">\
+</div><a href="${esc(p.sourceURL)}" rel="noreferrer">\
 元のページ ↗</a></div><div class="import-stat-grid">${Object.entries(STAT_LABELS).map(([k, label]) => `<div>\
 <span>${label}</span>\
 <strong>${p.stats[k] === undefined ? '未取得' : number(p.stats[k])}</strong>\
