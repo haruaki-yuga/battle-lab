@@ -28,17 +28,27 @@ function applySnapshot(unit,snapshot) {
     if(finite(unit.hp)!==null)unit.alive=unit.hp>0;
 }
 const isMeaningful = log => log?.kind==='state' || ['START_TURN','ACTION','DEAL_DAMAGE','DAMAGE','EFFECT','END_BATTLE_MESSAGE'].includes(String(log?.type||''));
-function directDamage(log, members) {
+// Count only confirmed damage *to the opposing team*. Official AP 摩耗 logs
+// frequently say "摩耗によりAPに80のダメージ" without naming the victim.
+// For those records, use the immediately preceding defense/BS target or the
+// only opponent in a 1-v-1. With multiple possible targets, do not invent one.
+function directDamage(log, members, recentTarget) {
     if(log?.type!=='DEAL_DAMAGE')return 0;
     const actor=members.find(u=>String(u.id)===String(log.entryId));
     if(!actor)return 0;
     const message=String(log.text||'');
-    const match=/^(.+?)の(?:HP|AP)に\s*([\d,]+)\s*(?:の)?ダメージ/.exec(message);
+    const match=/(?:HP|AP)に\s*([\d,]+)\s*(?:の)?ダメージ/.exec(message);
     if(!match)return 0;
-    const targetName=match[1].trim();
-    const recipients=members.filter(u=>[u.name,...u.name.split(/[\s　・･]+/)].includes(targetName));
-    if(recipients.length!==1||recipients[0].team===actor.team)return 0;
-    return Number(match[2].replaceAll(',',''));
+    const amount=Number(match[1].replaceAll(',',''));
+    if(!Number.isFinite(amount)||amount<=0)return 0;
+    const prefix=/^(.+?)の(?:HP|AP)に/.exec(message)?.[1]?.trim();
+    const enemies=members.filter(u=>u.team!==actor.team);
+    const named=prefix ? enemies.filter(u=>[
+        u.name,...u.name.split(/[\s　・･]+/).filter(Boolean)
+    ].includes(prefix)) : [];
+    const recent=enemies.find(u=>String(u.id)===String(recentTarget));
+    const target=named.length===1?named[0] : recent || (enemies.length===1?enemies[0]:null);
+    return target ? amount : 0;
 }
 /**
  * @returns {{frames:Array,logFrameIndices:number[]}}
@@ -57,10 +67,14 @@ export function buildOfficialArenaReplay(teams,logs) {
     const frames=[{logIndex:-1,turn:0,label:'戦闘開始時',actorId:null,units:copyUnits(memberRows)}];
     const logFrameIndices=[];
     const maxFrames=4000;
+    let recentTarget=null;
     for(let i=0;i<(logs||[]).length;i++){
         const log=logs[i];
+        if(log.type==='SKILL_INFO' || log.type==='START_TURN')recentTarget=null;
+        if(['AVOID_ROLL','REGIST_ROLL','DEF_ROLL'].includes(log.type)&&idMap.has(String(log.entryId)))
+            recentTarget=String(log.entryId);
         if(log.kind==='state')applySnapshot(idMap.get(String(log.entryId)),log.snapshot);
-        const dealt=directDamage(log,memberRows);
+        const dealt=directDamage(log,memberRows,recentTarget);
         if(dealt && idMap.has(String(log.entryId))) idMap.get(String(log.entryId)).damageDealt+=dealt;
         if(isMeaningful(log)&&frames.length<maxFrames){
             const label=log.kind==='state' ? `${log.actorName||'ユニット'}：HP/AP・位置更新` : String(log.text||`第${log.turn}ターン`).slice(0,120);

@@ -91,6 +91,10 @@ export function collectOfficialMetrics(teams,rawLogs,lastTurn) {
         if(present.ranks)row.hitRanks={G:0,L:0,C:0,H:0,S:0};
     }
     let active=null,lastTarget=null,pendingDamage=null,pendingHeals=[],turnMarker=-1;
+    // The official Sudden Death transition performs a battle-wide HP/AP/BS reset.
+    // Its START_TURN_INFO values are real for the replay, but the difference from
+    // the previous snapshot is not a character's healing action.
+    let suddenResetTurn=null;
     // Events are chronological. Damage/heal descriptions precede the next
     // state snapshot; source action and target are stored only within this turn.
     for(let i=0;i<rawLogs.length;i++){
@@ -99,11 +103,25 @@ export function collectOfficialMetrics(teams,rawLogs,lastTurn) {
         const row=actor&&rows.get(String(actor.id));
         const msg=content(log),turn=number(log.turn)??0;
         if(turn!==turnMarker){active=null;lastTarget=null;pendingDamage=null;pendingHeals=[];turnMarker=turn;}
+        // The notice is emitted at the end of the preceding turn, before the
+        // following START_TURN_INFO records for every team member.
+        if(type==='MESSAGE_ONLY' && /サドンデスに突入/.test(msg) && /HP[・／/]AP/.test(msg)) {
+            suddenResetTurn=turn+1;
+            pendingDamage=null;
+            pendingHeals=[];
+        }
         const isState=log.hp!==undefined||log.ap!==undefined||log.max_hp!==undefined;
         if(isState){
             if(!actor)continue;
             const before=snapshots.get(String(actor.id))||{};
             const after={HP:number(log.hp),AP:number(log.ap)};
+            if(type==='START_TURN_INFO' && turn===suddenResetTurn){
+                snapshots.set(String(actor.id),{HP:after.HP??before.HP??null,AP:after.AP??before.AP??null});
+                // Any healing is accounted for only when it occurs after the reset.
+                pendingDamage=null;
+                pendingHeals=[];
+                continue;
+            }
             for(const pool of ['HP','AP']){
                 const current=after[pool],previous=before[pool];
                 const stated=number(log[pool==='HP'?'add_hp':'add_ap']);

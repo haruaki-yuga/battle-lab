@@ -15,6 +15,46 @@ export function officialArenaBattleId(value) {
 }
 const num = n => n == null || n === '' ? null : Number.isFinite(Number(n)) ? Number(n) : null;
 const safe = (n, max=500) => typeof n === 'string' ? n.slice(0,max) : typeof n === 'number' ? String(n) : '';
+// 公式APIの種別コードは集計・再生に必要なので保持し、画面だけ日本語にする。
+// 新種別でも英語の識別子をそのまま出さない。
+const OFFICIAL_LOG_TYPE_LABELS = Object.freeze({
+    START_BATTLE_MESSAGE:'戦闘開始時のセリフ',
+    START_TURN:'ターン開始',
+    START_TURN_INFO:'ターン開始時の状態',
+    MID_TURN_INFO:'戦闘中の状態',
+    END_TURN_INFO:'ターン終了時の状態',
+    END_BATTLE:'戦闘終了',
+    END_BATTLE_INFO:'戦闘終了時の状態',
+    END_BATTLE_MESSAGE:'戦闘終了時のセリフ',
+    END_BATTLE_DETAIL:'戦闘結果の集計',
+    SKILL_INFO:'スキル使用情報',
+    ACTION_SELECT:'行動の選択・条件',
+    ACTION_STARTED:'行動開始',
+    ACTION_FINISHED:'行動終了',
+    ACTION:'行動',
+    HIT_ROLL:'命中・発動判定',
+    AVOID_ROLL:'回避判定',
+    HIT_TYPE_ROLL:'ヒット判定',
+    DEF_ROLL:'防御判定',
+    REGIST_ROLL:'BS抵抗判定',
+    BS_SHRINK_ROLL:'BSの継続時間判定',
+    SPD_ROLL:'速度判定',
+    SAME_SPD_ROLL:'同速度時の順番判定',
+    CT_PENALTY:'クリティカル時の効果',
+    DEAL_DAMAGE:'ダメージ発生',
+    DAMAGE:'反動・状態異常などのダメージ',
+    EFFECT:'効果の発生',
+    EFFECT_TRIGGER:'特殊効果の発動判定',
+    AUTO_MOVE:'自動位置取り',
+    MESSAGE_ONLY:'戦闘中のお知らせ',
+    DRAMA_ROLL:'ドラマ判定',
+    NORMAL:'戦闘の記録',
+    HEAL:'回復',
+    RECOVERY:'回復'
+});
+export function officialArenaLogTypeLabel(type) {
+    return OFFICIAL_LOG_TYPE_LABELS[String(type||'').toUpperCase()] || 'その他の記録';
+}
 export function parseOfficialArenaResult(payload) {
     const result = payload?.result || payload?.data?.rev2ArenaBattleGetResult;
     if (!result || !Array.isArray(result.teams) || !Array.isArray(result.logs))
@@ -82,7 +122,7 @@ export function parseOfficialArenaResult(payload) {
             item.kind='skill';
             item.text=`スキル発動（ID ${safe(raw.skill_id,40)}）`;
         } else {
-            item.text=safe(raw.text,2400) || safe(raw.talk,2400) || safe(raw.type,100) || '記録';
+            item.text=safe(raw.text,2400) || safe(raw.talk,2400) || officialArenaLogTypeLabel(raw.type);
             if (raw.roll !== undefined && raw.roll !== null) {
                 const roll = typeof raw.roll==='object' ? JSON.stringify(raw.roll) : String(raw.roll);
                 item.roll=roll.slice(0,900);
@@ -94,7 +134,7 @@ export function parseOfficialArenaResult(payload) {
     const {frames,logFrameIndices}=buildOfficialArenaReplay(teams,logs);
     logs.forEach((log,index)=>{ log.replayFrame=logFrameIndices[index]; });
     return {id:String(payload?.battleId ?? result.battle?.id ?? ''),
-        name:safe(result.battle?.name,140) || '公式闘技場の戦闘ログ',schemaVersion:5,teams,logs,lastTurn,mapSize,frames,
+        name:safe(result.battle?.name,140) || '公式闘技場の戦闘ログ',schemaVersion:6,teams,logs,lastTurn,mapSize,frames,
         statistics: collectOfficialMetrics(teams,original,lastTurn),
         counts:{turns:lastTurn,entries:logs.length}, source:'official'};
 }
@@ -111,15 +151,17 @@ export function officialArenaStatistics(battle) {
         healGivenHP:null,healGivenAP:null,healReceivedHP:null,healReceivedAP:null
     })));
 }
-// Default view keeps actions and outcomes, putting repetitive dice rolls and
-// HP/AP snapshots into per-turn disclosure panels. The original data stays in memory.
+// Keep the full official timeline available in original order. The optional
+// main/details classification is retained for older callers, but no judgement,
+// dice roll, or status snapshot is omitted from `all`.
 export function officialArenaVisibleLog(logs) {
     const groups=[],byTurn=new Map();
     for(const log of logs||[]){
         if(!byTurn.has(log.turn)){
-            const group={turn:log.turn,main:[],details:[],totalDetails:0,omitted:0};byTurn.set(log.turn,group);groups.push(group);
+            const group={turn:log.turn,all:[],main:[],details:[],totalDetails:0,omitted:0};byTurn.set(log.turn,group);groups.push(group);
         }
         const group=byTurn.get(log.turn);
+        group.all.push(log); // original relative order, including every dice check
         const message=String(log.text||'');
         const code=String(log.type||'').toUpperCase();
         const rank=/(グレイズ|ライト|クリーン|ハード|スマッシュ)ヒット/.exec(String(log.roll||''));
@@ -137,6 +179,14 @@ export function officialArenaVisibleLog(logs) {
             group.main.push({...log,summary:/クリティカル回避/.test(message)?'クリティカル回避':'回避成功'});isMain=true;
         } else if(code==='HIT_ROLL' && /発動に失敗/.test(message)){
             group.main.push({...log,summary:message});isMain=true;
+        } else if(['DEAL_DAMAGE','DAMAGE'].includes(code) && /ダメージ/.test(message)){
+            // Official damage rows include a roll formula. Do NOT hide their
+            // text just because roll is non-empty: the damage is the result.
+            group.main.push(log);isMain=true;
+        } else if(['EFFECT','HEAL','RECOVERY'].includes(code) &&
+            /(?:HP|AP).*?(?:回復|[＋+])/.test(message) &&
+            !/(?:HP|AP)を\s*0\s*回復/.test(message)){
+            group.main.push(log);isMain=true;
         } else {
             const hide=log.kind==='state'||log.kind==='skill'||Boolean(log.roll)||
                 /(?:^|_)ROLL$|EFFECT_TRIGGER|SPD_ROLL|BS_SHRINK_ROLL/.test(code)||
@@ -144,12 +194,9 @@ export function officialArenaVisibleLog(logs) {
                 /^HP\s*-?\d/.test(message);
             if(!hide&&message){group.main.push(log);isMain=true;}
         }
-        // Cap initial DOM size for BS-heavy official fights. The original
-        // records remain available in the loaded battle and on the source page.
         if(!isMain){
             group.totalDetails++;
-            if(group.details.length<240)group.details.push(log);
-            else group.omitted++;
+            group.details.push(log); // do not silently drop rows over 240
         }
     }
     return groups;

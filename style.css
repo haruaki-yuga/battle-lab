@@ -3246,10 +3246,6 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 .official-turn-group{border-bottom:1px solid var(--line);padding-bottom:6px}
 .official-turn-group:last-child{border-bottom:0}
 .official-turn-group>h4{position:sticky;top:0;z-index:1;margin:0;background:var(--paper);border-bottom:1px solid var(--line);padding:9px 12px;font-size:12px}
-.official-log-debug{margin:5px 9px 8px;border:1px solid var(--line);border-radius:7px}
-.official-log-debug>summary{cursor:pointer;padding:9px 11px;color:var(--muted);font-size:11px}
-.official-log-debug-body{max-height:260px;overflow:auto;border-top:1px solid var(--line)}
-.official-log-debug-body .official-log-row{font-size:11px;color:var(--muted);padding:6px 9px}
 .official-log-empty{padding:8px 11px;margin:0}
 
 /* v1.18.8: the public Arena results use the same live map and HP/AP bars as
@@ -3302,3 +3298,14 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
   padding: 4px 2px;
   scrollbar-gutter: stable;
 }
+
+/* v1.18.10: full chronological official log, including judgement formulas. */
+.official-replay-layout .official-log-row[data-act] {padding:7px 11px;line-height:1.5;}
+.official-log-kind {display:inline-block;margin:0 6px 3px 0;padding:1px 6px;border-radius:4px;background:var(--paper);border:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:650;vertical-align:baseline;}
+.official-log-message {white-space:pre-wrap;overflow-wrap:anywhere;}
+.official-log-roll {display:block;margin-top:2px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted);}
+.official-replay-layout .official-log-row.official-log-state {background:color-mix(in srgb,var(--paper) 65%,transparent);}
+@media(max-width:420px){.official-replay-layout .official-log-row[data-act]{padding:6px 7px}.official-log-kind{font-size:9px;margin-right:4px}}
+
+.official-replay-layout .official-log-row.official-log-judge {padding-left:16px;}
+.official-replay-layout .official-log-judge .official-log-kind {font-weight:600;}
