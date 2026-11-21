@@ -3234,3 +3234,43 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 /* v1.18.6: image-free help */
 .manual-dialog .guide-intro{margin:0 0 17px;font-size:14px;line-height:1.85;color:var(--ink);}
 .manual-dialog .guide-note strong{font-weight:750;}
+
+/* v1.18.7: checkbox picker and focused official log */
+.normal-attack-bs .bs-count{font-weight:500;color:var(--muted)}
+.normal-bs-checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px;padding:12px 10px 4px;max-height:265px;overflow-y:auto}
+.normal-bs-check{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);border-radius:7px;cursor:pointer;font-size:12px;min-width:0}
+.normal-bs-check:has(input:checked){border-color:var(--green);background:var(--paper)}
+.normal-bs-check input{width:16px;height:16px;accent-color:var(--green);margin:0;flex:none}
+.normal-bs-check span{overflow-wrap:anywhere}
+.official-log-list{max-height:610px}
+.official-turn-group{border-bottom:1px solid var(--line);padding-bottom:6px}
+.official-turn-group:last-child{border-bottom:0}
+.official-turn-group>h4{position:sticky;top:0;z-index:1;margin:0;background:var(--paper);border-bottom:1px solid var(--line);padding:9px 12px;font-size:12px}
+.official-log-debug{margin:5px 9px 8px;border:1px solid var(--line);border-radius:7px}
+.official-log-debug>summary{cursor:pointer;padding:9px 11px;color:var(--muted);font-size:11px}
+.official-log-debug-body{max-height:260px;overflow:auto;border-top:1px solid var(--line)}
+.official-log-debug-body .official-log-row{font-size:11px;color:var(--muted);padding:6px 9px}
+.official-log-empty{padding:8px 11px;margin:0}
+
+/* v1.18.8: the public Arena results use the same live map and HP/AP bars as
+ * the local simulation replay, without rewriting the local engine state. */
+.official-replay-layout{min-width:0;max-width:100%;margin:2px 0 10px;gap:12px}
+.official-replay-layout .panel{min-width:0}
+.official-replay-sidebar{top:12px}
+.official-replay-layout .replay-log-panel{overflow:hidden}
+.official-replay-layout .official-log-list{max-height:650px;overflow-y:auto;margin-top:12px}
+.official-replay-layout .official-log-title{display:flex;align-items:center;margin-top:0}
+.official-replay-layout .official-log-title .field{margin:0;width:min(230px,100%)}
+.official-replay-controls{display:grid;grid-template-columns:1fr 2fr 1fr;align-items:center;gap:7px;margin-top:12px}
+.official-replay-controls button{min-height:36px;min-width:0}
+.official-replay-slider{display:flex;align-items:center;gap:8px;margin-top:11px;font-size:11px;color:var(--muted)}
+.official-replay-slider input{flex:1;min-width:0;accent-color:var(--green)}
+.official-replay-note{margin:9px 0 0;line-height:1.6;font-size:11px}
+.official-replay-layout .replay-sidebar .panel+.panel{margin-top:12px}
+.official-log-row[data-act]{width:100%;font-family:inherit;background:transparent;text-align:left;cursor:pointer;line-height:1.6;color:var(--ink);border:0;border-bottom:1px solid var(--line);border-radius:0}
+.official-log-row[data-act]:hover,.official-log-row[data-act]:focus-visible{background:var(--paper)}
+.official-log-row[data-act].selected-log{background:color-mix(in srgb,var(--green) 12%,transparent);box-shadow:inset 3px 0 var(--green)}
+.official-log-row .official-log-text{pointer-events:none}
+.official-log-row .official-log-text>*{pointer-events:none}
+@media(max-width:850px){.official-replay-layout{display:flex;flex-direction:column;gap:12px}.official-replay-layout .replay-sidebar,.official-replay-layout .replay-log-panel{position:static;width:100%}}
+@media(max-width:420px){.official-replay-layout .panel-body{padding:9px}.official-replay-controls button{font-size:11px;padding:6px 4px}.official-log-row[data-act]{font-size:11px}}

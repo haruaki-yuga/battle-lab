@@ -63,8 +63,5 @@ export function renderCombatStatistics(items,turns,options={}) {
     if (!Array.isArray(items) || !items.length) return '';
     const sorted=[...items].sort((a,b)=>String(a.team).localeCompare(String(b.team))||String(a.name).localeCompare(String(b.name),'ja'));
     const title=options.title||'キャラ別・戦闘全体の統計';
-    const note=options.official
-      ? '公式ログで明示された対象者のHP/AP増減だけを集計します。与ダメージ、回復の実施者、命中・抵抗等が不明な項目は「—」（集計不可）で、0回とは異なります。公式の実記録から算出可能な範囲だけを表示します。'
-      : 'HP/APダメージは障壁を通過した値です。与ダメージは敵チームへの効果のみ集計。1T平均は経過ターン数で除算します。BS付与はBSの種類単位、抵抗はBS判定単位です。';
-    return `<details class="panel battle-stats-panel"><summary class="battle-stats-head"><strong>${esc(title)}</strong><span>${sorted.length}人 / ${num(turns)}T</span><span class="stat-chevron">⌄</span></summary><div class="battle-stats-body">${sorted.map(row).join('')}<p class="footnote">${esc(note)}</p></div></details>`;
+    return `<details class="panel battle-stats-panel"><summary class="battle-stats-head"><strong>${esc(title)}</strong><span>${sorted.length}人 / ${num(turns)}T</span><span class="stat-chevron">⌄</span></summary><div class="battle-stats-body">${sorted.map(row).join('')}</div></details>`;
 }

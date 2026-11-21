@@ -1,19 +1,19 @@
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.6';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.8';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
 import { deleteUnitSafely } from './unit-management.js?v=1.18';
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.6';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.8';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.18.6';
+import { Battle, clamp } from './engine.js?v=1.18.8';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
-import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.6';
-import { loadOfficialArenaViaWorker, officialArenaStatistics } from './official-arena-log.js?v=1.18.6';
+import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.8';
+import { loadOfficialArenaViaWorker, officialArenaStatistics, officialArenaVisibleLog } from './official-arena-log.js?v=1.18.8';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.6';
-import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.6';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.8';
+import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.8';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
 import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18';
 import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.18';
@@ -142,9 +142,11 @@ selectedLogId = savedUi.selectedLogId;
 logScrollTop = savedUi.logScrollTop;
 let lastReplayRef = sim, lastReplayTurn = sim?.turn ?? -1;
 const OFFICIAL_BATTLE_STATE_KEY = 'battle-lab-official-arena-log-v1';
-let officialArena = (() => { try { return JSON.parse(sessionStorage.getItem(OFFICIAL_BATTLE_STATE_KEY) || 'null'); } catch { return null; } })();
+let officialArena = (() => { try { const cached=JSON.parse(sessionStorage.getItem(OFFICIAL_BATTLE_STATE_KEY) || 'null'); return cached?.schemaVersion === 4 ? cached : null; } catch { return null; } })();
 let officialArenaUrl = officialArena?.id ? `https://rev2.reversion.jp/arena/battle/${officialArena.id}` : '';
 let officialArenaTurn = 'all', officialArenaLoading = false;
+let officialFrameIndex = null, officialPlaying = false, officialPlaybackTimer = null, officialScrollFrame = 0;
+let expandedMapSource = 'local';
 let initialRestoreScrollY = savedUi.scrollY;
 function persistUi() {
     writeUiState(typeof sessionStorage === 'undefined' ? null : sessionStorage, {
@@ -265,12 +267,14 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.6</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.6</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.8</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.8</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
-</main>${page === 'sim' && sim ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
+</main>${page === 'sim' && (sim || officialArena) ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
     if (page === 'sim' && sim)
         bindReplay();
+    if (page === 'sim' && officialArena?.frames?.length)
+        bindOfficialReplay();
 }
 const heading = (eyebrow, title, subtitle, buttons = '', actionClass = '') => `<div class="page-heading"> <div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1>${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}</div>\
 <div class="btnrow ${esc(actionClass)}">${buttons}</div>\
@@ -291,8 +295,9 @@ function teams() {
     });
     return `<div class="teams">${strips.join('')}</div>`;
 }
-function map(units = config.units, large = false, expanded = false, compact = false) {
-    const size = config.settings.mapSize || 150, half = size / 2, w = expanded ? 1050 : large ? 540 : 300, h = expanded ? 680 : large ? 340 : 205;
+function map(units = config.units, large = false, expanded = false, compact = false, context = null) {
+    const official = context?.source === 'official';
+    const size = official ? context.mapSize || 150 : config.settings.mapSize || 150, half = size / 2, w = expanded ? 1050 : large ? 540 : 300, h = expanded ? 680 : large ? 340 : 205;
     const scale = Math.min((w - 40) / size, (h - 24) / size), cx = w / 2, cy = h / 2;
     // The floating thumbnail is always an overview, independent of the dialog zoom/pan.
     const viewport = mapViewport(w, h, scale, compact ? 1 : mapZoom, compact ? { x: 0, y: 0 } : mapPan, size);
@@ -302,9 +307,9 @@ function map(units = config.units, large = false, expanded = false, compact = fa
         grid += `<path d="M${x} 10v${h - 20}M10 ${y}h${w - 20}" stroke="#dce5d7" stroke-width=".65"/>`;
     }
     const inReplay = page === 'sim';
-    const actionActorId = inReplay && sim ? replayActorId(sim.logs, sim.frames, frame, selectedLogId) : null;
+    const actionActorId = official ? (context.actorId ?? null) : (inReplay && sim ? replayActorId(sim.logs, sim.frames, frame, selectedLogId) : null);
     const focusId = mapFocus === 'selected' ? (inReplay ? actionActorId : selected) : mapFocus;
-    const links = !compact && mapRelations ? mapRelationPairs(units, focusId) : [];
+    const links = !compact && mapRelations ? mapRelationPairs(units.filter(u=>Number.isFinite(u.x)&&Number.isFinite(u.y)), focusId) : [];
     const connections = links.map(({ from, to, distance, direction }, index) => {
         const x1 = cx + from.x * scale, y1 = cy - from.y * scale, x2 = cx + to.x * scale, y2 = cy - to.y * scale;
         const mx = (x1 + x2) / 2 + (index % 2 ? 5 : -5), my = (y1 + y2) / 2 + ((index % 3) - 1) * 13;
@@ -314,7 +319,7 @@ function map(units = config.units, large = false, expanded = false, compact = fa
 <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${from.team === to.team ? '#6796a2' : '#a97760'}" stroke-width="1.2" stroke-dasharray="${from.team === to.team ? '3 3' : 'none'}" opacity=".72"/>${links.length <= 8 ? `<rect x="${mx - labelWidth / 2}" y="${my - 8.5}" width="${labelWidth}" height="13" rx="4" fill="#fff" fill-opacity=".94" stroke="#d8dfd4" stroke-width=".5"/>\
 <text x="${mx}" y="${my + 1}" font-size="8.5" text-anchor="middle" fill="#233e32" font-weight="650">${label}</text>` : ''}</g>`;
     }).join('');
-    const markers = units.map((u, i) => {
+    const markers = units.filter(u=>Number.isFinite(u.x)&&Number.isFinite(u.y)).map((u, i) => {
         const x = cx + u.x * scale, y = cy - u.y * scale, markerRadius = Math.min(9, Math.max(3.5, 5 * scale * .44)), color = u.team === 'A' ? '#4f8362' : '#b47961';
         return `<g data-map-unit="${esc(u.id)}" data-x="${u.x}" data-y="${u.y}" opacity="${u.alive === false ? .3 : 1}"><title>${esc(u.name)} (${u.x.toFixed(1)}, ${u.y.toFixed(1)}) m</title>\
 <circle cx="${x}" cy="${y}" r="${u.id === (inReplay ? actionActorId : selected) ? 19 : 15}" fill="${color}" opacity=".10"/>\
@@ -322,10 +327,10 @@ function map(units = config.units, large = false, expanded = false, compact = fa
 <text x="${x}" y="${y + 3}" font-size="${Math.min(7, markerRadius * 1.3)}" fill="white" text-anchor="middle">${u.team}${units.filter(z => z.team === u.team).findIndex(z => z.id === u.id) + 1}</text>${large || expanded ? `<text x="${x}" y="${y + 25}" text-anchor="middle" fill="${color}" font-size="9">${esc(u.name)}</text>` : ''}</g>`;
     }).join('');
     const movementUnit = units.find(u => u.id === (inReplay ? actionActorId : selected));
-    const baseMobility = Math.max(0, Number(config.units.find(u => u.id === movementUnit?.id)?.mobility) || 0);
+    const baseMobility = official ? 0 : Math.max(0, Number(config.units.find(u => u.id === movementUnit?.id)?.mobility) || 0);
     const moveRadius = baseMobility * 10;
     const maskId = 'move-bounds-' + (compact ? 'thumbnail' : expanded ? 'dialog' : large ? 'replay' : 'setup');
-    const movementDisk = !compact && mapMoveCircle && movementUnit && moveRadius > 0 ? `<g class="map-movement-disk" clip-path="url(#${maskId})" data-map-move-unit="${esc(movementUnit.id)}" data-map-move-radius="${moveRadius}">\
+    const movementDisk = !official && !compact && mapMoveCircle && movementUnit && moveRadius > 0 ? `<g class="map-movement-disk" clip-path="url(#${maskId})" data-map-move-unit="${esc(movementUnit.id)}" data-map-move-radius="${moveRadius}">\
 <title>${esc(movementUnit.name)}：基礎機動力${baseMobility}、通常移動で最大${moveRadius}m</title>\
 <circle cx="${cx + movementUnit.x * scale}" cy="${cy - movementUnit.y * scale}" r="${moveRadius * scale}" fill="#5b91af" fill-opacity=".095" stroke="#3b7da2" stroke-width="1.5" stroke-dasharray="5 3"/>\
 </g>` : '';
@@ -335,16 +340,16 @@ function map(units = config.units, large = false, expanded = false, compact = fa
         ...Object.fromEntries(units.map(u => [u.id, `${u.team}｜${u.name}`]))
     };
     const controls = compact ? '' : `<div class="map-tools"><label class="checkbox-label"><input type="checkbox" data-map-relations ${mapRelations ? 'checked' : ''}>\
-位置関係・距離を表示</label><label class="checkbox-label"><input type="checkbox" data-map-movement ${mapMoveCircle ? 'checked' : ''}>\
-移動可能範囲を表示</label><div class="map-zoom-controls"><button type="button" class="small" data-act="map-zoom-out" ${mapZoom === 1 ? 'disabled' : ''} aria-label="マップを縮小">\
+位置関係・距離を表示</label>${official ? '' : `<label class="checkbox-label"><input type="checkbox" data-map-movement ${mapMoveCircle ? 'checked' : ''}>\
+移動可能範囲を表示</label>`}<div class="map-zoom-controls"><button type="button" class="small" data-act="map-zoom-out" ${mapZoom === 1 ? 'disabled' : ''} aria-label="マップを縮小">\
 －</button><output aria-label="マップの倍率">${Math.round(mapZoom * 100)}%</output>\
 <button type="button" class="small" data-act="map-zoom-in" ${mapZoom === 4 ? 'disabled' : ''} aria-label="マップを拡大">\
 ＋</button><button type="button" class="small" data-act="map-center" ${mapZoom === 1 ? 'disabled' : ''}>\
-中心に戻す</button>${expanded ? '' : btn('拡大表示', 'map-expand', 'small')}</div>\
+中心に戻す</button>${expanded ? '' : btn('拡大表示', official ? 'official-map-expand' : 'map-expand', 'small')}</div>\
 </div>${mapRelations ? `<div class="map-focus-row">\
 <label>線を表示する組み合わせ ${select(positionOptions, mapFocus, 'data-map-focus aria-label="位置関係の比較対象"')}</label>\
 <span class="subtle">実線：敵味方間／点線：同チーム</span></div>` : ''}`;
-    const movementLegend = !compact && mapMoveCircle ? `<div class="map-focus-row"><span class="subtle">${movementUnit ? `${esc(movementUnit.name)}：基礎機動力 ${baseMobility} × 10m ＝ 移動半径 ${moveRadius}m` : 'この時点では行動中のキャラがいません'}（戦闘中の機動力補正は別途適用）</span>\
+    const movementLegend = !official && !compact && mapMoveCircle ? `<div class="map-focus-row"><span class="subtle">${movementUnit ? `${esc(movementUnit.name)}：基礎機動力 ${baseMobility} × 10m ＝ 移動半径 ${moveRadius}m` : 'この時点では行動中のキャラがいません'}（戦闘中の機動力補正は別途適用）</span>\
 </div>` : '';
     const distanceList = !compact && mapRelations ? `<div class="map-distance-list" aria-label="キャラ同士の距離一覧">${links.map(({ from, to, distance, direction }) => `<div class="map-distance-row">\
 <span>${esc(from.name)} <b>\
@@ -368,16 +373,22 @@ function currentMapUnits() {
 }
 function refreshMobileReplayMap(units = currentMapUnits()) {
     const thumbnail = $('#mobile-replay-map-view');
-    if (!thumbnail || !sim) return;
-    thumbnail.innerHTML = map(units, false, false, true);
+    if (!thumbnail) return;
+    const useOfficial = Boolean(officialArena?.frames?.length && $('#official-replay-map'));
+    const show = useOfficial ? officialReplayFrame() : null;
+    if (!useOfficial && !sim) return;
+    thumbnail.innerHTML = useOfficial ? map(show.units, false, false, true, officialMapContext(show)) : map(units, false, false, true);
     const label = $('#mobile-replay-map-turn');
-    const log = sim.logs.find(entry => entry.id === selectedLogId);
-    if (label) label.textContent = log ? `T${String(log.turn).padStart(2, '0')} マップ` : 'マップ';
+    const log = sim?.logs.find(entry => entry.id === selectedLogId);
+    if (label) label.textContent = useOfficial ? `公式 T${show.turn} マップ` : log ? `T${String(log.turn).padStart(2, '0')} マップ` : 'マップ';
+    const button = $('.mobile-replay-map-button');
+    if (button) button.dataset.act = useOfficial ? 'official-map-expand' : 'map-expand';
 }
 function updateMobileReplayMapVisibility() {
     const floating = $('#mobile-replay-map');
     if (!floating) return;
-    const logs = $('#log-entries'), original = $('#replay-map');
+    const useOfficial=Boolean(officialArena?.frames?.length && $('#official-replay-map'));
+    const logs = useOfficial ? $('#official-log-list') : $('#log-entries'), original = useOfficial ? $('#official-replay-map') : $('#replay-map');
     if (!logs || !original || !window.matchMedia('(max-width: 700px)').matches) {
         floating.hidden = true;
         return;
@@ -407,14 +418,19 @@ function repaintMaps() {
     if (replay && sim)
         replay.innerHTML = map(currentMapUnits(), true);
     if (replay && sim) refreshMobileReplayMap();
+    if ($('#official-replay-map') && officialArena?.frames?.length) paintOfficialReplay();
     repaintExpandedMap();
 }
 function repaintExpandedMap() {
     const el = $('#map-dialog-content');
-    if (el && $('#map-dialog')?.open)
-        el.innerHTML = map(currentMapUnits(), true, true);
+    if (el && $('#map-dialog')?.open) {
+        const official=expandedMapSource==='official'&&officialArena?.frames?.length;
+        const current=official?officialReplayFrame():null;
+        el.innerHTML = official ? map(current.units,true,true,false,officialMapContext(current)) : map(currentMapUnits(),true,true);
+    }
 }
-function openExpandedMap() {
+function openExpandedMap(source = 'local') {
+    expandedMapSource = source;
     const dlg = $('#map-dialog');
     if (!dlg)
         return;
@@ -523,7 +539,7 @@ function setupPage() {
         'fumble',
         'drama'
     ].map(k => passiveAwareStatField(u, k)).join('')}${field('通常攻撃の射程', select(RANGES, u.normalRange, 'data-unit="normalRange"'))}</div>\
-<details class="accordion normal-attack-bs"><summary>通常攻撃：命中時に付与するBS（${(u.normalBS || []).length}種類）</summary>${field('通常攻撃の命中時BS（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-normal-bs>${BS_NAMES.map(b => `<option ${(u.normalBS || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}<p class="footnote">選んだBSは通常攻撃の命中時、通常のBS抵抗判定後に付与されます。未指定ならBS効果なしです。</p></details>\
+<details class="accordion normal-attack-bs"><summary>通常攻撃：BS <span class="bs-count" data-normal-bs-count>（${(u.normalBS || []).length}種類）</span></summary><div class="normal-bs-checks">${BS_NAMES.map(b => `<label class="normal-bs-check"><input type="checkbox" value="${esc(b)}" data-unit-normal-bs ${(u.normalBS || []).includes(b) ? 'checked' : ''}><span>${esc(b)}</span></label>`).join('')}</div><p class="footnote">チェックしたBSが通常攻撃の命中時に付与判定されます。複数選べます。</p></details>\
 ${conditionalPassivesDisplay(u)}${importedEffectsDisplay(u)}<div class="field-section">属性（ダメージ補正のみ）</div><div class="element-single">${field('属性', `<select data-element-key><option value="" ${!u.element?.key ? 'selected' : ''}>未設定</option>${ELEMENT_KEYS.map(k => `<option value="${k}" ${u.element?.key === k ? 'selected' : ''}>${k}</option>`).join('')}</select>`)}${field('属性値', `<input type="number" min="0" max="1000000" step="1" inputmode="numeric" data-element-value value="${u.element?.value ?? 0}" ${!u.element?.key ? 'disabled' : ''}>`)}<span class="element-level" data-element-level>Lv${elementLevel(u.element?.value)}</span></div>\
 <details class="accordion"><summary>初期位置・開始HP/AP・特殊効果</summary><div class="fields four">${field('初期X座標 (m)', input('x', u.x))}${field('初期Y座標 (m)', input('y', u.y))}${field('開始HP (%)', input('startHp', u.startHp, 'min="0" max="100"'))}${field('開始AP (%)', input('startAp', u.startAp, 'min="0" max="100"'))}</div>\
 <div class="fields two" style="margin-top:15px">${field('開始時BS（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-bs>${BS_NAMES.map(b => `<option ${(u.initialBS || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}${field('BS耐性（Ctrl/⌘で複数選択）', `<select multiple class="multi-bs" data-unit-immunity>${BS_NAMES.map(b => `<option ${(u.immunities || []).includes(b) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`)}</div>\
@@ -772,30 +788,95 @@ function officialBattlePanel() {
       </div>
     </details>`;
 }
-function officialBattleContent(battle) {
-    const allTurns = [...new Set(battle.logs.map(l => l.turn))].sort((a,b)=>a-b);
-    const chosen = officialArenaTurn === 'all' ? 'all' : Number(officialArenaTurn);
-    const activeLogs = battle.logs.filter(l => chosen === 'all' || l.turn === chosen);
-    const displayed = chosen === 'all' && activeLogs.length > 1000 ? activeLogs.slice(-1000) : activeLogs;
-    const selectedTurn = chosen === 'all' ? battle.lastTurn : chosen;
-    // Official state snapshots are not the local simulator's replay frames.
-    const stateMap = new Map();
-    for (const log of battle.logs) {
-        if (log.turn > selectedTurn) continue;
-        if (log.kind==='state' && log.entryId && log.snapshot) stateMap.set(log.entryId,log.snapshot);
-    }
-    const teams = battle.teams.map(team => `<div class="official-team"><h4>TEAM ${esc(team.id)} ${esc(team.name)}</h4>${team.members.map(u => {
-        const state=stateMap.get(u.id)||{hp:null,ap:null,maxHp:null,maxAp:null};
-        const hpPct=Number.isFinite(state.hp)&&Number.isFinite(state.maxHp)&&state.maxHp>0 ? ` (${(Math.max(0,state.hp)/state.maxHp*100).toFixed(1)}%)` : '';
-        return `<div class="official-unit"><strong>${esc(u.name)}</strong><span>HP ${state.hp===null?'—':nf(state.hp)}${hpPct} / AP ${state.ap===null?'—':nf(state.ap)}</span></div>`;
-    }).join('')}</div>`).join('');
-    return `<div class="official-battle-result"><div class="official-result-head"><div><strong>${esc(battle.name)}</strong><div class="subtle">公式ログ / ${battle.counts.entries.toLocaleString('ja-JP')}件・${battle.counts.turns}T</div></div><a href="https://rev2.reversion.jp/arena/battle/${encodeURIComponent(battle.id)}" target="_blank" rel="noopener noreferrer">公式ページを開く ↗</a></div>
-        <div class="official-unit-grid">${teams}</div>
-        ${renderCombatStatistics(officialArenaStatistics(battle), battle.counts.turns, {official:true, title:'公式ログ：キャラ別・戦闘全体の統計'})}
-        <div class="official-log-title"><strong>公式戦闘ログ</strong><label class="field"><span>ターン</span>${select({all:'全ターン',...Object.fromEntries(allTurns.map(t=>[t,`第${t}ターン`]))}, officialArenaTurn,'id="official-battle-turn" aria-label="公式ログのターン"')}</label><span class="subtle">${activeLogs.length}件</span></div>
-        <div class="official-log-list">${displayed.map(log=>`<div class="official-log-row ${log.kind==='state'?'state':''}"><span class="official-log-turn">T${String(log.turn).padStart(2,'0')}</span><span class="official-log-text"><strong>${esc(log.actorName)}</strong>${log.actorName?'：':''}${esc(log.text)}${log.roll?`<small>出目 ${esc(log.roll)}</small>`:''}</span></div>`).join('') || '<p class="subtle">該当するログがありません。</p>'}</div>
-        ${activeLogs.length>displayed.length?`<p class="footnote">表示負荷を減らすため全ターン表示は最新1000件です。ターンを指定すると、そのターンのログを確認できます。</p>`:''}</div>`;
+function officialReplayFrame() {
+    if(!officialArena?.frames?.length)return null;
+    const index=officialFrameIndex==null ? officialArena.frames.length-1 : Math.max(0,Math.min(officialArena.frames.length-1,officialFrameIndex));
+    return officialArena.frames[index];
 }
+function officialMapContext(f) {return {source:'official',mapSize:officialArena?.mapSize||150,actorId:f?.actorId||null};}
+function officialLogRow(log, detailed=false) {
+    const message=detailed ? `${log.type && log.type!=='NORMAL' ? `${log.type} ` : ''}${log.text}` : log.summary||log.text;
+    return `<button type="button" class="official-log-row${detailed?' official-log-detail':''}" data-act="official-select-log:${log.id}" data-official-log-index="${log.id}" aria-label="第${log.turn}ターン：${esc(log.actorName)} ${esc(message).slice(0,150)}"><span class="official-log-text">${log.actorName?`<strong>${esc(log.actorName)}</strong>：`:''}${esc(message)}${detailed && log.roll?`<small>出目 ${esc(log.roll)}</small>`:''}</span></button>`;
+}
+function officialBattleContent(battle) {
+    const allTurns=[...new Set(battle.logs.map(l=>l.turn))].sort((a,b)=>a-b);
+    const chosen=officialArenaTurn==='all'?'all':Number(officialArenaTurn);
+    const activeLogs=battle.logs.filter(l=>chosen==='all'||l.turn===chosen);
+    const groupedLogs=officialArenaVisibleLog(activeLogs);
+    const visibleCount=groupedLogs.reduce((total,group)=>total+group.main.length,0);
+    const replay=battle.frames?.length ? (officialReplayFrame()||battle.frames.at(-1)) : null;
+    return `<div class="official-battle-result"><div class="official-result-head"><div><strong>${esc(battle.name)}</strong><div class="subtle">公式ログ / ${battle.counts.entries.toLocaleString('ja-JP')}件・${battle.counts.turns}T</div></div><a href="https://rev2.reversion.jp/arena/battle/${encodeURIComponent(battle.id)}" target="_blank" rel="noopener noreferrer">公式ページを開く ↗</a></div>
+        ${renderCombatStatistics(officialArenaStatistics(battle),battle.counts.turns,{official:true,title:'公式ログ：キャラ別・戦闘全体の統計'})}
+        ${replay?`<div class="result-grid replay-layout official-replay-layout">
+        <aside class="replay-sidebar official-replay-sidebar"><section class="panel"><div class="panel-head"><h2>公式戦闘マップ</h2>${pill('記録された位置・HP/AP','green')}</div><div class="panel-body"><p id="official-replay-label" class="replay-label"></p><div id="official-replay-map"></div>
+        <div class="official-replay-controls"><button type="button" data-act="official-replay-first" aria-label="公式リプレイの最初に戻る">|◀</button><button type="button" id="official-replay-play" data-act="official-replay-play" aria-label="公式リプレイを再生する">▶ 再生</button><button type="button" data-act="official-replay-last" aria-label="公式リプレイの最後へ">▶|</button></div>
+        <div class="official-replay-slider"><span>開始</span><input type="range" id="official-frame-range" min="0" max="${battle.frames.length-1}" value="${Math.max(0,officialFrameIndex??battle.frames.length-1)}" aria-label="公式リプレイ時点"><span>終了</span></div><p class="subtle official-replay-note">スライダーや戦闘ログを選ぶと、その時点の位置とHP/APに切り替わります。</p>
+        </div></section><section class="panel"><div class="panel-head"><h2>ユニットの状態</h2></div><div id="official-replay-units" class="panel-body"></div></section></aside>
+        <section class="panel replay-log-panel official-replay-log-panel"><div class="panel-head"><h2>公式戦闘ログ</h2></div>
+        <div class="panel-body"><div class="official-log-title"><label class="field"><span>ターン</span>${select({all:'全ターン',...Object.fromEntries(allTurns.map(t=>[t,`第${t}ターン`]))},officialArenaTurn,'id="official-battle-turn" aria-label="公式ログのターン"')}</label><span class="subtle">主要な記録 ${visibleCount}件</span></div>
+        <div id="official-log-list" class="official-log-list" tabindex="0" aria-label="公式戦闘ログ。選択した記録にマップとHP/APが連動します">${groupedLogs.map(group=>`<section class="official-turn-group"><h4>${group.turn===0?'戦闘開始前':`第${group.turn}ターン`}</h4>${group.main.map(log=>officialLogRow(log)).join('')||'<p class="subtle official-log-empty">このターンの主な行動記録はありません。</p>'}<details class="official-log-debug"><summary>判定・状態更新などの詳細（${group.totalDetails}件${group.omitted?'・先頭240件を表示':''}）</summary><div class="official-log-debug-body">${group.details.map(log=>officialLogRow(log,true)).join('')}</div></details></section>`).join('')||'<p class="subtle">該当するログがありません。</p>'}</div></div></section></div>`:'<p class="subtle">公式の状態記録を再生できません。</p>'}</div>`;
+}
+function stopOfficialPlayback() {
+    if(officialPlaybackTimer!==null)clearInterval(officialPlaybackTimer);
+    officialPlaybackTimer=null;officialPlaying=false;
+    const button=$('#official-replay-play');
+    if(button){button.textContent='▶ 再生';button.setAttribute('aria-label','公式リプレイを再生する');}
+}
+function paintOfficialReplay() {
+    const shown=officialReplayFrame();
+    if(!shown||!$('#official-replay-map'))return;
+    const count=officialArena.frames.length;
+    $('#official-replay-map').innerHTML=map(shown.units,true,false,false,officialMapContext(shown));
+    $('#official-replay-units').innerHTML=replayUnits(shown.units);
+    $('#official-replay-label').textContent=`T${String(shown.turn).padStart(2,'0')} / ${shown.label} （${(officialFrameIndex??count-1)+1}/${count}）`;
+    $('#official-frame-range').value=String(officialFrameIndex??count-1);
+    const selectedLogIndex=shown.logIndex;
+    $('#official-log-list')?.querySelectorAll('[data-official-log-index]').forEach(row=>{
+        const active=Number(row.dataset.officialLogIndex)===selectedLogIndex;
+        row.classList.toggle('selected-log',active);
+        row.setAttribute('aria-pressed',String(active));
+    });
+    if(expandedMapSource==='official')repaintExpandedMap();
+    refreshMobileReplayMap();
+    scheduleMobileReplayMapVisibility();
+}
+function setOfficialFrame(index,stop=true) {
+    if(stop)stopOfficialPlayback();
+    if(!officialArena?.frames?.length)return;
+    officialFrameIndex=Math.max(0,Math.min(officialArena.frames.length-1,Math.round(Number(index)||0)));
+    paintOfficialReplay();
+}
+function toggleOfficialPlayback() {
+    if(officialPlaying){stopOfficialPlayback();return;}
+    if(!officialArena?.frames?.length)return;
+    if((officialFrameIndex??officialArena.frames.length-1)>=officialArena.frames.length-1)officialFrameIndex=0;
+    officialPlaying=true;
+    const button=$('#official-replay-play');
+    if(button){button.textContent='Ⅱ 一時停止';button.setAttribute('aria-label','公式リプレイを一時停止する');}
+    paintOfficialReplay();
+    officialPlaybackTimer=setInterval(()=>{
+        if(page!=='sim'||!$('#official-replay-map')||!officialArena){stopOfficialPlayback();return;}
+        if(officialFrameIndex>=officialArena.frames.length-1){stopOfficialPlayback();return;}
+        setOfficialFrame(officialFrameIndex+1,false);
+        if(officialFrameIndex>=officialArena.frames.length-1)stopOfficialPlayback();
+    },250);
+}
+function bindOfficialReplay() {
+    if(!$('#official-replay-map'))return;
+    paintOfficialReplay();
+    const box=$('#official-log-list');
+    if(!box)return;
+    box.addEventListener('scroll',()=>{
+        if(officialPlaying)return;
+        cancelAnimationFrame(officialScrollFrame);
+        officialScrollFrame=requestAnimationFrame(()=>{
+            const candidates=[...box.querySelectorAll('[data-official-log-index]')].filter(row=>row.getBoundingClientRect().bottom>box.getBoundingClientRect().top+16);
+            const selected=candidates[0];
+            if(selected)setOfficialFrame(officialArena.logs[Number(selected.dataset.officialLogIndex)]?.replayFrame??0);
+        });
+    },{passive:true});
+}
+
 function simPage() {
     const result = sim?.result();
     const stale = sim && JSON.stringify(config) !== JSON.stringify(sim.config);
@@ -903,11 +984,11 @@ function replayUnits(units) {
 </div><div class="replay-team-members">${members.map((u, index) => `<div class="combatant">\
 <span class="avatar ${team === 'B' ? 'enemy' : ''}">${team}${index + 1}</span>\
 <div><div class="name">${esc(u.name)} ${u.alive ? '' : pill('戦闘不能', 'red')}</div>\
-<div class="numbers"><span class="replay-hp-value">HP ${nf(u.hp)} / ${nf(u.maxHp)} <strong class="replay-hp-percent">(${u.maxHp > 0 ? (clamp(u.hp / u.maxHp * 100, 0, 100)).toFixed(1) : '0.0'}%)</strong></span>\
-<span>AP ${nf(u.ap)}</span>${u.barrier > 0 ? `<span class="replay-barrier">障壁 ${nf(u.barrier)}</span>` : ''}\
-</div><div class="hpbar"><i style="width:${clamp(u.hp / u.maxHp * 100, 0, 100)}%">\
-</i></div><div class="apbar"><i style="width:${u.maxAp ? clamp(u.ap / u.maxAp * 100, 0, 100) : 0}%">\
-</i></div><p class="subtle">座標 (${u.x.toFixed(1)}, ${u.y.toFixed(1)}) m</p>${u.bs.length ? `<div class="skill-tags">${u.bs.filter(b => b.remaining > 0).map(b => pill(bsStatusLabel(b), 'gold')).join('')}</div>` : ''}</div>\
+<div class="numbers"><span class="replay-hp-value">HP ${u.hp==null?'—':nf(u.hp)} / ${u.maxHp==null?'—':nf(u.maxHp)} <strong class="replay-hp-percent">(${u.maxHp===0 ? '0.0' : u.hp!=null&&u.maxHp>0 ? (clamp(u.hp / u.maxHp * 100, 0, 100)).toFixed(1) : '—'}%)</strong></span>\
+<span>AP ${u.ap==null?'—':nf(u.ap)}${u.maxAp==null?'':` / ${nf(u.maxAp)}`}</span>${u.barrier > 0 ? `<span class="replay-barrier">障壁 ${nf(u.barrier)}</span>` : ''}\
+</div><div class="hpbar"><i style="width:${u.hp!=null&&u.maxHp>0?clamp(u.hp / u.maxHp * 100, 0, 100):0}%">\
+</i></div><div class="apbar"><i style="width:${u.ap!=null&&u.maxAp>0 ? clamp(u.ap / u.maxAp * 100, 0, 100) : 0}%">\
+</i></div><p class="subtle">${Number.isFinite(u.x)&&Number.isFinite(u.y)?`座標 (${u.x.toFixed(1)}, ${u.y.toFixed(1)}) m`:'座標情報なし'}</p>${u.bs.length ? `<div class="skill-tags">${u.bs.filter(b => b.remaining > 0).map(b => pill(bsStatusLabel(b), 'gold')).join('')}</div>` : ''}</div>\
 <div class="damage">${nf(u.damageDealt)}<small>\
 与ダメージ</small></div></div>`).join('') || '<p class="subtle replay-team-empty">ユニットはいません。</p>'}</div>\
 </section>`).join('')}</div>`;
@@ -1452,12 +1533,24 @@ async function onAction(act) {
         repaintMaps();
         return;
     }
+    if (a === 'official-map-expand') {
+        openExpandedMap('official');
+        return;
+    }
     if (a === 'map-expand') {
-        openExpandedMap();
+        openExpandedMap('local');
         return;
     }
     if (a === 'map-dialog-close') {
         $('#map-dialog')?.close();
+        return;
+    }
+    if (a === 'official-replay-play') {toggleOfficialPlayback();return;}
+    if (a === 'official-replay-first') {setOfficialFrame(0);return;}
+    if (a === 'official-replay-last') {setOfficialFrame(officialArena?.frames?.length-1);return;}
+    if (a === 'official-select-log') {
+        const log=officialArena?.logs?.[Number(arg)];
+        if(log)setOfficialFrame(log.replayFrame??0);
         return;
     }
     if (a === 'select-log') {
@@ -1466,6 +1559,7 @@ async function onAction(act) {
     }
     if (a === 'load-official-battle') {
         if (officialArenaLoading) return;
+        stopOfficialPlayback();
         const input = $('#official-battle-url');
         const url = input?.value?.trim() || '';
         officialArenaUrl = url;
@@ -1476,6 +1570,7 @@ async function onAction(act) {
         try {
             const next = await loadOfficialArenaViaWorker(url, ARENA_SHARED_WORKER_URL);
             officialArena = next;
+            officialFrameIndex = next.frames?.length ? next.frames.length-1 : null;
             officialArenaTurn = 'all';
             try {
                 const payload=JSON.stringify(next);
@@ -1491,7 +1586,8 @@ async function onAction(act) {
         return;
     }
     if (a === 'clear-official-battle') {
-        officialArena=null;officialArenaTurn='all';officialArenaUrl='';
+        stopOfficialPlayback();
+        officialFrameIndex=null;officialArena=null;officialArenaTurn='all';officialArenaUrl='';
         try { sessionStorage.removeItem(OFFICIAL_BATTLE_STATE_KEY); } catch { /* ignore */ }
         render();return;
     }
@@ -2011,7 +2107,9 @@ document.addEventListener('change', e => {
         return;
     }
     if (el.matches('[data-unit-normal-bs]')) {
-        u.normalBS = [...el.selectedOptions].map(o => o.value);
+        u.normalBS = [...document.querySelectorAll('[data-unit-normal-bs]:checked')].map(box => box.value);
+        const count = document.querySelector('[data-normal-bs-count]');
+        if (count) count.textContent = `（${u.normalBS.length}種類）`;
         save();
         return;
     }
@@ -2179,7 +2277,13 @@ document.addEventListener('change', e => {
         return;
     }
     if (el.id === 'official-battle-turn') {
+        stopOfficialPlayback();
         officialArenaTurn = el.value;
+        if(officialArena?.frames?.length) {
+            const target=el.value==='all'?officialArena.lastTurn:Number(el.value);
+            const last=officialArena.frames.findLastIndex(f=>f.turn<=target);
+            officialFrameIndex=last>=0?last:0;
+        }
         const panel = document.querySelector('.official-battle-panel');
         if (panel) {
             const keep = $('#official-battle-url')?.value;
@@ -2311,6 +2415,9 @@ document.addEventListener('compositionend', e => {
 });
 document.addEventListener('input', e => {
     const el = e.target;
+    if (el.id === 'official-frame-range') {
+        setOfficialFrame(el.value);return;
+    }
     if (el.id === 'frame-range') {
         frame = Number(el.value);
         selectedLogId = -1;
