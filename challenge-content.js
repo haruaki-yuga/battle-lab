@@ -6,7 +6,7 @@ import { importUnitCharacter } from './unit-character-io.js?v=1.18.14';
 
 export const CHALLENGE_BOSS_ID = 'challenge-serara-normal-boss';
 export const CHALLENGES = Object.freeze([
-  Object.freeze({ id: 'serara-normal', title: 'セララチャレンジ', difficulty: 'Normal', teamALimit: 1, enemyName: '甘咲 セララ' })
+  Object.freeze({ id: 'serara-normal', title: 'セララチャレンジ', difficulty: 'Normal', teamALimit: 1, enemyName: '甘咲 セララ', icon: './assets/serara-challenge-icon.png' })
 ]);
 export function activeChallenge(config) { return CHALLENGES.find(c=>c.id===config?.challenge?.id) || null; }
 export function canEditChallengeUnit(config, unit) { return !activeChallenge(config) || unit?.team==='A'; }
@@ -22,12 +22,16 @@ function seraraAiRules() {
   const rule = (options)=>freshRule({enabled:true,conditions:[],...options});
   const auto={autoMove:true,moveMode:'fixed',minDist:0,maxDist:3,movePriority:'action'};
   const weakest=[{type:'sort',sort:'hp'}];
-  // Rules follow the separate セララAI.txt instructions; the attached character
-  // JSON supplies attributes/skills but its 2 draft rules are overridden here.
+  // Rule priorities/targets follow セララAI.txt; attack-position bands are
+  // optimized in v1.18.17, preserving the source attributes and five skills.
   return [
     rule({...auto,conditions:[condition('enemies','hp',1,250)],action:'skill',skillId:'wiki-063',target:'previous'}),
-    rule({...auto,conditions:[condition('all','alive',0,100)],action:'skill',skillId:'acc-mwq2vuih-6',target:'enemies',targetCriteria:weakest}),
-    rule({...auto,conditions:[condition('all','alive',0,100)],action:'effectiveAttack',target:'enemies',targetCriteria:weakest}),
+    // v1.18.17: fixed-range tuning on 18 synthetic archetypes × 3 starting distances.
+    // At 0–3m Serara over-approaches and wastes AV against mobile/ranged opponents.
+    // Keep Phoenix inside its legal 20m band without requiring melee contact.
+    rule({...auto,minDist:9,maxDist:14,conditions:[condition('all','alive',0,100)],action:'skill',skillId:'acc-mwq2vuih-6',target:'enemies',targetCriteria:weakest}),
+    // EffectiveAttack should not undo the ranged position by rushing back to 0–3m.
+    rule({...auto,minDist:12,maxDist:20,conditions:[condition('all','alive',0,100)],action:'effectiveAttack',target:'enemies',targetCriteria:weakest}),
     rule({conditions:[condition('all','alive',0,100)],action:'attack',target:'enemies',autoMove:false}),
     rule({conditions:[condition('enemies','distance',0,40)],action:'carry',target:'self',autoMove:false}),
     rule({conditions:[condition('enemies','distance',40,99)],action:'move',target:'previous',autoMove:true,moveMode:'fixed',minDist:0,maxDist:40})

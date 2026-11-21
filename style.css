@@ -3219,8 +3219,8 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
  .official-log-list{max-height:60vh}.official-log-row{padding:6px 7px;font-size:11px}
 }
 
-/* v1.18.6: stable three-button setup toolbar and slot actions */
-.page-heading>.setup-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:min(100%,390px);max-width:none;flex:0 0 auto}
+/* v1.18.16: four quick actions share a single responsive row */
+.page-heading>.setup-quick-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:min(100%,560px);min-width:0;max-width:none;flex:0 1 560px}
 .page-heading>.setup-quick-actions button{width:100%;min-width:0;min-height:37px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:7px 5px;font-size:12px}
 .character-slots-compact .character-slot-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .character-slots-compact .character-slot-actions .slot-save-button{grid-column:1/-1;justify-self:start;min-width:0}
@@ -3229,7 +3229,7 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 .normal-attack-bs .field{margin-top:10px}
 .normal-attack-bs .footnote{margin:8px 0 1px}
 @media(max-width:1100px){.page-heading:has(>.setup-quick-actions){align-items:stretch;flex-wrap:wrap}.page-heading>.setup-quick-actions{flex:1 1 100%;width:100%}}
-@media(max-width:700px){.page-heading>.setup-quick-actions{width:100%;max-width:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.page-heading>.setup-quick-actions button{min-height:36px;padding:6px 3px;font-size:11px}.character-slots-compact .character-slot-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.character-slots-compact .character-slot-actions .slot-save-button{width:auto;grid-column:1/-1}.character-slots-compact .character-slot-actions button:not(.slot-save-button){font-size:11px;padding:7px 2px}}
+@media(max-width:700px){.page-heading>.setup-quick-actions{width:100%;max-width:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.page-heading>.setup-quick-actions button{min-height:36px;padding:6px 2px;font-size:10px}.page-heading>.setup-quick-actions .inline-icon{width:12px;height:12px}.character-slots-compact .character-slot-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.character-slots-compact .character-slot-actions .slot-save-button{width:auto;grid-column:1/-1}.character-slots-compact .character-slot-actions button:not(.slot-save-button){font-size:11px;padding:7px 2px}}
 
 /* v1.18.6: image-free help */
 .manual-dialog .guide-intro{margin:0 0 17px;font-size:14px;line-height:1.85;color:var(--ink);}
@@ -3333,3 +3333,13 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 .challenge-option p{font-size:12px;color:var(--muted);margin:5px 0}
 .challenge-level{display:inline-block;font-size:11px;border-radius:6px;padding:2px 6px;border:1px solid var(--line);vertical-align:middle}
 @media(max-width:600px){.challenge-active-banner,.challenge-option{align-items:stretch}.challenge-list{padding:12px}}
+
+/* v1.18.17 — Serara challenge pixel-art portrait (user-supplied PNG). */
+.challenge-portrait{display:block;object-fit:cover;image-rendering:pixelated;flex:0 0 auto;background:#21100b;border:1px solid var(--line);border-radius:9px;}
+.challenge-option-portrait{width:72px;height:72px;}
+.challenge-banner-identity{display:flex!important;flex-direction:row!important;align-items:center;gap:11px;min-width:0;}
+.challenge-banner-identity>div{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.challenge-banner-portrait{width:46px;height:46px;}
+.avatar.challenge-avatar{width:36px;height:36px;padding:0;overflow:hidden;border-radius:6px;background:transparent;}
+.avatar.challenge-avatar .challenge-avatar-image{width:100%;height:100%;border:none;border-radius:inherit;}
+@media(max-width:420px){.challenge-option-portrait{width:54px;height:54px;}.challenge-banner-portrait{width:40px;height:40px;}}
