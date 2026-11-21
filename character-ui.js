@@ -35,7 +35,7 @@ export function characterSearchEndpoint(value) {
         throw Error('検索用Workerの設定を確認してください。');
     return new URL('/character/search', url.origin).href;
 }
-export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
+export function createCharacterImporter({ getConfig, getCurrent, getChallenge=()=>null, onApply }) {
     const dialog = document.createElement('dialog');
     dialog.className = 'character-import-modal';
     dialog.setAttribute('aria-labelledby', 'character-import-title');
@@ -51,7 +51,7 @@ export function createCharacterImporter({ getConfig, getCurrent, onApply }) {
         }).join('')}</div>`;
     }
     function render() {
-        const p = state.profile, config = getConfig(), target = config.units.find(u => u.id === state.replaceId), supported = p?.skills.filter(s => s.supported) || [];
+        const p = state.profile, config = getConfig(), challenge = getChallenge(), target = config.units.find(u => u.id === state.replaceId), supported = p?.skills.filter(s => s.supported) || [];
         const tabs = `<div class="character-search-tabs" role="group" aria-label="キャラの探し方">
 ${button('名前で検索', 'mode-name', state.mode === 'name' ? 'primary' : '', state.loading)}
 ${button('URLから取得', 'mode-url', state.mode === 'url' ? 'primary' : '', state.loading)}</div>`;
@@ -90,8 +90,8 @@ ${conditionalPreview(p.conditionalPassives)}<h3 class="import-section-title">採
 ${p.otherStats?.some(r => r.type !== 'ELEMENT' && r.name !== '活性限界値' && Number(r.value)) ? `<p class="import-warning">自動反映できないその他の値：${p.otherStats.filter(r => r.type !== 'ELEMENT' && r.name !== '活性限界値' && Number(r.value)).map(r => esc(`${r.name} ${r.value}`)).join('、')}</p>` : ''}${p.warnings.length ? `<div class="import-warning-box" role="status">\
 <b>読み込み内容の確認</b><ul>${p.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>\
 </div>` : ''}<div class="import-destination fields two">\
-<label class="field"><span>反映先</span><select id="character-destination">${option('add', '新しいキャラとして追加', state.replaceId)}${config.units.map(u => option(u.id, `${u.name} を置き換える`, state.replaceId)).join('')}</select>\
-</label><label class="field"><span>陣営</span><select id="character-team">${option('A', 'チームA / 自チーム', state.team)}${option('B', 'チームB / 相手チーム', state.team)}</select>\
+<label class="field"><span>反映先</span><select id="character-destination">${!challenge || config.units.filter(u=>u.team==='A').length<challenge.teamALimit ? option('add','新しいキャラとして追加',state.replaceId) : ''}${config.units.filter(u=>!challenge || u.team==='A').map(u => option(u.id, `${u.name} を置き換える`, state.replaceId)).join('')}</select>\
+</label><label class="field"><span>陣営</span><select id="character-team">${option('A', 'チームA / 自チーム', state.team)}${challenge?'':option('B', 'チームB / 相手チーム', state.team)}</select>\
 </label><label class="field"><span>通常攻撃の射程（手動指定）</span><select id="character-normal-range">${Object.entries(RANGES).filter(([k]) => k !== 'special').map(([k, v]) => option(k, v, state.normalRange)).join('')}</select>\
 </label></div><p class="footnote">射程・消費AP・威力・特殊効果などの性能が一致するWIKIスキルは、名前が違っていても元のIDを再利用し、特殊化スキルはキャラ専用欄にまとめ、名前・説明文・効果原文もキャラ別に保持します。一致しないスキルは編集できるアクセルカレイドとして登録します。通常攻撃の射程・キャラAI設定は公開データから取得できません。射程を確認してください。行動ルールは「効果的な攻撃 → 行動値持ち越し」で開始します。</p>${target ? `<p class="import-warning">\
 「${esc(target.name)}」の数値・装備・キャラAI設定を置き換えます。初期位置は引き継ぎます。</p>` : ''}<p class="footnote">\
@@ -245,7 +245,7 @@ ${p.otherStats?.some(r => r.type !== 'ELEMENT' && r.name !== '活性限界値' &
             render();
         }
         if (e.target.id === 'character-team')
-            state.team = e.target.value;
+            state.team = getChallenge()?'A':e.target.value;
         if (e.target.id === 'character-normal-range')
             state.normalRange = e.target.value;
     });
@@ -290,6 +290,8 @@ ${p.otherStats?.some(r => r.type !== 'ELEMENT' && r.name !== '活性限界値' &
         if (a === 'apply') {
             try {
                 const config = clone(getConfig()), replace = config.units.find(u => u.id === state.replaceId);
+                const limit=getChallenge();
+                if (limit && (state.team!=='A' || replace?.team==='B' || (!replace && config.units.filter(u=>u.team==='A').length>=limit.teamALimit)))throw Error('チャレンジではチームAの参加人数が上限です。敵は変更できません。');
                 if (!replace && config.units.length >= 16)
                     throw Error('編成は最大16人です。反映先で既存のキャラを選んでください。');
                 deduplicateImportedSkills(config);
@@ -336,8 +338,8 @@ ${p.otherStats?.some(r => r.type !== 'ELEMENT' && r.name !== '活性限界値' &
             profile: null,
             error: '',
             loading: false,
-            replaceId: 'add',
-            team: u.team,
+            replaceId: getChallenge()?u.id:'add',
+            team: getChallenge()?'A':u.team,
             normalRange: u.normalRange === 'special' ? 'near' : u.normalRange
         };
         render();

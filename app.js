@@ -1,19 +1,19 @@
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.14';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.15';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
 import { deleteUnitSafely } from './unit-management.js?v=1.18';
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.14';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.15';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.18.14';
+import { Battle, clamp } from './engine.js?v=1.18.15';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
-import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.14';
-import { loadOfficialArenaViaWorker, parseOfficialArenaResult, officialArenaResultLocation, officialArenaStatistics, officialArenaDisplayGroups, officialArenaLogTypeLabel } from './official-arena-log.js?v=1.18.14';
+import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.15';
+import { loadOfficialArenaViaWorker, parseOfficialArenaResult, officialArenaResultLocation, officialArenaStatistics, officialArenaDisplayGroups, officialArenaLogTypeLabel } from './official-arena-log.js?v=1.18.15';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.14';
-import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.14';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.15';
+import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.15';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
 import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18';
 import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.18';
@@ -23,10 +23,11 @@ import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
-import { createCharacterImporter } from './character-ui.js?v=1.18';
+import { createCharacterImporter } from './character-ui.js?v=1.18.15';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
 import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.18';
+import { CHALLENGES, activeChallenge, canEditChallengeUnit, challengePartyValid, startChallenge, endChallenge } from './challenge-content.js?v=1.18.15';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -172,11 +173,19 @@ const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({
     "'": '&#39;'
 }[c]));
 const nf = x => Math.round(Number(x) || 0).toLocaleString('ja-JP');
-const current = () => config.units.find(u => u.id === selected) || config.units[0];
+const current = () => config.units.find(u => u.id === selected && canEditChallengeUnit(config,u)) || config.units.find(u=>canEditChallengeUnit(config,u)) || config.units[0];
+const challenge = () => activeChallenge(config);
+const allowUnit = (unit) => canEditChallengeUnit(config,unit);
+function challengeInvalidMove(message='チャレンジ中は敵チームの設定を変更できません。') { toast(message); return true; }
+if (challenge() && !allowUnit(config.units.find(u=>u.id===selected))) selected=current().id;
 const openCharacterImport = createCharacterImporter({
     getConfig: () => config,
     getCurrent: () => current(),
+    getChallenge: () => challenge(),
     onApply: (next, unit, summary) => {
+        if (challenge() && (unit.team!=='A'||next.units.filter(u=>u.team==='A').length>challenge().teamALimit)) {
+            toast('チャレンジの参加人数制限により追加できません。'); return;
+        }
         config = next;
         selected = unit.id;
         sim = null;
@@ -229,7 +238,7 @@ const options = (obj, value) => Object.entries(obj).map(([k, v]) => `<option val
 const select = (obj, value, attrs = '') => `<select ${attrs}>${options(obj, value)}</select>`;
 const field = (label, content) => `<label class="field"><span>${label}</span>${content}</label>`;
 const input = (key, value, attrs = '') => `<input type="number" data-unit="${key}" value="${esc(value)}" step="any" ${attrs}>`;
-const unitSelect = () => select(Object.fromEntries(config.units.map(u => [u.id, `${u.team}｜${u.name}`])), selected, 'class="unit-selector" aria-label="編集するユニット" data-select-unit');
+const unitSelect = () => select(Object.fromEntries(config.units.filter(allowUnit).map(u => [u.id, `${u.team}｜${u.name}`])), current().id, 'class="unit-selector" aria-label="編集するユニット" data-select-unit');
 const unitTacticsControls = (showArenaActions = true) => {
     const basicButtons = `${btn('書き出し', 'export-unit-tactics', 'small', 'title="スキル・AIを書き出す" aria-label="選択中のキャラのスキル・AIを書き出す"')}${btn('読み込み', 'import-unit-tactics', 'small', 'title="スキル・AIを読み込む" aria-label="選択中のキャラにスキル・AIを読み込む"')}`;
     const arenaButtons = `${btn('アリーナ取込', 'import-arena-tactics', 'small', 'title="公式アリーナHTMLから戦術を読み込む" aria-label="公式アリーナHTMLから戦術を読み込む"')}${btn('共有コード読込', 'import-share-code', 'small', 'title="公式アリーナの共有コードからAIを読み込む"')}${btn('共有コード発行', 'open-share-export', 'small', 'title="選択したAIを公式アリーナの共有コードとして発行する"')}`;
@@ -261,6 +270,7 @@ function openPageHelp(targetPage = page) {
     $('#modal').showModal();
 }
 function render() {
+    if (challenge() && !allowUnit(config.units.find(u=>u.id===selected))) selected=current().id;
     persistUi();
     const titles = { setup: '編成・ステータス', skills: 'スキルライブラリ', rules: 'キャラAI設定（β版）', sim: 'シミュレーション' };
     const mobileTitles = { setup: '編成', skills: 'スキル', rules: 'AI設定', sim: '戦闘' };
@@ -268,7 +278,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.14</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.14</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.15</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.15</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && (sim || officialArena) ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -283,15 +293,16 @@ const heading = (eyebrow, title, subtitle, buttons = '', actionClass = '') => `<
 const pill = (text, cls = '') => `<span class="pill ${cls}">${esc(text)}</span>`;
 function teams() {
     const canAdd = config.units.length < 16;
+    const active = challenge();
     const strips = ['A', 'B'].map(team => {
         const members = config.units.filter(unit => unit.team === team);
         const chips = members.map((unit, index) => btn(`<span class="avatar ${team === 'B' ? 'enemy' : ''}">${team}${index + 1}</span>\
 <span><strong>${esc(unit.name)}</strong>\
-<small>HP ${nf(unit.maxHp)} · SPD ${nf(unit.speed)}</small>\
-</span>`, `unit:${unit.id}`, `unit-chip ${unit.id === selected ? 'selected' : ''}`)).join('');
+<small>${active && team==='B' ? 'チャレンジ専用・設定非公開' : `HP ${nf(unit.maxHp)} · SPD ${nf(unit.speed)}`}</small>\
+</span>`, `unit:${unit.id}`, `unit-chip ${unit.id === selected ? 'selected' : ''}`, active && team==='B'?'disabled title="チャレンジの敵は選択できません"':'')).join('');
         return `<div class="team-strip ${team === 'B' ? 'enemy' : ''}"><div class="team-title"><b>チーム${team} <span style="font-size:9px;font-weight:400;margin-left:8px">${team === 'A' ? '自チーム' : '相手チーム'}</span>\
 </b><span class="subtle">${members.length}人</span>\
-</div><div class="unit-row">${chips}${btn('+', `add-unit:${team}`, 'add-chip', `aria-label="チーム${team}にユニットを追加" ${canAdd ? '' : 'disabled'}`)}</div>\
+</div><div class="unit-row">${chips}${btn('+', `add-unit:${team}`, 'add-chip', `aria-label="チーム${team}にユニットを追加" ${canAdd && (!active || team==='A' && members.length<active.teamALimit) ? '' : 'disabled'}`)}</div>\
 </div>`;
     });
     return `<div class="teams">${strips.join('')}</div>`;
@@ -505,24 +516,24 @@ function characterSlotsPanel() {
     const safeIndex = Number.isInteger(selectedSlotIndex) && selectedSlotIndex>=0 && selectedSlotIndex<CHARACTER_SLOT_COUNT ? selectedSlotIndex : 0;
     const saved = slots[safeIndex];
     const slotOptions = Object.fromEntries(slots.map((entry,i) => [String(i), `${String(i+1).padStart(2,'0')}｜${entry ? entry.name : '空きスロット'}`]));
-    const selectedUnitOptions = Object.fromEntries(config.units.map(unit => [unit.id, `${unit.team}｜${unit.name}`]));
+    const selectedUnitOptions = Object.fromEntries(config.units.filter(allowUnit).map(unit => [unit.id, `${unit.team}｜${unit.name}`]));
     const description = saved ? `<div class="slot-selected-info"><strong>${esc(saved.name)}</strong><span>元チーム ${esc(saved.team)} ／ 装備 ${saved.snapshot?.tactics?.skills?.length || 0}種 ／ AI ${saved.snapshot?.tactics?.rules?.length || 0}件</span></div>` : '<div class="slot-selected-info"><strong>空きスロット</strong><span>選択中のキャラを保存できます</span></div>';
     return `<details class="data-management-group character-slots-details" id="character-slots-panel" ${slotsExpanded ? 'open' : ''}><summary>キャラスロット（${slots.filter(Boolean).length}/${CHARACTER_SLOT_COUNT}）</summary>`+
         `<div class="character-slots-compact"><div class="slot-select-grid"><label class="slot-select-field"><span>キャラ選択（保存元）</span>${select(selectedUnitOptions, selected, 'data-slot-unit-select aria-label="保存元のキャラ選択"')}</label>`+
         `<label class="slot-select-field"><span>キャラスロット</span>${select(slotOptions, String(safeIndex), 'data-character-slot-select aria-label="キャラスロット番号"')}</label></div>`+
         description+`<div class="character-slot-actions">${btn(saved?'上書き保存':'このキャラを保存',`slot-save:${safeIndex}`,'small slot-save-button')}`+
-        `${btn('Aへ読込',`slot-load:${safeIndex}:A`,'small primary',saved?'':'disabled title="空のスロットは読み込めません"')}`+
-        `${btn('Bへ読込',`slot-load:${safeIndex}:B`,'small',saved?'':'disabled title="空のスロットは読み込めません"')}`+
+        `${btn('Aへ読込',`slot-load:${safeIndex}:A`,'small primary',saved && (!challenge() || config.units.filter(x=>x.team==='A').length<challenge().teamALimit) ? '' : 'disabled title="保存データがないか参加人数上限です"')}`+
+        `${btn('Bへ読込',`slot-load:${safeIndex}:B`,'small',saved && !challenge()?'':'disabled title="チャレンジ中はチームBを変更できません"')}`+
         `${btn('空にする',`slot-clear:${safeIndex}`,'small danger',saved?'':'disabled title="すでに空です"')}</div>`+
         `<p class="slot-small-note">スロットは編成から独立して保存されます。キャラを削除しても復元可能です（ブラウザ内保存・端末間同期なし）。</p></div></details>`;
 }
 function setupPage() {
     const u = current();
-    return heading('BATTLE CONFIGURATION', '編成・ステータス', '', btn('キャラ検索', 'character-import') + btn('キャラスロット', 'jump-slots', 'small') + btn(`${icon('sim', 'inline-icon')}実行画面へ`, 'page:sim', 'primary'), 'setup-quick-actions') + teams() + `<div class="two-col">\
+    return heading('BATTLE CONFIGURATION', '編成・ステータス', '', btn('キャラ検索', 'character-import') + btn('チャレンジ', 'open-challenges', 'small') + btn('キャラスロット', 'jump-slots', 'small') + btn(`${icon('sim', 'inline-icon')}実行画面へ`, 'page:sim', 'primary'), 'setup-quick-actions') + (challenge()?`<section class="challenge-active-banner"><div><strong>${esc(challenge().title)}（${esc(challenge().difficulty)}）</strong><span>チームA ${challenge().teamALimit}人まで・チームBは固定／能力値・AI非公開</span></div>${btn('通常編成に戻す','challenge-end','small')}</section>`:'') + teams() + `<div class="two-col">\
 <section class="panel"><div class="panel-head"><div><h2>${esc(u.name)} <span class="rule-count">\
 / TEAM ${u.team}</span>\
-</h2></div><div class="btnrow">${btn('複製', 'clone-unit', 'small')}${btn('削除', 'delete-unit', 'small danger')}</div>\
-</div><div class="panel-body"><div class="fields two">${field('ユニット名', `<input data-unit="name" value="${esc(u.name)}" maxlength="50">`)}${field('陣営', select({ A: 'チームA / 自チーム', B: 'チームB / 相手チーム' }, u.team, 'data-unit="team"'))}</div>\
+</h2></div><div class="btnrow">${btn('複製', 'clone-unit', 'small',challenge() && config.units.filter(x=>x.team==='A').length>=challenge().teamALimit ?'disabled title="チャレンジ参加人数上限"':'')}${btn('削除', 'delete-unit', 'small danger',challenge()?'disabled title="チャレンジ中は最後の参加者を削除できません"':'')}</div>\
+</div><div class="panel-body"><div class="fields two">${field('ユニット名', `<input data-unit="name" value="${esc(u.name)}" maxlength="50">`)}${field('陣営', challenge()?'<strong class="challenge-locked-team">チームA / チャレンジ参加者</strong>':select({ A: 'チームA / 自チーム', B: 'チームB / 相手チーム' }, u.team, 'data-unit="team"'))}</div>\
 <div class="field-section">耐久・リソース</div><div class="fields two"><div class="meter-field">${passiveAwareStatField(u, 'maxHp', 'min="1"', 'MAX HP')}<div class="bar">\
 </div></div><div class="meter-field ap">${passiveAwareStatField(u, 'maxAp', 'min="0"', 'MAX AP')}<div class="bar">\
 </div></div></div><div class="field-section">攻撃・防御</div><div class="fields">${[
@@ -581,9 +592,11 @@ function conditionSummary(c) {
 }
 function skillsPage() {
     const u = current();
+    const bossCustomIds=new Set(challenge()?(config.units.find(v=>v.team==='B')?.skills||[]).filter(id=>!id.startsWith('wiki-') && !u.skills.includes(id)):[]);
     const specialIds = new Set(Object.keys(u.specializedSkills || {}));
     const characterSpecialIds = new Set(config.units.flatMap(unit => Object.keys(unit.specializedSkills || {})));
     const matches = s => {
+        if (bossCustomIds.has(s.id))return false;
         const displayed = displayedSkillText(u, s);
         return skillMatchesKind(s, kindFilter) &&
             (displayed.name + s.name + displayed.baseName + displayed.note + displayed.original).toLowerCase().includes(skillSearch.toLowerCase());
@@ -872,7 +885,7 @@ function paintOfficialReplay() {
     if(!shown||!$('#official-replay-map'))return;
     const count=officialArena.frames.length;
     $('#official-replay-map').innerHTML=map(shown.units,true,false,false,officialMapContext(shown));
-    $('#official-replay-units').innerHTML=replayUnits(shown.units);
+    $('#official-replay-units').innerHTML=replayUnits(shown.units, true);
     $('#official-replay-label').textContent=`T${String(shown.turn).padStart(2,'0')} / ${shown.label} （${(officialFrameIndex??count-1)+1}/${count}）`;
     $('#official-frame-range').value=String(officialFrameIndex??count-1);
     const selectedLogIndex=shown.logIndex;
@@ -970,7 +983,7 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
 <span class="subtle">最新</span></div></div></section><section class="panel">\
 <div class="panel-head"><h2>ユニットの状態</h2>${btn('結果JSON', 'export-result', 'small ghost')}</div>\
 <div id="replay-units" class="panel-body"></div></section></aside><section class="panel replay-log-panel"><div class="panel-head"><h2>\
-戦闘ログ</h2>${btn('ログを書き出す', 'export-log', 'small')}</div>\
+戦闘ログ</h2>${challenge()?'':btn('ログを書き出す', 'export-log', 'small')}</div>\
 <div class="panel-body" style="padding-top:14px;padding-bottom:14px"><div class="log-toolbar">${select({
         main: '主要な行動',
         all: '詳細すべて',
@@ -983,7 +996,7 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
 </section></div>`;
 }
 function visibleLogs() {
-    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && (['pursuit', 'suddenDamage'].includes(l.type) || l.type === 'bs' && l.message.includes('障壁が'))) && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
+    return !sim ? [] : sim.logs.filter(l => !(challenge() && l.type==='condition' && config.units.some(u=>u.team==='B'&&u.id===l.actor)) && (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && (['pursuit', 'suddenDamage'].includes(l.type) || l.type === 'bs' && l.message.includes('障壁が'))) && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
 }
 function logEntries() {
     const logs = visibleLogs(), types = {
@@ -1037,11 +1050,11 @@ function replayBsStatus(bs) {
     const types=new Set(active.map(b=>b.name)).size;
     return `<details class="replay-bs-overflow"><summary>BS ${active.length}個（${types}種類）を表示</summary><div class="skill-tags replay-bs-overflow-list">${tags}</div></details>`;
 }
-function replayUnits(units) {
+function replayUnits(units, official = false) {
     return `<div class="combatants replay-teams">${groupReplayUnitsByTeam(units).map(({ team, units: members }) => `<section class="replay-team ${team === 'B' ? 'enemy' : ''}" aria-label="TEAM ${team}のユニットの状態">\
 <div class="replay-team-head"><strong>TEAM ${team} <span>${team === 'A' ? '自チーム' : '相手チーム'}</span>\
 </strong><small>${members.length}人</small>\
-</div><div class="replay-team-members">${members.map((u, index) => `<div class="combatant">\
+</div><div class="replay-team-members">${members.map((u, index) => challenge() && team==='B' && !official ? `<div class="combatant challenge-boss-hidden"><span class="avatar enemy">B${index + 1}</span><div><div class="name">${esc(u.name)} ${u.alive ? '' : pill('戦闘不能','red')}</div><p class="subtle">チャレンジ敵の能力値・現在HP/AP・AIは非公開</p></div></div>` : `<div class="combatant">\
 <span class="avatar ${team === 'B' ? 'enemy' : ''}">${team}${index + 1}</span>\
 <div><div class="name">${esc(u.name)} ${u.alive ? '' : pill('戦闘不能', 'red')}</div>\
 <div class="numbers"><span class="replay-hp-value">HP ${u.hp==null?'—':nf(u.hp)} / ${u.maxHp==null?'—':nf(u.maxHp)} <strong class="replay-hp-percent">(${u.maxHp===0 ? '0.0' : u.hp!=null&&u.maxHp>0 ? (clamp(u.hp / u.maxHp * 100, 0, 100)).toFixed(1) : '—'}%)</strong></span>\
@@ -1137,6 +1150,7 @@ function effectEditor(group, labels, title) {
     return `<div class="effect-editor"><div class="field-section">${esc(title)}</div>${rows}${Object.keys(labels).some(key => !(key in effects)) ? btn('＋ 効果を追加', `add-effect:${group}`, 'small ghost') : ''}</div>`;
 }
 function openSkill(id, copy = false) {
+    if (challenge() && id && config.units.some(v=>v.team==='B'&&v.skills.includes(id)) && !current().skills.includes(id) && !id.startsWith('wiki-')) {challengeInvalidMove('チャレンジ専用スキルの詳細・編集はできません。');return;}
     const s = config.skills.find(s => s.id === id);
     modalMode = 'skill';
     if (isReadOnlySkill(s) && !copy) {
@@ -1289,6 +1303,7 @@ function download(name, data, type = 'application/json') {
 }
 function ensureValid() {
     errors = validateConfig(config);
+    if (!challengePartyValid(config))errors.push('チャレンジの参加人数またはチームBの構成が不正です。');
     if (errors.length) {
         render();
         toast('入力内容を確認してください。');
@@ -1517,6 +1532,34 @@ function applyShareResponse() {
 async function onAction(act) {
     const [a, arg, arg2] = act.split(':');
     const u = current();
+    if (a === 'open-challenges') {
+        const choices=CHALLENGES.map(c=>`<section class="challenge-option"><div class="challenge-option-details"><h3>${esc(c.title)} <span class="challenge-level">${esc(c.difficulty)}</span></h3><p>参加上限：チームA ${c.teamALimit}人 ／ 敵：${esc(c.enemyName)}</p><p>敵の能力値・AI設定は公開されず、変更もできません。</p></div>${btn(challenge()?.id===c.id?'挑戦中':'チャレンジ開始',`challenge-start:${c.id}`,'primary',challenge()?'disabled':'')}</section>`).join('');
+        $('#modal').innerHTML=`<div class="modal-header"><div><div class="eyebrow">CHALLENGE CONTENTS</div><h2>チャレンジ</h2></div>${btn('×','close-modal','ghost')}</div><div class="challenge-list">${choices}</div><div class="modal-footer">${challenge()?btn('通常編成に戻す','challenge-end','small'):''}${btn('閉じる','close-modal','small')}</div>`;
+        $('#modal').showModal();return;
+    }
+    if (a === 'challenge-start') {
+        const picked=CHALLENGES.find(c=>c.id===arg);
+        if (!picked || challenge()) return;
+        const keepA=config.units.filter(x=>x.team==='A');
+        if (keepA.length>picked.teamALimit && !confirm(`このチャレンジは${picked.teamALimit}人までです。選択中のキャラを残して参加し、その他の編成は一時保存しますか？`))return;
+        try {
+            const result=startChallenge(config,arg,current().id);
+            config=result.config;selected=result.selectedId;page='setup';sim=null;batch=null;frame=-1;selectedLogId=-1;errors=[];
+            $('#modal')?.close();save();render();toast(`${result.challenge.title}（${result.challenge.difficulty}）を開始しました。`);
+        } catch(e) {toast('チャレンジを開始できません：'+e.message);}
+        return;
+    }
+    if (a === 'challenge-end') {
+        if (!challenge())return;
+        if (!confirm('チャレンジを終了し、選択前の通常編成を復元しますか？'))return;
+        try {
+            config=endChallenge(config);selected=config.units[0].id;page='setup';sim=null;batch=null;frame=-1;selectedLogId=-1;errors=[];
+            $('#modal')?.close();save();render();toast('通常編成に戻しました。');
+        }catch(e){toast(e.message);}
+        return;
+    }
+    // Defense in depth: clicking a stale/forged action must not edit the boss.
+    if (challenge() && !allowUnit(u)) {challengeInvalidMove();return;}
     if (a === 'jump-slots') {
         page = 'setup'; slotsExpanded = true;
         render();
@@ -1549,6 +1592,7 @@ async function onAction(act) {
     if (a === 'slot-load') {
         const index = Number(arg), team = arg2;
         if (!Number.isInteger(index) || index < 0 || index >= CHARACTER_SLOT_COUNT || !['A','B'].includes(team)) return;
+        if (challenge() && (team!=='A'||config.units.filter(x=>x.team==='A').length>=challenge().teamALimit)) {challengeInvalidMove('チャレンジではチームAの参加人数が上限です。');return;}
         try {
             const restored = loadCharacterSlot(localStorage,index,config,team);
             config = restored.config; selected = restored.unitId;
@@ -1732,6 +1776,7 @@ async function onAction(act) {
         return;
     }
     if (a === 'unit') {
+        if (!allowUnit(config.units.find(v=>v.id===arg))) {challengeInvalidMove();return;}
         selected = arg;
         render();
         return;
@@ -1924,6 +1969,7 @@ async function onAction(act) {
         return;
     }
     if (a === 'add-unit') {
+        if (challenge() && (arg!=='A'||config.units.filter(x=>x.team==='A').length>=challenge().teamALimit)) {challengeInvalidMove('チャレンジの参加人数は1人までです。');return;}
         if (config.units.length >= 16) {
             toast('ユニットは最大16人です。');
             return;
@@ -1939,6 +1985,7 @@ async function onAction(act) {
         selected = v.id;
     }
     else if (a === 'clone-unit') {
+        if (challenge() && config.units.filter(x=>x.team==='A').length>=challenge().teamALimit) {challengeInvalidMove('チャレンジの参加人数が上限です。');return;}
         if (config.units.length >= 16) {
             toast('ユニットは最大16人です。');
             return;
@@ -1957,6 +2004,7 @@ async function onAction(act) {
         selected = v.id;
     }
     else if (a === 'delete-unit') {
+        if (challenge() && u.team==='B') {challengeInvalidMove();return;}
         if (config.units.filter(v => v.team === u.team).length <= 1) {
             toast('各チームに1人以上必要です。');
             return;
@@ -2040,14 +2088,17 @@ async function onAction(act) {
         return;
     }
     else if (a === 'export-result') {
+        if (challenge()) {toast('チャレンジでは敵の設定が含まれる戦闘結果JSONを出力できません。');return;}
         download('arcadia-battle-result.json', { ...sim.result(), config: sim.config });
         return;
     }
     else if (a === 'export-log') {
+        if (challenge()) {toast('チャレンジ中は敵AIの内部判定を含むログを書き出せません。');return;}
         download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}`).join('\n'), 'text/plain');
         return;
     }
     else if (a === 'reset-config') {
+        if (challenge()) {challengeInvalidMove('チャレンジを終了してから編成を初期化してください。');return;}
         if (!confirm('現在の設定を初期編成に戻します。必要なら先に設定を書き出してください。'))
             return;
         config = makeSample();
@@ -2095,7 +2146,7 @@ document.addEventListener('change', e => {
         selectedSlotIndex=n; slotsExpanded=true; render(); return;
     }
     if (el.matches('[data-slot-unit-select]')) {
-        if (config.units.some(item=>item.id===el.value)) {
+        if (config.units.some(item=>item.id===el.value && allowUnit(item))) {
             selected=el.value; slotsExpanded=true; render();
         }
         return;
@@ -2153,6 +2204,7 @@ document.addEventListener('change', e => {
         return;
     }
     if (el.matches('[data-unit]')) {
+        if (!allowUnit(u) || challenge() && el.dataset.unit==='team') {challengeInvalidMove();render();return;}
         const k = el.dataset.unit;
         u[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value;
         if (['x', 'y'].includes(k))
@@ -2183,6 +2235,7 @@ document.addEventListener('change', e => {
         return;
     }
     if (el.matches('[data-select-unit]')) {
+        if (!allowUnit(config.units.find(v=>v.id===el.value))) {challengeInvalidMove();render();return;}
         selected = el.value;
         render();
         return;
@@ -2535,6 +2588,7 @@ $('#character-json-import').addEventListener('change', async (e) => {
         const payload = JSON.parse(await f.text());
         const target = config.units.find(unit => unit.id === targetId);
         if (!target) throw Error('読み込み先のキャラクターが見つかりません。');
+        if (!allowUnit(target)) throw Error('チャレンジの敵キャラクターは変更できません。');
         const result = importUnitCharacter(config, targetId, payload);
         if (!confirm(`選択中の「${target.name}」を「${result.name}」の設定で置き換えます。\n能力値・固有効果・開始時BS・装備スキル・AIを読み込みます。\nチーム・初期座標と他のキャラクターは変更しません。\n続行しますか？`)) return;
         config = normalizeSettings(cleanWebConfiguration(result.config));
@@ -2567,6 +2621,7 @@ $('#unit-tactics-import').addEventListener('change', async (e) => {
         const target = config.units.find(u => u.id === targetId);
         if (!target)
             throw Error('読込先のキャラクターが見つかりません。');
+        if (!allowUnit(target)) throw Error('チャレンジの敵キャラクターは変更できません。');
         const outcome = importUnitTactics(config, targetId, payload);
         cleanWebConfiguration(outcome.config);
         normalizeMoveModes(outcome.config);
