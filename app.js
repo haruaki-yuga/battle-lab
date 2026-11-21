@@ -1,4 +1,4 @@
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.18&reactions=2&logfirst=1';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.18&reactions=2&logfirst=1&labels=0';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
@@ -28,7 +28,7 @@ import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
 import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.18';
 import { CHALLENGES, CHALLENGE_BOSS_ID, activeChallenge, canEditChallengeUnit, challengePartyValid, startChallenge, endChallenge } from './challenge-content.js?v=1.18.18';
-import { SERARA_REACTION_LINES, seraraReactionAt, seraraReactionByLog } from './challenge-reactions.js?v=1.18.18&logfirst=1';
+import { SERARA_REACTION_LINES, seraraReactionAt, seraraReactionByLog } from './challenge-reactions.js?v=1.18.18&logfirst=1&labels=0';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -958,17 +958,16 @@ function challengeReactionPanel() {
         {label:'試合開始前',text:SERARA_REACTION_LINES.start,key:'start'};
     return `<section id="serara-reaction-panel" class="serara-reaction-panel" aria-label="セララのリアクション">
         ${challengePortrait(ch,'serara-reaction-portrait')}
-        <div class="serara-reaction-content"><strong>甘咲 セララ <span id="serara-reaction-label">${esc(chosen?.label||'戦闘中')}</span></strong>
+        <div class="serara-reaction-content"><strong>甘咲 セララ</strong>
         <p id="serara-reaction-text" class="serara-reaction-bubble">${chosen?`「${esc(chosen.text)}」`:'戦闘中のリアクションをリプレイで確認できます。'}</p></div>
     </section>`;
 }
 function paintChallengeReaction() {
-    const text=$('#serara-reaction-text'),label=$('#serara-reaction-label');
-    if(!text||!label||challenge()?.id!=='serara-normal')return;
+    const text=$('#serara-reaction-text');
+    if(!text||challenge()?.id!=='serara-normal')return;
     const validBattle=sim?.config?.challenge?.id==='serara-normal'?sim:null;
     const picked=validBattle?seraraReactionAt(validBattle,frame,selectedLogId):
         {label:'試合開始前',text:SERARA_REACTION_LINES.start};
-    label.textContent=picked?.label||'戦闘中';
     text.textContent=picked?`「${picked.text}」`:'戦闘中のリアクションをリプレイで確認できます。';
 }
 
@@ -1064,8 +1063,8 @@ function logEntries() {
     // the beginning of long battles, even when the scrollbar was at the top.
     const opening = sim?.config?.challenge?.id === 'serara-normal' &&
         logTurn === 'all' && ['all','main'].includes(logType) &&
-        (!logSearch || (`${SERARA_REACTION_LINES.start} セララ 試合開始前`).includes(logSearch))
-        ? `<div class="log serara-start-log${selectedLogId===-1 && frame===0 ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="-1" data-act="select-log:-1" aria-pressed="${selectedLogId===-1 && frame===0}"><span class="time">開始前</span><span class="type">挨拶</span><div class="serara-log-reaction">${challengePortrait(challenge(),'serara-log-portrait')}<span><strong>セララ｜試合開始前</strong>「${esc(SERARA_REACTION_LINES.start)}」</span></div></div>` : '';
+        (!logSearch || (`${SERARA_REACTION_LINES.start} セララ 開始前 挨拶`).includes(logSearch))
+        ? `<div class="log serara-start-log${selectedLogId===-1 && frame===0 ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="-1" data-act="select-log:-1" aria-pressed="${selectedLogId===-1 && frame===0}"><span class="time">開始前</span><span class="type">挨拶</span><div class="serara-log-reaction">${challengePortrait(challenge(),'serara-log-portrait')}<span><strong>セララ</strong>「${esc(SERARA_REACTION_LINES.start)}」</span></div></div>` : '';
     const shown = logs.slice(0, logVisibleCount);
     return opening + shown.map(l => `<div class="log ${l.type}${selectedLogId === l.id ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="${l.id}" data-act="select-log:${l.id}" aria-pressed="${selectedLogId === l.id}">\
 <span class="time">T${String(l.turn).padStart(2, '0')}<span class="time-gauge">${['speed', 'sudden', 'suddenDamage'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}</span></span>\
@@ -1076,7 +1075,7 @@ function logEntries() {
         'weak',
         'status',
         'result'
-    ].includes(tag.kind) ? tag.kind : 'other'}">${esc(tag.label)}</span>`).join('')}</div>` : ''}${l.detail ? `<div class="detail">${esc(l.detail)}</div>` : ''}${(reactions.get(l.id)||[]).map(r=>`<div class="serara-log-reaction">${challengePortrait(challenge(),'serara-log-portrait')}<span><strong>セララ｜${esc(r.label)}</strong>「${esc(r.text)}」</span></div>`).join('')}</div>\
+    ].includes(tag.kind) ? tag.kind : 'other'}">${esc(tag.label)}</span>`).join('')}</div>` : ''}${l.detail ? `<div class="detail">${esc(l.detail)}</div>` : ''}${(reactions.get(l.id)||[]).map(r=>`<div class="serara-log-reaction">${challengePortrait(challenge(),'serara-log-portrait')}<span><strong>セララ</strong>「${esc(r.text)}」</span></div>`).join('')}</div>\
 </div>`).join('') + (!logs.length && !opening ? '<div class="empty">一致するログがありません。</div>' : '') + (logs.length > shown.length ? `<div class="log-load-more"><button type="button" data-act="log-more">続きを表示（${shown.length.toLocaleString()} / ${logs.length.toLocaleString()}件）</button></div>` : '');
 }
 // 長いBS一覧でHP/APバーが縦に押し広げられないようにする。
@@ -2162,8 +2161,8 @@ async function onAction(act) {
     }
     else if (a === 'export-log') {
         const reactions=challenge()?.id==='serara-normal' && sim?.config?.challenge?.id==='serara-normal' ? seraraReactionByLog(sim) : new Map();
-        const greeting=reactions.size||sim?.config?.challenge?.id==='serara-normal' ? `【セララ｜試合開始前】「${SERARA_REACTION_LINES.start}」\n` : '';
-        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + greeting + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}${(reactions.get(l.id)||[]).map(r=>`\n  【セララ｜${r.label}】「${r.text}」`).join('')}`).join('\n'), 'text/plain');
+        const greeting=reactions.size||sim?.config?.challenge?.id==='serara-normal' ? `【セララ】「${SERARA_REACTION_LINES.start}」\n` : '';
+        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + greeting + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}${(reactions.get(l.id)||[]).map(r=>`\n  【セララ】「${r.text}」`).join('')}`).join('\n'), 'text/plain');
         return;
     }
     else if (a === 'reset-config') {
