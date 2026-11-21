@@ -124,12 +124,10 @@ export function collectOfficialMetrics(teams,rawLogs,lastTurn) {
             }
             for(const pool of ['HP','AP']){
                 const current=after[pool],previous=before[pool];
-                const stated=number(log[pool==='HP'?'add_hp':'add_ap']);
-                // Prefer real snapshots; use an explicit nonzero add value when
-                // states are equal (some older/partial log formats).
-                const snapshotDelta=current!==null&&previous!=null?current-previous:null;
-                const delta=snapshotDelta==null ? (stated!==0?stated:null) :
-                    snapshotDelta!==0?snapshotDelta:(stated!==0?stated:0);
+                // A state log contains the resulting HP/AP, not proof of a heal.
+                // add_hp/add_ap may repeat, or describe a different kind of
+                // adjustment. Require two known snapshots before deriving a delta.
+                const delta=current!==null&&previous!=null?current-previous:null;
                 if(delta===0){
                     // 満タンなどで増加がなかった回復を後のスナップショットへ持ち越さない。
                     pendingHeals=pendingHeals.filter(heal=>
@@ -149,15 +147,17 @@ export function collectOfficialMetrics(teams,rawLogs,lastTurn) {
                     }
                     pendingDamage=null;
                 } else if(delta>0){
-                    // 回復を受けた本人の実増加量は、回復者が特定できなくても数える。
-                    add(row,pool==='HP'?'healReceivedHP':'healReceivedAP',delta);
-                    // 1つのスナップショットに複数人の回復が含まれても、それぞれの
-                    // 回復者へ実回復量を振り分ける。回復上限を超えた分は加算しない。
+                    // State increases alone are not proof of healing. Training
+                    // events can change max HP/AP or reset a phase without a heal.
+                    // Count only the increase verified by an explicit heal log.
+                    // The same verified amount belongs to both the recipient and
+                    // the healer. Never credit the uncorroborated remainder.
                     let remaining=delta;
                     for(const heal of pendingHeals){
                         if(heal.pool!==pool||String(heal.target)!==String(actor.id)||i-heal.index>15)continue;
                         const actual=Math.min(remaining,heal.amount);
                         if(actual>0){
+                            add(row,pool==='HP'?'healReceivedHP':'healReceivedAP',actual);
                             add(rows.get(String(heal.source)),pool==='HP'?'healGivenHP':'healGivenAP',actual);
                             remaining-=actual;
                         }

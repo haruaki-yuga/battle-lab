@@ -153,7 +153,7 @@ export function parseOfficialArenaResult(payload) {
     const {frames,logFrameIndices}=buildOfficialArenaReplay(teams,logs);
     logs.forEach((log,index)=>{ log.replayFrame=logFrameIndices[index]; });
     return {id:String(payload?.battleId ?? result.battle?.id ?? ''),
-        name:safe(result.battle?.name,140) || '公式闘技場の戦闘ログ',schemaVersion:6,teams,logs,lastTurn,mapSize,frames,
+        name:safe(result.battle?.name,140) || '公式闘技場の戦闘ログ',schemaVersion:7,teams,logs,lastTurn,mapSize,frames,
         statistics: collectOfficialMetrics(teams,original,lastTurn),
         counts:{turns:lastTurn,entries:logs.length}, source:'official',
         sourceUrl:(() => {
@@ -370,27 +370,48 @@ export function officialArenaDisplayGroups(logs,{mode='simple',members=[]}={}) {
     return groups;
 }
 
-export async function loadOfficialArenaViaWorker(url, workerUrl, fetchImpl=fetch) {
+// Keep a single deadline across both the response headers and JSON body.
+// The Worker may perform two sequential upstream lookups (up to 20s each).
+// Promise.race also settles if an injected fetch ignores AbortSignal.
+export async function loadOfficialArenaViaWorker(url, workerUrl, fetchImpl=fetch, timeoutMs=45000) {
     const location=officialArenaResultLocation(url);
     const id=location.battleId;
     const base=new URL(String(workerUrl||''));
     if (base.protocol!=='https:' || !base.hostname.endsWith('.workers.dev')) throw Error('WorkerのURL設定が正しくありません。');
-    let response;
+    const controller=new AbortController();
+    let timer;
+    const deadline=new Promise((_,reject)=>{
+        timer=setTimeout(()=>{
+            controller.abort();
+            reject(Object.assign(new Error('公式ログの取得がタイムアウトしました。時間をおいて再試行するか、「JSONから取込」をご利用ください。'),{name:'TimeoutError'}));
+        },timeoutMs);
+    });
+    let stage='fetch';
     try {
-        response=await fetchImpl(base.origin+'/arena/battle',{
-            method:'POST', mode:'cors',credentials:'omit',redirect:'error',cache:'no-store',referrerPolicy:'no-referrer',
-            headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify({url:location.url}),
-            signal:AbortSignal.timeout(25000)
-        });
-    } catch(e) {throw Error(e?.name==='TimeoutError'||e?.name==='AbortError'?'公式ログの取得がタイムアウトしました。':'Workerとの通信に失敗しました。');}
-    let payload;
-    try {payload=await response.json();}
-    catch {throw Error('公式ログの応答形式を読み込めませんでした。');}
-    if (!response.ok || payload?.ok!==true) throw Error(safe(payload?.error,250)||'公式闘技場のログを取得できませんでした。');
-    const parsed=parseOfficialArenaResult(payload);
-    parsed.id=id;
-    parsed.resultKind=location.kind;
-    parsed.sourceUrl=location.url;
-    return parsed;
+        const response=await Promise.race([
+            fetchImpl(base.origin+'/arena/battle',{
+                method:'POST', mode:'cors',credentials:'omit',redirect:'error',cache:'no-store',referrerPolicy:'no-referrer',
+                headers:{'Content-Type':'application/json','Accept':'application/json'},
+                body:JSON.stringify({url:location.url}), signal:controller.signal
+            }),deadline
+        ]);
+        stage='body';
+        const payload=await Promise.race([response.json(),deadline]);
+        stage='parse';
+        if (!response.ok || payload?.ok!==true)
+            throw Error(safe(payload?.error,250)||'公式闘技場のログを取得できませんでした。');
+        const parsed=parseOfficialArenaResult(payload);
+        parsed.id=id;
+        parsed.resultKind=location.kind;
+        parsed.sourceUrl=location.url;
+        return parsed;
+    } catch (error) {
+        if (error?.name==='TimeoutError'||error?.name==='AbortError')
+            throw Error('公式ログの取得がタイムアウトしました。時間をおいて再試行するか、「JSONから取込」をご利用ください。');
+        if (stage==='fetch') throw Error('Workerとの通信に失敗しました。');
+        if (stage==='body' && error?.name==='SyntaxError') throw Error('公式ログの応答形式を読み込めませんでした。');
+        throw error;
+    } finally {
+        clearTimeout(timer);
+    }
 }
