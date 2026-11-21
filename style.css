@@ -3356,3 +3356,9 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 .serara-log-reaction span{min-width:0;}
 .serara-log-reaction strong{display:block;font-size:11px;margin-bottom:2px;}
 @media(max-width:480px){.serara-reaction-panel{padding:10px;gap:9px;}.serara-reaction-portrait{width:54px;height:54px;}.serara-reaction-bubble{font-size:12px;padding:7px 9px;}}
+
+/* Read fight history from the start, loading the next page only on request. */
+.serara-start-log .serara-log-reaction{align-self:center;}
+.log-load-more{padding:14px 10px 18px;text-align:center;}
+.log-load-more button{width:min(100%,340px);padding:10px 15px;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink);font-weight:700;cursor:pointer;}
+.log-load-more button:hover{background:var(--green-light);}

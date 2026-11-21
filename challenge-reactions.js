@@ -58,6 +58,9 @@ export function buildSeraraReactions(battle) {
 export function seraraReactionAt(battle,frameIndex,selectedLogId=-1) {
     const events=buildSeraraReactions(battle);
     if(!events.length) return null;
+    // Opening log / first replay snapshot: allow the greeting to be revisited
+    // after the match, before T01 begins. Other events remain log-gated.
+    if(frameIndex===0 && selectedLogId===-1) return events[0];
     if(!battle.logs?.length) return events[0];
     const byLog=Number.isInteger(selectedLogId)&&selectedLogId>=0;
     // When two different log entries share a snapshot, log id is decisive.
