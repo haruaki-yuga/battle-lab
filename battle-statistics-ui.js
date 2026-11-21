@@ -34,7 +34,7 @@ function row(item) {
         nMetric('命中回数',item.hitLanded,'攻撃が回避されず命中した回数（複数対象は対象別）'),
         metric('命中率',percent(item.accuracyRate),'命中回数÷攻撃試行数'),
         nMetric('攻撃判定数',item.hitAttempts,'対象ごとに行った攻撃判定数')]),
-      group('ヒット段階',['G','L','C','H','S'].map((k,i)=>
+      group('ヒット判定',['G','L','C','H','S'].map((k,i)=>
         metric(['グレイズ','ライト','クリーン','ハード','スマッシュ'][i],hits?.[k] == null ? '—' : `${num(hits[k])}回`,
           ['グレイズ','ライト','クリーン','ハード','スマッシュ'][i]+'の命中回数'))),
       group('回避・防御・抵抗',[
@@ -53,7 +53,7 @@ function row(item) {
         nMetric('かばわれた回数',item.wasCovered,'誰かにかばわれた回数'),
         nMetric('ドラマ復活回数',item.drama,'ドラマ復活した回数'),
         metric('1d100出目平均',dec(item.diceAverage),'所属の特定できる1d100出目の平均'),
-        nMetric('1d100判定数',item.diceCount,'集計対象1d100判定数'),
+        nMetric('ダイスを振った回数',item.diceCount,'記録された1d100ダイスを振った回数'),
         nMetric('行動回数',item.actions,'行動を実行した回数'),
         nMetric('撃破数',item.defeats,'敵を戦闘不能にした回数')])
     ];

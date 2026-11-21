@@ -3274,3 +3274,31 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 .official-log-row .official-log-text>*{pointer-events:none}
 @media(max-width:850px){.official-replay-layout{display:flex;flex-direction:column;gap:12px}.official-replay-layout .replay-sidebar,.official-replay-layout .replay-log-panel{position:static;width:100%}}
 @media(max-width:420px){.official-replay-layout .panel-body{padding:9px}.official-replay-controls button{font-size:11px;padding:6px 4px}.official-log-row[data-act]{font-size:11px}}
+
+/* v1.18.9: large BS stacks stay compact beside the replay HP/AP bars. */
+.replay-bs-overflow { margin: 6px 0 2px; min-width: 0; }
+.replay-bs-overflow > summary {
+  display: inline-block;
+  max-width: 100%;
+  padding: 4px 7px;
+  border: 1px solid var(--line, #dce6df);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface, #f7faf8);
+  font-size: 11px;
+  line-height: 1.4;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  list-style: none;
+}
+.replay-bs-overflow > summary::-webkit-details-marker { display: none; }
+.replay-bs-overflow > summary::before { content: '▸ '; }
+.replay-bs-overflow[open] > summary::before { content: '▾ '; }
+.replay-bs-overflow > summary:focus-visible { outline: 2px solid var(--accent, #499874); outline-offset: 2px; }
+.replay-bs-overflow-list {
+  max-height: 140px;
+  overflow-y: auto;
+  align-content: flex-start;
+  padding: 4px 2px;
+  scrollbar-gutter: stable;
+}

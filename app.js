@@ -1,19 +1,19 @@
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.8';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.9';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
 import { deleteUnitSafely } from './unit-management.js?v=1.18';
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.8';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.9';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.18.8';
+import { Battle, clamp } from './engine.js?v=1.18.9';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
-import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.8';
-import { loadOfficialArenaViaWorker, officialArenaStatistics, officialArenaVisibleLog } from './official-arena-log.js?v=1.18.8';
+import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.9';
+import { loadOfficialArenaViaWorker, officialArenaStatistics, officialArenaVisibleLog } from './official-arena-log.js?v=1.18.9';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.8';
-import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.8';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.9';
+import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.9';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
 import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18';
 import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.18';
@@ -142,7 +142,7 @@ selectedLogId = savedUi.selectedLogId;
 logScrollTop = savedUi.logScrollTop;
 let lastReplayRef = sim, lastReplayTurn = sim?.turn ?? -1;
 const OFFICIAL_BATTLE_STATE_KEY = 'battle-lab-official-arena-log-v1';
-let officialArena = (() => { try { const cached=JSON.parse(sessionStorage.getItem(OFFICIAL_BATTLE_STATE_KEY) || 'null'); return cached?.schemaVersion === 4 ? cached : null; } catch { return null; } })();
+let officialArena = (() => { try { const cached=JSON.parse(sessionStorage.getItem(OFFICIAL_BATTLE_STATE_KEY) || 'null'); return cached?.schemaVersion === 5 ? cached : null; } catch { return null; } })();
 let officialArenaUrl = officialArena?.id ? `https://rev2.reversion.jp/arena/battle/${officialArena.id}` : '';
 let officialArenaTurn = 'all', officialArenaLoading = false;
 let officialFrameIndex = null, officialPlaying = false, officialPlaybackTimer = null, officialScrollFrame = 0;
@@ -267,7 +267,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.8</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.8</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.9</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.9</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && (sim || officialArena) ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -977,6 +977,21 @@ function logEntries() {
     ].includes(tag.kind) ? tag.kind : 'other'}">${esc(tag.label)}</span>`).join('')}</div>` : ''}${l.detail ? `<div class="detail">${esc(l.detail)}</div>` : ''}</div>\
 </div>`).join('') + (!logs.length ? '<div class="empty">一致するログがありません。</div>' : '') + (logs.length > 700 ? '<p class="footnote">表示は最新700件です。全件はログ書き出しから保存できます。</p>' : '');
 }
+// 長いBS一覧でHP/APバーが縦に押し広げられないようにする。
+// 通常の再生と公式戦闘の再生の両方で共通使用する。
+function replayBsStatus(bs) {
+    const active=(Array.isArray(bs)?bs:[]).filter(b=>b && b.remaining>0);
+    if(!active.length)return '';
+    if(active.length<=5)return `<div class="skill-tags">${active.map(b=>pill(bsStatusLabel(b),'gold')).join('')}</div>`;
+    const grouped=new Map();
+    for(const b of active){
+        const label=bsStatusLabel(b);
+        grouped.set(label,(grouped.get(label)||0)+1);
+    }
+    const tags=[...grouped].map(([label,count])=>pill(count>1?`${label} ×${count}`:label,'gold')).join('');
+    const types=new Set(active.map(b=>b.name)).size;
+    return `<details class="replay-bs-overflow"><summary>BS ${active.length}個（${types}種類）を表示</summary><div class="skill-tags replay-bs-overflow-list">${tags}</div></details>`;
+}
 function replayUnits(units) {
     return `<div class="combatants replay-teams">${groupReplayUnitsByTeam(units).map(({ team, units: members }) => `<section class="replay-team ${team === 'B' ? 'enemy' : ''}" aria-label="TEAM ${team}のユニットの状態">\
 <div class="replay-team-head"><strong>TEAM ${team} <span>${team === 'A' ? '自チーム' : '相手チーム'}</span>\
@@ -988,7 +1003,7 @@ function replayUnits(units) {
 <span>AP ${u.ap==null?'—':nf(u.ap)}${u.maxAp==null?'':` / ${nf(u.maxAp)}`}</span>${u.barrier > 0 ? `<span class="replay-barrier">障壁 ${nf(u.barrier)}</span>` : ''}\
 </div><div class="hpbar"><i style="width:${u.hp!=null&&u.maxHp>0?clamp(u.hp / u.maxHp * 100, 0, 100):0}%">\
 </i></div><div class="apbar"><i style="width:${u.ap!=null&&u.maxAp>0 ? clamp(u.ap / u.maxAp * 100, 0, 100) : 0}%">\
-</i></div><p class="subtle">${Number.isFinite(u.x)&&Number.isFinite(u.y)?`座標 (${u.x.toFixed(1)}, ${u.y.toFixed(1)}) m`:'座標情報なし'}</p>${u.bs.length ? `<div class="skill-tags">${u.bs.filter(b => b.remaining > 0).map(b => pill(bsStatusLabel(b), 'gold')).join('')}</div>` : ''}</div>\
+</i></div><p class="subtle">${Number.isFinite(u.x)&&Number.isFinite(u.y)?`座標 (${u.x.toFixed(1)}, ${u.y.toFixed(1)}) m`:'座標情報なし'}</p>${replayBsStatus(u.bs)}</div>\
 <div class="damage">${nf(u.damageDealt)}<small>\
 与ダメージ</small></div></div>`).join('') || '<p class="subtle replay-team-empty">ユニットはいません。</p>'}</div>\
 </section>`).join('')}</div>`;

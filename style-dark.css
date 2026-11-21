@@ -341,3 +341,9 @@ html[data-theme="dark"] .passive-timed-step > span{color:#b8cbd9}
 html[data-theme="dark"] .unit-stats-detail,html[data-theme="dark"] .official-team,html[data-theme="dark"] .official-delta{background:#202933;color:var(--ink);border-color:var(--line)}
 html[data-theme="dark"] .stat-metric,html[data-theme="dark"] .official-log-row.state{background:#26313c;color:var(--ink)}
 html[data-theme="dark"] .stat-team.enemy{color:#efa998}
+
+html[data-theme="dark"] .replay-bs-overflow > summary {
+  background: #202933;
+  border-color: #3d4b58;
+  color: #e1e8eb;
+}

@@ -94,7 +94,7 @@ export function parseOfficialArenaResult(payload) {
     const {frames,logFrameIndices}=buildOfficialArenaReplay(teams,logs);
     logs.forEach((log,index)=>{ log.replayFrame=logFrameIndices[index]; });
     return {id:String(payload?.battleId ?? result.battle?.id ?? ''),
-        name:safe(result.battle?.name,140) || '公式闘技場の戦闘ログ',schemaVersion:4,teams,logs,lastTurn,mapSize,frames,
+        name:safe(result.battle?.name,140) || '公式闘技場の戦闘ログ',schemaVersion:5,teams,logs,lastTurn,mapSize,frames,
         statistics: collectOfficialMetrics(teams,original,lastTurn),
         counts:{turns:lastTurn,entries:logs.length}, source:'official'};
 }

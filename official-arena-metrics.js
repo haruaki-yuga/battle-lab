@@ -39,11 +39,17 @@ function damageEvent(str){
         self:/反動|自傷|自身|毒|炎上|出血|BSによる|によりHPに/.test(str)};
 }
 function healEvent(str){
-    if(!/回復/.test(str))return null;
+    // BSの回復判定とHP/APの実回復は別物。プラス表示の公式ログにも対応。
+    if(!/回復|\b(?:HP|AP)\s*[＋+]/.test(str))return null;
+    const poolMatch=str.match(/(?:HP|AP)/);
+    if(!poolMatch)return null;
+    const pool=poolMatch[0];
     const match=str.match(/(?:HP|AP)を\s*([\d,]+)\s*回復/)
+        ||str.match(/(?:HP|AP)\s*[＋+]\s*([\d,]+)/)
+        ||str.match(/(?:HP|AP)が?\s*([\d,]+)\s*(?:の)?回復/)
         ||str.match(/([\d,]+)\s*(?:の)?(?:HP|AP)を?回復/);
     if(!match)return null;
-    return {amount:Number(match[1].replaceAll(',','')),pool:/AP|充填/.test(str)?'AP':'HP'};
+    return {amount:Number(match[1].replaceAll(',','')),pool};
 }
 function bsNames(str){
     if(!/BS[『「]/.test(str))return [];
@@ -84,7 +90,7 @@ export function collectOfficialMetrics(teams,rawLogs,lastTurn) {
         })) if(present[presentKey])for(const key of keys)row[key]=0;
         if(present.ranks)row.hitRanks={G:0,L:0,C:0,H:0,S:0};
     }
-    let active=null,lastTarget=null,pendingDamage=null,pendingHeal=null,turnMarker=-1;
+    let active=null,lastTarget=null,pendingDamage=null,pendingHeals=[],turnMarker=-1;
     // Events are chronological. Damage/heal descriptions precede the next
     // state snapshot; source action and target are stored only within this turn.
     for(let i=0;i<rawLogs.length;i++){
@@ -92,7 +98,7 @@ export function collectOfficialMetrics(teams,rawLogs,lastTurn) {
         const actor=byId.get(String(log.entry_id??''));
         const row=actor&&rows.get(String(actor.id));
         const msg=content(log),turn=number(log.turn)??0;
-        if(turn!==turnMarker){active=null;lastTarget=null;pendingDamage=null;pendingHeal=null;turnMarker=turn;}
+        if(turn!==turnMarker){active=null;lastTarget=null;pendingDamage=null;pendingHeals=[];turnMarker=turn;}
         const isState=log.hp!==undefined||log.ap!==undefined||log.max_hp!==undefined;
         if(isState){
             if(!actor)continue;
@@ -106,7 +112,13 @@ export function collectOfficialMetrics(teams,rawLogs,lastTurn) {
                 const snapshotDelta=current!==null&&previous!=null?current-previous:null;
                 const delta=snapshotDelta==null ? (stated!==0?stated:null) :
                     snapshotDelta!==0?snapshotDelta:(stated!==0?stated:0);
-                if(delta==null||delta===0)continue;
+                if(delta===0){
+                    // 満タンなどで増加がなかった回復を後のスナップショットへ持ち越さない。
+                    pendingHeals=pendingHeals.filter(heal=>
+                        heal.pool!==pool||String(heal.target)!==String(actor.id));
+                    continue;
+                }
+                if(delta==null)continue;
                 const damage=pendingDamage;
                 if(delta<0&&damage?.pool===pool&&damage.target===actor.id&&i-damage.index<=15){
                     const amount=-delta;
@@ -119,21 +131,32 @@ export function collectOfficialMetrics(teams,rawLogs,lastTurn) {
                     }
                     pendingDamage=null;
                 } else if(delta>0){
+                    // 回復を受けた本人の実増加量は、回復者が特定できなくても数える。
                     add(row,pool==='HP'?'healReceivedHP':'healReceivedAP',delta);
-                    const heal=pendingHeal;
-                    if(heal?.pool===pool&&heal.target===actor.id&&i-heal.index<=15){
-                        const giver=rows.get(String(heal.source));
-                        if(giver)add(giver,pool==='HP'?'healGivenHP':'healGivenAP',delta);
-                        pendingHeal=null;
+                    // 1つのスナップショットに複数人の回復が含まれても、それぞれの
+                    // 回復者へ実回復量を振り分ける。回復上限を超えた分は加算しない。
+                    let remaining=delta;
+                    for(const heal of pendingHeals){
+                        if(heal.pool!==pool||String(heal.target)!==String(actor.id)||i-heal.index>15)continue;
+                        const actual=Math.min(remaining,heal.amount);
+                        if(actual>0){
+                            add(rows.get(String(heal.source)),pool==='HP'?'healGivenHP':'healGivenAP',actual);
+                            remaining-=actual;
+                        }
+                        if(!remaining)break;
                     }
                 }
+                // 同じHP/AP状態を確認した回復イベントは消費する。
+                // 満タンで回復できなかった場合、後の増加を誤計上しない。
+                pendingHeals=pendingHeals.filter(heal=>
+                    heal.pool!==pool||String(heal.target)!==String(actor.id));
             }
             snapshots.set(String(actor.id),{HP:after.HP??before.HP??null,AP:after.AP??before.AP??null});
             continue;
         }
         if(type==='SKILL_INFO'){
             active={actor:actor?.id,turn,attackCounted:false};
-            lastTarget=null;pendingDamage=null;pendingHeal=null;
+            lastTarget=null;pendingDamage=null;pendingHeals=[];
             add(row,'actions');
             continue;
         }
@@ -221,8 +244,14 @@ export function collectOfficialMetrics(teams,rawLogs,lastTurn) {
         const heal=healEvent(msg);
         if(heal&& ['EFFECT','HEAL','RECOVERY','ACTION','NORMAL'].includes(type)){
             const target=explicitTarget(msg,members)||actor;
-            if(target&&heal.amount>0)pendingHeal={index:i,pool:heal.pool,target:target.id,
-                source:actor?.id??active?.actor};
+            // 充填・再生は本人の回復。対象が明記された回復スキルは
+            // 行動者を回復者とし、各対象のイベントを個別に保持する。
+            const automatic=/充填|再生/.test(msg);
+            const source=automatic ? target?.id :
+                (actor?.id===target?.id&&active?.actor&&active.actor!==target?.id
+                    ? active.actor : (actor?.id??active?.actor));
+            if(target&&heal.amount>0)pendingHeals.push({index:i,pool:heal.pool,
+                target:target.id,source,amount:heal.amount});
         }
     }
     const turns=Math.max(1,Number(lastTurn)||1);
