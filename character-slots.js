@@ -1,6 +1,6 @@
 /** Browser-local character snapshots, independent from active team configuration. */
-import { clone, freshUnit, arrangeInitialPositions, validateConfig } from './model.js?v=1.18.6';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.6';
+import { clone, freshUnit, arrangeInitialPositions, validateConfig } from './model.js?v=1.18.19';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.19';
 
 export const CHARACTER_SLOT_COUNT = 10;
 export const CHARACTER_SLOT_STORAGE_KEY = 'arcadia-battle-lab-character-slots-v1';

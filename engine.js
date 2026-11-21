@@ -1,7 +1,7 @@
 import { conditionalPassiveModifier, conditionalPassiveEffectModifier } from './conditional-passives.js?v=1.18';
 import { normalizeSettings, runSeed } from './run-settings.js';
 import { freshBattleStatistics, finishBattleStatistics, HIT_RANK_KEYS } from './battle-statistics.js?v=1.18.6';
-import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js?v=1.18.6';
+import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js?v=1.18.19';
 import { scoreDraw } from './battle-summary.js';
 import { selectDiskDestination } from './movement-disk.js';
 import { bsLogLabel } from './combat-log-format.js';

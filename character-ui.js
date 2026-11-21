@@ -1,7 +1,7 @@
 import { conditionalPassiveDescription } from './conditional-passives.js?v=1.18';
-import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateConfig } from './model.js';
-import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js?v=1.18';
-import { deduplicateImportedSkills } from './skill-dedup.js';
+import { STAT_LABELS, EFFECTS, RANGES, clone, arrangeInitialPositions, validateConfig } from './model.js?v=1.18.19';
+import { parseCharacterURL, parseCharacterData, createImportedUnit } from './character-import.js?v=1.18.19';
+import { deduplicateImportedSkills } from './skill-dedup.js?v=1.18.19';
 import { DEFAULT_CHARACTER_WORKER_URL } from './character-api-config.js';
 import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js';
 import { elementLevel } from './element-bonus.js?v=1.18';

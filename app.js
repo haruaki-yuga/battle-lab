@@ -1,34 +1,34 @@
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.18&reactions=2&logfirst=1&labels=0';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.19&reactions=2&logfirst=1&labels=0';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
-import { deleteUnitSafely } from './unit-management.js?v=1.18';
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.18';
+import { deleteUnitSafely } from './unit-management.js?v=1.18.19';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.19';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
-import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.18.18';
+import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js?v=1.18.19';
+import { Battle, clamp } from './engine.js?v=1.18.19';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
-import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.18';
-import { loadOfficialArenaViaWorker, parseOfficialArenaResult, officialArenaResultLocation, officialArenaStatistics, officialArenaDisplayGroups, officialArenaLogTypeLabel } from './official-arena-log.js?v=1.18.18';
-import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.18';
-import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.18';
-import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
-import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18';
+import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.19';
+import { loadOfficialArenaViaWorker, parseOfficialArenaResult, officialArenaResultLocation, officialArenaStatistics, officialArenaDisplayGroups, officialArenaLogTypeLabel } from './official-arena-log.js?v=1.18.19';
+import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js?v=1.18.19';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.19';
+import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.19';
+import { parseArenaHtml, importArenaTactics } from './arena-html-import.js?v=1.18.19';
+import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18.19';
 import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.18';
-import { buildOfficialArenaActions } from './arena-share-export.js?v=1.18';
+import { buildOfficialArenaActions } from './arena-share-export.js?v=1.18.19';
 import { ARENA_SHARED_WORKER_URL } from './arena-worker-config.js?v=1.18';
 import { normalizeSettings } from './run-settings.js';
-import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js';
+import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js?v=1.18.19';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
-import { createCharacterImporter } from './character-ui.js?v=1.18.18';
+import { createCharacterImporter } from './character-ui.js?v=1.18.19';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
 import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.18';
-import { CHALLENGES, CHALLENGE_BOSS_ID, activeChallenge, canEditChallengeUnit, challengePartyValid, startChallenge, endChallenge } from './challenge-content.js?v=1.18.18';
-import { SERARA_REACTION_LINES, seraraReactionAt, seraraReactionByLog } from './challenge-reactions.js?v=1.18.18&logfirst=1&labels=0';
+import { CHALLENGES, CHALLENGE_BOSS_ID, activeChallenge, canEditChallengeUnit, challengePartyValid, startChallenge, endChallenge } from './challenge-content.js?v=1.18.19';
+import { SERARA_REACTION_LINES, seraraReactionAt, seraraReactionByLog } from './challenge-reactions.js?v=1.18.19&logfirst=1&labels=0';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -281,7 +281,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.18</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.18</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.19</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.19</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && (sim || officialArena) ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -294,7 +294,7 @@ const heading = (eyebrow, title, subtitle, buttons = '', actionClass = '') => `<
 <div class="btnrow ${esc(actionClass)}">${buttons}</div>\
 </div>`;
 const pill = (text, cls = '') => `<span class="pill ${cls}">${esc(text)}</span>`;
-// v1.18.18: locally bundled pixel-art boss portrait; no enemy stats or AI are exposed.
+// v1.18.19: locally bundled pixel-art boss portrait; no enemy stats or AI are exposed.
 function challengePortrait(challengeEntry, extraClass = '') {
     return challengeEntry?.icon
         ? `<img class="challenge-portrait ${esc(extraClass)}" src="${esc(challengeEntry.icon)}" width="48" height="48" alt="" loading="lazy" decoding="async">`

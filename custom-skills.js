@@ -1,5 +1,5 @@
 import { CATALOG } from './catalog.js';
-import { clone, uid } from './model.js';
+import { clone, uid } from './model.js?v=1.18.19';
 import { normalizeLegacyBarrierConfig, normalizeLegacyBarrierSkill } from './barrier-rules.js';
 // WIKI originals are protected. The nine historical demo skills are removed on migration.
 const WIKI_IDS = new Set(CATALOG.map(skill => skill.id));
@@ -97,6 +97,7 @@ export function deleteCustomSkill(config, skillId) {
         // Remove character-specific presentation when its definition is deleted.
         if (unit.specializedSkills) delete unit.specializedSkills[skillId];
         if (unit.skillAliases) delete unit.skillAliases[skillId];
+        if (unit.officialSkillIds) delete unit.officialSkillIds[skillId];
         for (const rule of unit.rules) {
             if (rule.action === 'skill' && rule.skillId === skillId) {
                 rule.action = 'attack';

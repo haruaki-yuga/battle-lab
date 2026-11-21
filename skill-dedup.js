@@ -1,3 +1,4 @@
+import { pruneOrphanOfficialSkillIds } from './model.js?v=1.18.19';
 /**
  * Combat-equivalent active skills share a global skill ID even when the public
  * character page uses a specialized display name. Names are unit-scoped, not
@@ -145,6 +146,7 @@ export function deduplicateImportedSkills(config) {
         for (const unit of config.units) {
             const aliases = { ...(unit.skillAliases || {}) };
             const specialized = { ...(unit.specializedSkills || {}) };
+            const officialSkillIds = { ...(unit.officialSkillIds || {}) };
             for (const oldId of unit.skills || []) {
                 const replacement = replacements.get(oldId);
                 if (!replacement)
@@ -160,8 +162,34 @@ export function deduplicateImportedSkills(config) {
                         note: original?.note || '', original: original?.original || ''
                     };
                 }
+                // A reused WIKI/canonical skill must keep this character's original
+                // official ID. Otherwise a subsequent validation sees a dangling key.
+                if (Object.hasOwn(officialSkillIds, oldId)) {
+                    if (!Object.hasOwn(officialSkillIds, replacement.id))
+                        officialSkillIds[replacement.id] = officialSkillIds[oldId];
+                    delete officialSkillIds[oldId];
+                }
                 delete specialized[oldId];
                 delete aliases[oldId];
+            }
+            // Unequipped imported skills can also carry historic source IDs.
+            // Their legacy IDs must follow the canonicalized definition.
+            for (const [oldId, replacement] of replacements) {
+                if (Object.hasOwn(officialSkillIds, oldId)) {
+                    if (!Object.hasOwn(officialSkillIds, replacement.id))
+                        officialSkillIds[replacement.id] = officialSkillIds[oldId];
+                    delete officialSkillIds[oldId];
+                }
+                if (Object.hasOwn(aliases, oldId)) {
+                    if (!Object.hasOwn(aliases, replacement.id))
+                        aliases[replacement.id] = aliases[oldId];
+                    delete aliases[oldId];
+                }
+                if (Object.hasOwn(specialized, oldId)) {
+                    if (!Object.hasOwn(specialized, replacement.id))
+                        specialized[replacement.id] = specialized[oldId];
+                    delete specialized[oldId];
+                }
             }
             if (Array.isArray(unit.skills))
                 unit.skills = [...new Set(unit.skills.map(id => replacements.get(id)?.id || id))];
@@ -170,8 +198,12 @@ export function deduplicateImportedSkills(config) {
                     rule.skillId = replacements.get(rule.skillId).id;
             unit.skillAliases = aliases;
             unit.specializedSkills = specialized;
+            unit.officialSkillIds = officialSkillIds;
         }
     }
+    // Repair legacy saved mappings that refer to already-deleted definitions.
+    // Do not drop IDs solely because their skill is currently unequipped.
+    pruneOrphanOfficialSkillIds(config);
     migrateSpecializedSkillMetadata(config);
     return { config, removed: replacements.size, converted };
 }

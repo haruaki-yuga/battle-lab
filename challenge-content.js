@@ -1,8 +1,8 @@
 // v1.18.15: challenge catalog. The boss is intentionally not exposed via character/AI editors.
 // Challenge data is bundled client-side to run the offline simulation. This is a UI lock,
 // not cryptographic secrecy against users inspecting downloaded JavaScript.
-import { clone, freshUnit, freshRule, freshCondition, validateConfig } from './model.js?v=1.18.14';
-import { importUnitCharacter } from './unit-character-io.js?v=1.18.14';
+import { clone, freshUnit, freshRule, freshCondition, validateConfig } from './model.js?v=1.18.19';
+import { importUnitCharacter } from './unit-character-io.js?v=1.18.19';
 
 export const CHALLENGE_BOSS_ID = 'challenge-serara-normal-boss';
 export const CHALLENGES = Object.freeze([

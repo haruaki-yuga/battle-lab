@@ -1,6 +1,6 @@
 // Battle Lab -> owner-operated Cloudflare Worker -> official authenticated Arena API.
 // No admin token is used on the public endpoint. Official credentials remain in Worker Secrets.
-import { validateArenaShareCode, extractSharedArenaActions } from './arena-share-import.js?v=1.17.18';
+import { validateArenaShareCode, extractSharedArenaActions } from './arena-share-import.js?v=1.18.19';
 
 export function normalizeArenaWorkerUrl(input) {
     let url;

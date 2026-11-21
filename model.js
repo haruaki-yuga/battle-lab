@@ -507,6 +507,29 @@ export function allocateDefaultUnitName(config, team) {
     return `${prefix}${next}`;
 }
 
+/**
+ * Remove only orphaned official skill IDs that no longer refer to any skill
+ * definition.  Unequipped skills retain their source IDs so a later re-equip
+ * can still export the official arena AI without losing its original mapping.
+ * Malformed values remain untouched so validateConfig can report them.
+ */
+export function pruneOrphanOfficialSkillIds(config) {
+    if (!Array.isArray(config?.units) || !Array.isArray(config?.skills)) return 0;
+    const available = new Set(config.skills.map(skill => skill.id));
+    let removed = 0;
+    for (const unit of config.units) {
+        const mapping = unit.officialSkillIds;
+        if (!mapping || typeof mapping !== 'object' || Array.isArray(mapping)) continue;
+        for (const id of Object.keys(mapping)) {
+            if (!available.has(id)) {
+                delete mapping[id];
+                removed++;
+            }
+        }
+    }
+    return removed;
+}
+
 export const clone = o => JSON.parse(JSON.stringify(o));
 export function validateConfig(c) {
     const errors = [];
@@ -574,7 +597,7 @@ export function validateConfig(c) {
             errors.push(`${u.name}: 存在しないスキルが装備されています。`);
         if (u.officialSkillIds !== undefined && (!u.officialSkillIds ||
             typeof u.officialSkillIds !== 'object' || Array.isArray(u.officialSkillIds) ||
-            Object.entries(u.officialSkillIds).some(([id, original]) => !u.skills.includes(id) ||
+            Object.entries(u.officialSkillIds).some(([id, original]) => !ids.has(id) ||
                 typeof original !== 'string' || !original || original.length > 200)))
             errors.push(`${u.name}: 公式スキルIDの対応情報が不正です。`);
         if (u.specializedSkills !== undefined) {

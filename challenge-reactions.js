@@ -1,6 +1,6 @@
 // Presentation-only scripted lines for the Serara Normal challenge.
 // These are derived from resolved engine logs; combat outcomes and AI are unchanged.
-import {CHALLENGE_BOSS_ID} from './challenge-content.js';
+import {CHALLENGE_BOSS_ID} from './challenge-content.js?v=1.18.19';
 
 export const SERARA_REACTION_LINES=Object.freeze({
     start:'甘味騎士セララだよ。よろしくねっ',

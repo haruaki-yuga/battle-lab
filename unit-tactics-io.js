@@ -1,6 +1,6 @@
 import { CATALOG } from './catalog.js';
 import { normalizeLegacyBarrierSkill } from './barrier-rules.js';
-import { clone, uid, validateConfig } from './model.js';
+import { clone, uid, validateConfig } from './model.js?v=1.18.19';
 export const UNIT_TACTICS_FORMAT = 'rosuaka-unit-tactics';
 export const UNIT_TACTICS_VERSION = 1;
 const WIKI_IDS = new Set(CATALOG.map(s => s.id));
@@ -40,7 +40,8 @@ export function exportUnitTactics(config, unitId) {
         customSkills: definitions,
         skillAliases: clone(unit.skillAliases || {}),
         specializedSkills: clone(unit.specializedSkills || {}),
-        officialSkillIds: clone(unit.officialSkillIds || {})
+        officialSkillIds: Object.fromEntries(Object.entries(unit.officialSkillIds || {})
+            .filter(([id]) => unit.skills.includes(id)))
     };
 }
 /** Import without touching stats, team, position, or any other unit's equipment/AI. */
@@ -67,7 +68,7 @@ export function importUnitTactics(config, targetId, data) {
     if (data.officialSkillIds !== undefined && (!data.officialSkillIds ||
         typeof data.officialSkillIds !== 'object' || Array.isArray(data.officialSkillIds) ||
         Object.entries(data.officialSkillIds).some(([id, originalId]) =>
-            !data.skills.includes(id) || typeof originalId !== 'string' || !originalId || originalId.length > 200)))
+            !isStringId(id) || typeof originalId !== 'string' || !originalId || originalId.length > 200)))
         throw Error('公式スキルIDの対応情報が不正です。');
     if (data.rules.some(r => !r || typeof r !== 'object' || Array.isArray(r)))
         throw Error('キャラAIルールの形式が不正です。');
@@ -117,8 +118,13 @@ export function importUnitTactics(config, targetId, data) {
     dst.skills = data.skills.map(id => idMap.get(id) || id);
     dst.skillAliases = Object.fromEntries(Object.entries(data.skillAliases || {}).map(([id, name]) => [idMap.get(id) || id, name]));
     dst.specializedSkills = Object.fromEntries(Object.entries(data.specializedSkills || {}).map(([id, detail]) => [idMap.get(id) || id, clone(detail)]));
-    dst.officialSkillIds = Object.fromEntries(Object.entries(data.officialSkillIds || {})
-        .map(([id, original]) => [idMap.get(id) || id, original]));
+    // Older exports could include mappings for unequipped or since-deleted
+    // skills. Retain known source IDs, but never introduce dangling IDs.
+    const availableSkillIds = new Set(result.skills.map(s => s.id));
+    const mappedOfficialIds = Object.entries(data.officialSkillIds || {})
+        .map(([id, original]) => [idMap.get(id) || id, original]);
+    const ignoredOfficialIds = mappedOfficialIds.filter(([id]) => !availableSkillIds.has(id));
+    dst.officialSkillIds = Object.fromEntries(mappedOfficialIds.filter(([id]) => availableSkillIds.has(id)));
     // Old tactic exports only had aliases; preserve those as per-unit records.
     for (const [id, name] of Object.entries(dst.skillAliases)) {
         const s = result.skills.find(s => s.id === id);
@@ -126,6 +132,8 @@ export function importUnitTactics(config, targetId, data) {
             dst.specializedSkills[id] = { name, baseName: s.baseName || s.name };
     }
     const warnings = [];
+    if (ignoredOfficialIds.length)
+        warnings.push(`存在しないスキルの公式ID対応 ${ignoredOfficialIds.length}件を無視しました。`);
     dst.rules = clone(data.rules).map(r => {
         r.id = uid('r');
         if (r.action === 'skill' && idMap.has(r.skillId))
