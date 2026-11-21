@@ -3309,3 +3309,13 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 
 .official-replay-layout .official-log-row.official-log-judge {padding-left:16px;}
 .official-replay-layout .official-log-judge .official-log-kind {font-weight:600;}
+
+/* v1.18.11: readable official-log modes and compact action/roll grouping */
+.official-log-title .official-log-mode-field{width:min(180px,100%)}
+.official-log-brief{display:block;margin-top:3px;color:var(--muted);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.official-log-merged{display:block;margin-top:5px;padding:3px 0 0 10px;border-left:2px solid var(--line)}
+.official-log-subrow{display:block;padding:4px 0;overflow-wrap:anywhere}
+.official-log-subrow>b{font-size:10px;font-weight:650;color:var(--muted);margin-right:8px}
+.official-log-subrow>span{display:inline}
+.official-log-subrow>small{display:block;color:var(--muted);font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:420px){.official-log-title .official-log-mode-field{flex:1 1 45%;min-width:130px}}

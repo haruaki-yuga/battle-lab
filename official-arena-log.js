@@ -44,7 +44,7 @@ const OFFICIAL_LOG_TYPE_LABELS = Object.freeze({
     DEAL_DAMAGE:'ダメージ発生',
     DAMAGE:'反動・状態異常などのダメージ',
     EFFECT:'効果の発生',
-    EFFECT_TRIGGER:'特殊効果の発動判定',
+    EFFECT_TRIGGER:'BS発動判定',
     AUTO_MOVE:'自動位置取り',
     MESSAGE_ONLY:'戦闘中のお知らせ',
     DRAMA_ROLL:'ドラマ判定',
@@ -197,6 +197,149 @@ export function officialArenaVisibleLog(logs) {
         if(!isMain){
             group.totalDetails++;
             group.details.push(log); // do not silently drop rows over 240
+        }
+    }
+    return groups;
+}
+
+// v1.18.11: presentation-only grouping for the imported official timeline.
+// The raw logs, statistics and replay frames remain unchanged. Never discard
+// events at import time: switching to 全表示 must not require a network request.
+const OFFICIAL_SIMPLE_HIDDEN = new Set([
+    'START_TURN_INFO','MID_TURN_INFO','END_TURN_INFO','END_BATTLE_INFO',
+    'ACTION_SELECT','ACTION_STARTED','AUTO_MOVE','END_BATTLE_DETAIL',
+    'HIT_TYPE_ROLL','REGIST_ROLL','BS_SHRINK_ROLL','DEF_ROLL',
+    'EFFECT_TRIGGER','SAME_SPD_ROLL','DRAMA_ROLL'
+]);
+const OFFICIAL_ALWAYS_HIDDEN = new Set(['START_TURN','SKILL_INFO','ACTION_FINISHED']);
+const numberInMessage = text => {
+    const m=String(text||'').match(/(?:HP|AP)に\s*([\d,]+)\s*(?:の)?ダメージ|(?:反動により|ダメージ)\s*([\d,]+)\s*ダメージ/);
+    return m ? Number((m[1]||m[2]).replaceAll(',','')) : null;
+};
+const damagePool = text => /APに/.test(String(text||'')) ? 'ap' : 'hp';
+function damageTargetByName(log,members) {
+    const text=String(log.text||'');
+    const m=/^(.+?)の(?:HP|AP)に[\d,]+\s*(?:の)?ダメージ/.exec(text);
+    if(!m)return null;
+    const shortName=m[1].trim();
+    const options=(members||[]).filter(u=>{
+        const name=String(u.name||'');
+        return name===shortName||name.startsWith(shortName+'・')||name.endsWith(' '+shortName)||name.endsWith('・'+shortName);
+    });
+    return options.length===1 ? options[0] : null;
+}
+function officialDamageTargets(logs,members) {
+    const result=new Map(),lastState=new Map();
+    for(let i=0;i<logs.length;i++){
+        const l=logs[i];
+        if(l.snapshot){lastState.set(String(l.entryId),l.snapshot);continue;}
+        if(l.type!=='DAMAGE'&&l.type!=='DEAL_DAMAGE')continue;
+        let target=damageTargetByName(l,members);
+        const text=String(l.text||'');
+        if(!target && l.type==='DAMAGE')
+            target=(members||[]).find(u=>String(u.id)===String(l.entryId));
+        if(!target){
+            const pool=damagePool(text),amount=numberInMessage(text),possibilities=[];
+            // The immediately following state records show the actual recipient;
+            // an AP skill cost on the attacker must not be confused with damage.
+            for(let j=i+1;j<Math.min(logs.length,i+26);j++){
+                const next=logs[j];
+                if(next.turn!==l.turn || (next.type==='DEAL_DAMAGE'||next.type==='DAMAGE'))break;
+                if(!next.snapshot)continue;
+                const prev=lastState.get(String(next.entryId));
+                const before=Number(prev?.[pool]),after=Number(next.snapshot[pool]);
+                if(!prev||!Number.isFinite(before)||!Number.isFinite(after)||before<=after)continue;
+                const delta=before-after;
+                if(amount!==null && delta!==amount)continue;
+                const member=(members||[]).find(u=>String(u.id)===String(next.entryId));
+                if(member && (l.type!=='DEAL_DAMAGE'||member.team!==members.find(u=>String(u.id)===String(l.entryId))?.team))possibilities.push(member);
+            }
+            if(possibilities.length===1)target=possibilities[0];
+            // For a single enemy, the official DEAL_DAMAGE event is explicitly
+            // opponent-directed even if a barrier prevents the HP/AP snapshot
+            // from decreasing. Do not guess among multiple opponents.
+            if(!target && l.type==='DEAL_DAMAGE'){
+                const source=(members||[]).find(u=>String(u.id)===String(l.entryId));
+                const opponents=(members||[]).filter(u=>source&&u.team!==source.team);
+                if(opponents.length===1)target=opponents[0];
+            }
+        }
+        if(target)result.set(l.id,target.name);
+    }
+    return result;
+}
+function judgeMeaning(log) {
+    const text=String(log.text||'').trim();
+    if(text)return text;
+    const roll=String(log.roll||'').trim();
+    return roll || '';
+}
+function evadeSummary(log) {
+    const text=String(log.text||''),roll=String(log.roll||'');
+    if(/クリティカル回避/.test(text))return 'クリティカル回避';
+    if(/ファンブル/.test(roll))return '回避ファンブル';
+    if(/回避[！!]|成功[！!]/.test(text+roll))return '回避成功';
+    if(/失敗[！!]/.test(text+roll))return '回避失敗';
+    return '回避判定';
+}
+export function officialArenaDisplayGroups(logs,{mode='simple',members=[]}={}) {
+    const full=mode==='all', groups=[],byTurn=new Map();
+    const damageTargets=officialDamageTargets(logs||[],members);
+    let actionByActor=new Map(),latestHitAction=null,lastAction=null;
+    for(const original of logs||[]){
+        if(!byTurn.has(original.turn)){
+            const group={turn:original.turn,rows:[],sourceCount:0};
+            groups.push(group);byTurn.set(original.turn,group);
+            actionByActor=new Map();latestHitAction=null;lastAction=null;
+        }
+        const group=byTurn.get(original.turn);group.sourceCount++;
+        const type=String(original.type||'').toUpperCase();
+        if(OFFICIAL_ALWAYS_HIDDEN.has(type))continue;
+        if(type==='ACTION_STARTED'&&/持ち越し中/.test(original.text||''))continue;
+        if(type==='HIT_ROLL'){
+            const owner=actionByActor.get(String(original.entryId));
+            if(owner){
+                owner.parts.push({...original,detailLabel:'命中・発動判定'});
+                if(original.text)owner.notes.push(original.text);
+                latestHitAction=owner;
+                continue;
+            }
+        }
+        if(type==='AVOID_ROLL'&&latestHitAction){
+            latestHitAction.parts.push({...original,detailLabel:`${original.actorName||'対象'}の回避判定`});
+            latestHitAction.notes.push(`${original.actorName||'対象'}：${evadeSummary(original)}`);
+            continue;
+        }
+        if(type==='CT_PENALTY'){
+            // The critical roll (of either attacker or defender) immediately
+            // precedes this penalty; keep it under that attack instead of a
+            // meaningless stand-alone '運気が削れた！' row.
+            const owner=latestHitAction||actionByActor.get(String(original.entryId));
+            if(owner){owner.parts.push({...original,detailLabel:'クリティカル時の効果'});owner.notes.push(original.text);continue;}
+        }
+        if(!full && (OFFICIAL_SIMPLE_HIDDEN.has(type)||type==='CT_PENALTY'))continue;
+        if(!full && type==='HIT_ROLL')continue;
+        if(!full && type==='AVOID_ROLL')continue;
+        // No empty label-only rows: a judgement with an empty text uses its
+        // dice formula. Unknown blank records are simply not useful visually.
+        let message=String(original.text||'').trim();
+        if(type==='SPD_ROLL'){
+            const roll=String(original.roll||'');
+            const match=roll.match(/[＝=]\s*(-?\d+(?:\.\d+)?)\s*$/);
+            message=match ? `最終行動値：${match[1]}` : (roll.replace(/^速度判定…?/,'')||'行動値の記録なし');
+        } else if((type==='DAMAGE'||type==='DEAL_DAMAGE')){
+            const target=damageTargets.get(original.id);
+            message=target ? `対象：${target} ／ ${message}` : `${message||'ダメージの記録'}（対象は特定できません）`;
+        }
+        if(!message && original.roll)message=String(original.roll);
+        if(!message)continue;
+        if(!full && type==='AUTO_MOVE'&&/位置取り中/.test(message))continue;
+        const row={...original,displayText:message,parts:[],notes:[]};
+        group.rows.push(row);
+        if(type==='ACTION'){
+            actionByActor.set(String(original.entryId),row);
+            lastAction=row;
+            latestHitAction=null;
         }
     }
     return groups;

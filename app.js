@@ -1,19 +1,19 @@
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.10';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.11';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
 import { deleteUnitSafely } from './unit-management.js?v=1.18';
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.10';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.11';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js';
-import { Battle, clamp } from './engine.js?v=1.18.10';
+import { Battle, clamp } from './engine.js?v=1.18.11';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
-import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.10';
-import { loadOfficialArenaViaWorker, officialArenaStatistics, officialArenaVisibleLog, officialArenaLogTypeLabel } from './official-arena-log.js?v=1.18.10';
+import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.11';
+import { loadOfficialArenaViaWorker, officialArenaStatistics, officialArenaDisplayGroups, officialArenaLogTypeLabel } from './official-arena-log.js?v=1.18.11';
 import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.10';
-import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.10';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.11';
+import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.11';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js';
 import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18';
 import { fetchArenaSharedAiViaWorker, issueArenaShareCodeViaWorker } from './arena-worker-import.js?v=1.18';
@@ -144,7 +144,7 @@ let lastReplayRef = sim, lastReplayTurn = sim?.turn ?? -1;
 const OFFICIAL_BATTLE_STATE_KEY = 'battle-lab-official-arena-log-v1';
 let officialArena = (() => { try { const cached=JSON.parse(sessionStorage.getItem(OFFICIAL_BATTLE_STATE_KEY) || 'null'); return cached?.schemaVersion === 6 ? cached : null; } catch { return null; } })();
 let officialArenaUrl = officialArena?.id ? `https://rev2.reversion.jp/arena/battle/${officialArena.id}` : '';
-let officialArenaTurn = 'all', officialArenaLoading = false;
+let officialArenaTurn = 'all', officialLogMode = 'simple', officialArenaLoading = false;
 let officialFrameIndex = null, officialPlaying = false, officialPlaybackTimer = null, officialScrollFrame = 0;
 let expandedMapSource = 'local';
 let initialRestoreScrollY = savedUi.scrollY;
@@ -267,7 +267,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.10</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.10</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.11</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.11</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && (sim || officialArena) ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -795,22 +795,30 @@ function officialReplayFrame() {
 }
 function officialMapContext(f) {return {source:'official',mapSize:officialArena?.mapSize||150,actorId:f?.actorId||null};}
 function officialLogRow(log) {
-    // Show every imported event at the right point in the battle. In particular,
-    // never separate dice checks from the action they belong to or hide the roll.
     const kind=officialArenaLogTypeLabel(log.type);
-    const body=log.text===kind ? '' : String(log.text||'');
+    const body=String(log.displayText??log.text??'');
     const actor=log.actorName?`<strong>${esc(log.actorName)}</strong>：`:'';
-    const roll=log.roll?`<small class="official-log-roll">判定・出目：${esc(log.roll)}</small>`:'';
+    const ownRoll=officialLogMode==='all'&&log.roll&&body!==log.roll?`<small class="official-log-roll">判定・出目：${esc(log.roll)}</small>`:'';
+    const mergedNotes=log.notes?.filter(Boolean)||[];
+    const concise=officialLogMode==='simple'&&mergedNotes.length
+        ? `<small class="official-log-brief">${esc(mergedNotes.join(' ／ '))}</small>` : '';
+    const mergedDetails=officialLogMode==='all'&&log.parts?.length
+        ? `<span class="official-log-merged">${log.parts.map(part=>{
+            const detail=part.detailLabel||officialArenaLogTypeLabel(part.type);
+            const message=part.text ? `<span>${esc(part.text)}</span>` : '';
+            const formula=part.roll ? `<small>判定・出目：${esc(part.roll)}</small>` : '';
+            return `<span class="official-log-subrow"><b>${esc(detail)}</b>${message}${formula}</span>`;
+        }).join('')}</span>` : '';
     const stateClass=log.kind==='state'?' official-log-state':'';
     const rollClass=/(?:_ROLL$|EFFECT_TRIGGER$)/.test(String(log.type||''))?' official-log-judge':'';
-    return `<button type="button" class="official-log-row${stateClass}${rollClass}" data-act="official-select-log:${log.id}" data-official-log-index="${log.id}" aria-label="第${log.turn}ターン：${esc(kind)} ${esc(log.actorName)} ${esc(body||log.roll).slice(0,140)}"><span class="official-log-text"><span class="official-log-kind">${esc(kind)}</span> ${actor}${body?`<span class="official-log-message">${esc(body)}</span>`:''}${roll}</span></button>`;
+    return `<button type="button" class="official-log-row${stateClass}${rollClass}" data-act="official-select-log:${log.id}" data-official-log-index="${log.id}" aria-label="第${log.turn}ターン：${esc(kind)} ${esc(log.actorName)} ${esc(body).slice(0,140)}"><span class="official-log-text"><span class="official-log-kind">${esc(kind)}</span> ${actor}<span class="official-log-message">${esc(body)}</span>${ownRoll}${concise}${mergedDetails}</span></button>`;
 }
 function officialBattleContent(battle) {
     const allTurns=[...new Set(battle.logs.map(l=>l.turn))].sort((a,b)=>a-b);
     const chosen=officialArenaTurn==='all'?'all':Number(officialArenaTurn);
     const activeLogs=battle.logs.filter(l=>chosen==='all'||l.turn===chosen);
-    const groupedLogs=officialArenaVisibleLog(activeLogs);
-    const visibleCount=groupedLogs.reduce((total,group)=>total+group.all.length,0);
+    const groupedLogs=officialArenaDisplayGroups(activeLogs,{mode:officialLogMode,members:battle.teams.flatMap(team=>team.members||[])});
+    const visibleCount=groupedLogs.reduce((total,group)=>total+group.rows.length,0);
     const replay=battle.frames?.length ? (officialReplayFrame()||battle.frames.at(-1)) : null;
     return `<div class="official-battle-result"><div class="official-result-head"><div><strong>${esc(battle.name)}</strong><div class="subtle">公式ログ / ${battle.counts.entries.toLocaleString('ja-JP')}件・${battle.counts.turns}T</div></div><a href="https://rev2.reversion.jp/arena/battle/${encodeURIComponent(battle.id)}" target="_blank" rel="noopener noreferrer">公式ページを開く ↗</a></div>
         ${renderCombatStatistics(officialArenaStatistics(battle),battle.counts.turns,{official:true,title:'公式ログ：キャラ別・戦闘全体の統計'})}
@@ -820,8 +828,8 @@ function officialBattleContent(battle) {
         <div class="official-replay-slider"><span>開始</span><input type="range" id="official-frame-range" min="0" max="${battle.frames.length-1}" value="${Math.max(0,officialFrameIndex??battle.frames.length-1)}" aria-label="公式リプレイ時点"><span>終了</span></div><p class="subtle official-replay-note">スライダーや戦闘ログを選ぶと、その時点の位置とHP/APに切り替わります。</p>
         </div></section><section class="panel"><div class="panel-head"><h2>ユニットの状態</h2></div><div id="official-replay-units" class="panel-body"></div></section></aside>
         <section class="panel replay-log-panel official-replay-log-panel"><div class="panel-head"><h2>公式戦闘ログ</h2></div>
-        <div class="panel-body"><div class="official-log-title"><label class="field"><span>ターン</span>${select({all:'全ターン',...Object.fromEntries(allTurns.map(t=>[t,`第${t}ターン`]))},officialArenaTurn,'id="official-battle-turn" aria-label="公式ログのターン"')}</label><span class="subtle">判定・出目を含む全記録 ${visibleCount}件（省略なし）</span></div>
-        <div id="official-log-list" class="official-log-list" tabindex="0" aria-label="公式戦闘ログ。選択した記録にマップとHP/APが連動します">${groupedLogs.map(group=>`<section class="official-turn-group"><h4>${group.turn===0?'戦闘開始前':`第${group.turn}ターン`}</h4>${group.all.map(log=>officialLogRow(log)).join('')||'<p class="subtle official-log-empty">このターンの記録はありません。</p>'}</section>`).join('')||'<p class="subtle">該当するログがありません。</p>'}</div></div></section></div>`:'<p class="subtle">公式の状態記録を再生できません。</p>'}</div>`;
+        <div class="panel-body"><div class="official-log-title"><label class="field"><span>ターン</span>${select({all:'全ターン',...Object.fromEntries(allTurns.map(t=>[t,`第${t}ターン`]))},officialArenaTurn,'id="official-battle-turn" aria-label="公式ログのターン"')}</label><label class="field official-log-mode-field"><span>表示形式</span>${select({simple:'簡易表示',all:'全表示'},officialLogMode,'id="official-log-mode" aria-label="公式ログの表示形式"')}</label><span class="subtle">表示 ${visibleCount}件 / 原本 ${activeLogs.length}件</span></div>
+        <div id="official-log-list" class="official-log-list" tabindex="0" aria-label="公式戦闘ログ。選択した記録にマップとHP/APが連動します">${groupedLogs.map(group=>`<section class="official-turn-group"><h4>${group.turn===0?'戦闘開始前':`第${group.turn}ターン`}</h4>${group.rows.map(log=>officialLogRow(log)).join('')||'<p class="subtle official-log-empty">このターンの記録はありません。</p>'}</section>`).join('')||'<p class="subtle">該当するログがありません。</p>'}</div></div></section></div>`:'<p class="subtle">公式の状態記録を再生できません。</p>'}</div>`;
 }
 function stopOfficialPlayback() {
     if(officialPlaybackTimer!==null)clearInterval(officialPlaybackTimer);
@@ -1593,7 +1601,7 @@ async function onAction(act) {
             const next = await loadOfficialArenaViaWorker(url, ARENA_SHARED_WORKER_URL);
             officialArena = next;
             officialFrameIndex = next.frames?.length ? next.frames.length-1 : null;
-            officialArenaTurn = 'all';
+            officialArenaTurn = 'all';officialLogMode = 'simple';
             try {
                 const payload=JSON.stringify(next);
                 if (payload.length < 2500000) sessionStorage.setItem(OFFICIAL_BATTLE_STATE_KEY,payload);
@@ -1609,7 +1617,7 @@ async function onAction(act) {
     }
     if (a === 'clear-official-battle') {
         stopOfficialPlayback();
-        officialFrameIndex=null;officialArena=null;officialArenaTurn='all';officialArenaUrl='';
+        officialFrameIndex=null;officialArena=null;officialArenaTurn='all';officialLogMode='simple';officialArenaUrl='';
         try { sessionStorage.removeItem(OFFICIAL_BATTLE_STATE_KEY); } catch { /* ignore */ }
         render();return;
     }
@@ -2297,6 +2305,11 @@ document.addEventListener('change', e => {
         skillPage = 0;
         render();
         return;
+    }
+    if (el.id === 'official-log-mode') {
+        stopOfficialPlayback();
+        officialLogMode = el.value === 'all' ? 'all' : 'simple';
+        render();return;
     }
     if (el.id === 'official-battle-turn') {
         stopOfficialPlayback();
