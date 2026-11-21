@@ -2,17 +2,31 @@ import {collectOfficialMetrics} from './official-arena-metrics.js';
 import {buildOfficialArenaReplay,officialPosition} from './official-arena-replay.js';
 // Viewer for public official Arena battle results. This module never alters a
 // Battle Lab simulation and never requests credentials or session cookies.
-const ID_RE = /^\/[a-z]+\/battle\/([1-9]\d{0,9})\/?$/;
-export function officialArenaBattleId(value) {
+const PUBLIC_RESULT_PATHS = [
+    {kind:'battle',pattern:/^\/arena\/battle\/([1-9]\d{0,9})\/?$/},
+    {kind:'training',pattern:/^\/arena\/training\/([1-9]\d{0,9})\/result\/([1-9]\d{0,9})\/?$/}
+];
+/** Accept only the two explicit official result URL patterns, never arbitrary URLs. */
+export function officialArenaResultLocation(value) {
     let url;
     try { url = new URL(String(value ?? '').trim()); }
-    catch { throw Error('公式闘技場の対戦結果URLを入力してください。'); }
-    const match = ID_RE.exec(url.pathname);
+    catch { throw Error('公式闘技場または訓練メニューの結果URLを入力してください。'); }
     if (url.protocol !== 'https:' || url.hostname !== 'rev2.reversion.jp' || url.port ||
-        url.username || url.password || url.search || url.hash || !match || !url.pathname.startsWith('/arena/'))
-        throw Error('https://rev2.reversion.jp/arena/battle/番号 の形式で入力してください。');
-    return match[1];
+        url.username || url.password || url.search || url.hash)
+        throw Error('公式サイトの公開結果URLを指定してください（クエリ文字列は使用できません）。');
+    for (const {kind,pattern} of PUBLIC_RESULT_PATHS) {
+        const match=pattern.exec(url.pathname);
+        if (!match) continue;
+        const trainingId=kind==='training'?match[1]:null;
+        const battleId=kind==='training'?match[2]:match[1];
+        const canonical=kind==='training'
+            ? `https://rev2.reversion.jp/arena/training/${trainingId}/result/${battleId}`
+            : `https://rev2.reversion.jp/arena/battle/${battleId}`;
+        return {kind,battleId,trainingId,url:canonical};
+    }
+    throw Error('対戦結果 /arena/battle/番号、または訓練結果 /arena/training/番号/result/番号 のURLを入力してください。');
 }
+export function officialArenaBattleId(value) {return officialArenaResultLocation(value).battleId;}
 const num = n => n == null || n === '' ? null : Number.isFinite(Number(n)) ? Number(n) : null;
 const safe = (n, max=500) => typeof n === 'string' ? n.slice(0,max) : typeof n === 'number' ? String(n) : '';
 // 公式APIの種別コードは集計・再生に必要なので保持し、画面だけ日本語にする。
@@ -56,7 +70,12 @@ export function officialArenaLogTypeLabel(type) {
     return OFFICIAL_LOG_TYPE_LABELS[String(type||'').toUpperCase()] || 'その他の記録';
 }
 export function parseOfficialArenaResult(payload) {
-    const result = payload?.result || payload?.data?.rev2ArenaBattleGetResult;
+    // Both Worker replies and a saved GraphQL response may wrap the same
+    // public battle records. Do not invent missing combat events from metadata.
+    const nested=payload?.data && typeof payload.data==='object'
+        ? Object.values(payload.data).find(value=>value && Array.isArray(value.teams) && Array.isArray(value.logs)) : null;
+    const result = payload?.result || payload?.data?.rev2ArenaBattleGetResult || nested ||
+        (Array.isArray(payload?.teams) && Array.isArray(payload?.logs) ? payload : null);
     if (!result || !Array.isArray(result.teams) || !Array.isArray(result.logs))
         throw Error('公式ログの取得データ形式が正しくありません。');
     if (result.teams.length > 8 || result.logs.length > 25000)
@@ -136,7 +155,13 @@ export function parseOfficialArenaResult(payload) {
     return {id:String(payload?.battleId ?? result.battle?.id ?? ''),
         name:safe(result.battle?.name,140) || '公式闘技場の戦闘ログ',schemaVersion:6,teams,logs,lastTurn,mapSize,frames,
         statistics: collectOfficialMetrics(teams,original,lastTurn),
-        counts:{turns:lastTurn,entries:logs.length}, source:'official'};
+        counts:{turns:lastTurn,entries:logs.length}, source:'official',
+        sourceUrl:(() => {
+            try {
+                const location=officialArenaResultLocation(payload?.sourceUrl);
+                return location.battleId===String(payload?.battleId??result.battle?.id??'')?location.url:null;
+            } catch {return null;}
+        })()};
 }
 // Official STATE records identify the affected member, but do not always
 // identify who dealt damage or performed healing. Unknown counters stay null,
@@ -346,7 +371,8 @@ export function officialArenaDisplayGroups(logs,{mode='simple',members=[]}={}) {
 }
 
 export async function loadOfficialArenaViaWorker(url, workerUrl, fetchImpl=fetch) {
-    const id=officialArenaBattleId(url);
+    const location=officialArenaResultLocation(url);
+    const id=location.battleId;
     const base=new URL(String(workerUrl||''));
     if (base.protocol!=='https:' || !base.hostname.endsWith('.workers.dev')) throw Error('WorkerのURL設定が正しくありません。');
     let response;
@@ -354,7 +380,7 @@ export async function loadOfficialArenaViaWorker(url, workerUrl, fetchImpl=fetch
         response=await fetchImpl(base.origin+'/arena/battle',{
             method:'POST', mode:'cors',credentials:'omit',redirect:'error',cache:'no-store',referrerPolicy:'no-referrer',
             headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify({url:`https://rev2.reversion.jp/arena/battle/${id}`}),
+            body:JSON.stringify({url:location.url}),
             signal:AbortSignal.timeout(25000)
         });
     } catch(e) {throw Error(e?.name==='TimeoutError'||e?.name==='AbortError'?'公式ログの取得がタイムアウトしました。':'Workerとの通信に失敗しました。');}
@@ -364,5 +390,7 @@ export async function loadOfficialArenaViaWorker(url, workerUrl, fetchImpl=fetch
     if (!response.ok || payload?.ok!==true) throw Error(safe(payload?.error,250)||'公式闘技場のログを取得できませんでした。');
     const parsed=parseOfficialArenaResult(payload);
     parsed.id=id;
+    parsed.resultKind=location.kind;
+    parsed.sourceUrl=location.url;
     return parsed;
 }
