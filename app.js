@@ -1,5 +1,5 @@
 import { confirmInApp } from './in-app-confirm.js?v=1.18.20';
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.20&reactions=2&logfirst=1&labels=0';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.20&reactions=2&logfirst=1&labels=0&seraramap=1';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
@@ -346,12 +346,18 @@ function map(units = config.units, large = false, expanded = false, compact = fa
 <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${from.team === to.team ? '#6796a2' : '#a97760'}" stroke-width="1.2" stroke-dasharray="${from.team === to.team ? '3 3' : 'none'}" opacity=".72"/>${links.length <= 8 ? `<rect x="${mx - labelWidth / 2}" y="${my - 8.5}" width="${labelWidth}" height="13" rx="4" fill="#fff" fill-opacity=".94" stroke="#d8dfd4" stroke-width=".5"/>\
 <text x="${mx}" y="${my + 1}" font-size="8.5" text-anchor="middle" fill="#233e32" font-weight="650">${label}</text>` : ''}</g>`;
     }).join('');
-    const markers = units.filter(u=>Number.isFinite(u.x)&&Number.isFinite(u.y)).map((u, i) => {
+    const markers = units.filter(u=>Number.isFinite(u.x)&&Number.isFinite(u.y)).map(u => {
         const x = cx + u.x * scale, y = cy - u.y * scale, markerRadius = Math.min(9, Math.max(3.5, 5 * scale * .44)), color = u.team === 'A' ? '#4f8362' : '#b47961';
-        return `<g data-map-unit="${esc(u.id)}" data-x="${u.x}" data-y="${u.y}" opacity="${u.alive === false ? .3 : 1}"><title>${esc(u.name)} (${u.x.toFixed(1)}, ${u.y.toFixed(1)}) m</title>\
-<circle cx="${x}" cy="${y}" r="${u.id === (inReplay ? actionActorId : selected) ? 19 : 15}" fill="${color}" opacity=".10"/>\
+        // The challenge boss uses its portrait INSTEAD OF the default B1 circle and halo.
+        // Both normal and expanded maps use this same renderer; ordinary units are unaffected.
+        const portrait = !official && u.team === 'B' && u.id === CHALLENGE_BOSS_ID ? challenge()?.icon : null;
+        const marker = portrait
+            ? `<image href="${esc(portrait)}" x="${x - 10}" y="${y - 10}" width="20" height="20" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>`
+            : `<circle cx="${x}" cy="${y}" r="${u.id === (inReplay ? actionActorId : selected) ? 19 : 15}" fill="${color}" opacity=".10"/>\
 <circle cx="${x}" cy="${y}" r="${markerRadius}" fill="${color}" stroke="#fff" stroke-width="2"/>\
-${!official && challenge()?.icon && u.id === CHALLENGE_BOSS_ID && u.team === 'B' ? `<image href="${esc(challenge().icon)}" x="${x - 10}" y="${y - 10}" width="20" height="20" preserveAspectRatio="xMidYMid meet" style="image-rendering:pixelated"/>` : `<text x="${x}" y="${y + 3}" font-size="${Math.min(7, markerRadius * 1.3)}" fill="white" text-anchor="middle">${u.team}${units.filter(z => z.team === u.team).findIndex(z => z.id === u.id) + 1}</text>`}${large || expanded ? `<text x="${x}" y="${y + 25}" text-anchor="middle" fill="${color}" font-size="9">${esc(u.name)}</text>` : ''}</g>`;
+<text x="${x}" y="${y + 3}" font-size="${Math.min(7, markerRadius * 1.3)}" fill="white" text-anchor="middle">${u.team}${units.filter(z => z.team === u.team).findIndex(z => z.id === u.id) + 1}</text>`;
+        return `<g data-map-unit="${esc(u.id)}" data-x="${u.x}" data-y="${u.y}" opacity="${u.alive === false ? .3 : 1}"><title>${esc(u.name)} (${u.x.toFixed(1)}, ${u.y.toFixed(1)}) m</title>\
+${marker}${large || expanded ? `<text x="${x}" y="${y + 25}" text-anchor="middle" fill="${color}" font-size="9">${esc(u.name)}</text>` : ''}</g>`;
     }).join('');
     const movementUnit = units.find(u => u.id === (inReplay ? actionActorId : selected));
     const baseMobility = official ? 0 : Math.max(0, Number(config.units.find(u => u.id === movementUnit?.id)?.mobility) || 0);
