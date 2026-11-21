@@ -57,7 +57,7 @@ function row(item) {
         nMetric('行動回数',item.actions,'行動を実行した回数'),
         nMetric('撃破数',item.defeats,'敵を戦闘不能にした回数')])
     ];
-    return `<details class="unit-stats-detail"><summary class="unit-stats-summary"><span class="stat-team ${item.team==='B'?'enemy':''}">TEAM ${esc(item.team)}</span><strong>${esc(item.name)}</strong><span class="stat-summary-data">与ダメ(HP) ${num(item.damageGivenHP)} · 被ダメ(HP) ${num(item.damageTakenHP)}</span><span class="stat-chevron" aria-hidden="true">⌄</span></summary><div class="stat-full">${detail.join('')}</div></details>`;
+    return `<details class="unit-stats-detail"><summary class="unit-stats-summary"><span class="stat-team ${item.team==='B'?'enemy':''}">TEAM ${esc(item.team)}</span><strong>${esc(item.name)}</strong><span class="stat-chevron" aria-hidden="true">⌄</span></summary><div class="stat-full">${detail.join('')}</div></details>`;
 }
 export function renderCombatStatistics(items,turns,options={}) {
     if (!Array.isArray(items) || !items.length) return '';

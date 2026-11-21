@@ -3176,9 +3176,9 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 .unit-stats-detail {border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--white)}
 .unit-stats-summary {display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:9px 12px;min-height:44px}
 .unit-stats-summary strong{font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.unit-stats-summary .stat-chevron{margin-left:auto}
 .stat-team{border:1px solid var(--green);border-radius:5px;padding:1px 5px;font-size:10px;font-weight:750;white-space:nowrap}
 .stat-team.enemy{border-color:var(--red);color:var(--red)}
-.stat-summary-data{font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap}
 .stat-primary{display:none}
 .stat-full{display:none;border-top:1px solid var(--line);padding:10px 12px;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .unit-stats-detail[open] .stat-full{display:grid}
@@ -3211,7 +3211,7 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 @media(max-width:760px){
  .battle-stats-head,.official-battle-summary{padding:9px 11px;min-height:42px}
  .battle-stats-body{padding:7px;gap:7px}.unit-stats-summary{padding:7px 9px;flex-wrap:wrap}
- .unit-stats-summary strong{font-size:12px}.stat-summary-data{font-size:10px}
+ .unit-stats-summary strong{font-size:12px}
  .unit-stats-detail[open] .stat-full{grid-template-columns:1fr;padding:8px;gap:7px}
  .stat-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-metric{padding:5px;font-size:10px}
  .official-battle-controls{gap:6px}.official-battle-controls .field{flex-basis:100%}
