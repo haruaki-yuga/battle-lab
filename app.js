@@ -31,7 +31,7 @@ import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
 import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.18';
 import { CHALLENGES, CHALLENGE_BOSS_ID, isSeraraChallengeId, activeChallenge, canEditChallengeUnit, challengePartyValid, startChallenge, endChallenge } from './challenge-content.js?v=1.18.19&hard=1';
-import { SERARA_REACTION_LINES, seraraReactionAt, seraraReactionByLog } from './challenge-reactions.js?v=1.18.19&logfirst=1&labels=0&hard=1';
+import { SERARA_REACTION_LINES, seraraReactionByLog } from './challenge-reactions.js?v=1.18.19&logfirst=1&labels=0&hard=1';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -991,28 +991,6 @@ function bindOfficialReplay() {
     },{passive:true});
 }
 
-function challengeReactionPanel() {
-    const ch=challenge();
-    if(!isSeraraChallengeId(ch?.id))return '';
-    const currentBattle=sim?.config?.challenge?.id===ch.id?sim:null;
-    const chosen=currentBattle?seraraReactionAt(currentBattle,
-        frame<0?Math.max(0,currentBattle.frames.length-1):frame,selectedLogId):
-        {label:'試合開始前',text:SERARA_REACTION_LINES.start,key:'start'};
-    return `<section id="serara-reaction-panel" class="serara-reaction-panel" aria-label="セララのリアクション">
-        ${challengePortrait(ch,'serara-reaction-portrait')}
-        <div class="serara-reaction-content"><strong>甘咲 セララ</strong>
-        <p id="serara-reaction-text" class="serara-reaction-bubble">${chosen?`「${esc(chosen.text)}」`:'戦闘中のリアクションをリプレイで確認できます。'}</p></div>
-    </section>`;
-}
-function paintChallengeReaction() {
-    const text=$('#serara-reaction-text');
-    if(!text||!isSeraraChallengeId(challenge()?.id))return;
-    const validBattle=isSeraraChallengeId(sim?.config?.challenge?.id)?sim:null;
-    const picked=validBattle?seraraReactionAt(validBattle,frame,selectedLogId):
-        {label:'試合開始前',text:SERARA_REACTION_LINES.start};
-    text.textContent=picked?`「${picked.text}」`:'戦闘中のリアクションをリプレイで確認できます。';
-}
-
 function battleDialoguePanel(){
     const all=sim ? buildBattleReactions(sim) : [];
     const preview=!sim ? config.units.filter(u=>!(isSeraraChallengeId(challenge()?.id) && u.team==='B') && u.reactionLines?.start?.trim())
@@ -1028,7 +1006,7 @@ function simPage() {
     const result = sim?.result();
     const stale = sim && JSON.stringify(config) !== JSON.stringify(sim.config);
     const a = config.units.filter(u => u.team === 'A').length, b = config.units.filter(u => u.team === 'B').length;
-    return `<div class="sim-page-heading"><div class="sim-page-title"><h1>シミュレーション</h1><p class="subtitle">実行ごとに乱数を自動で更新します。</p></div><div class="sim-settings"><div class="sim-settings-fields">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('ターン制限', '<div class="fixed-turns">サドンデス込 25T</div>')}</div><div class="sim-settings-actions">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div></div></div>${stale ? '<div class="notice">設定が変更されています。表示中の結果は変更前のものです。次の実行時に初期状態から再計算します。</div>' : ''}${officialBattlePanel()}${challengeReactionPanel()}${battleDialoguePanel()}${batchPanel()}${!sim ? `<div class="result-grid">\
+    return `<div class="sim-page-heading"><div class="sim-page-title"><h1>シミュレーション</h1><p class="subtitle">実行ごとに乱数を自動で更新します。</p></div><div class="sim-settings"><div class="sim-settings-fields">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('ターン制限', '<div class="fixed-turns">サドンデス込 25T</div>')}</div><div class="sim-settings-actions">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div></div></div>${stale ? '<div class="notice">設定が変更されています。表示中の結果は変更前のものです。次の実行時に初期状態から再計算します。</div>' : ''}${officialBattlePanel()}${battleDialoguePanel()}${batchPanel()}${!sim ? `<div class="result-grid">\
 <section class="panel"><div class="panel-head"><h2>対戦プレビュー</h2>${pill(`${a} vs ${b}`, 'green')}</div>\
 <div class="panel-body">${map(config.units, true)}</div>\
 </section><section class="empty-state"><div class="big-icon">${icon('sim')}</div>${btn('シミュレーション実行', 'run', 'primary')}<p class="footnote">\
@@ -1184,7 +1162,6 @@ function paintReplay() {
     $('#replay-units').innerHTML = replayUnits(f.units);
     $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(log.type) ? '開始時' : `残行動値 ${Math.floor(log.gauge)}`}｜${log.message}` : f.label;
     $('#frame-range').value = frame;
-    paintChallengeReaction();
     const dialogue=$('#battle-dialogue-lines');
     if(dialogue)dialogue.innerHTML=battleDialogueMarkup(battleReactionAt(sim,frame,selectedLogId));
     $('#log-entries')?.querySelectorAll('[data-log-id]').forEach(el => {
