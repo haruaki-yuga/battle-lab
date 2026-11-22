@@ -1,13 +1,16 @@
 // v1.18.15: challenge catalog. The boss is intentionally not exposed via character/AI editors.
 // Challenge data is bundled client-side to run the offline simulation. This is a UI lock,
 // not cryptographic secrecy against users inspecting downloaded JavaScript.
-import { clone, freshUnit, freshRule, freshCondition, validateConfig } from './model.js?v=1.18.21&dialogueui=1';
+import { clone, freshUnit, freshRule, freshCondition, validateConfig, arrangeInitialPositions } from './model.js?v=1.18.21&dialogueui=1';
 import { importUnitCharacter } from './unit-character-io.js?v=1.18.21&dialogueui=1';
+import { SERARA_HARD_CHARACTER, seraraHardAiRules } from './serara-hard-data.js?v=1.18.21&hard=1';
 
 export const CHALLENGE_BOSS_ID = 'challenge-serara-normal-boss';
 export const CHALLENGES = Object.freeze([
-  Object.freeze({ id: 'serara-normal', title: 'セララチャレンジ', difficulty: 'Normal', teamALimit: 1, enemyName: '甘咲 セララ', icon: './assets/serara-challenge-icon.png' })
+  Object.freeze({ id: 'serara-normal', title: 'セララチャレンジ', difficulty: 'Normal', teamALimit: 1, enemyName: '甘咲 セララ', icon: './assets/serara-challenge-icon.png' }),
+  Object.freeze({ id: 'serara-hard', title: 'セララチャレンジ', difficulty: 'HARD', teamALimit: 8, enemyName: '甘咲 セララ', icon: './assets/serara-challenge-icon.png' })
 ]);
+export const isSeraraChallengeId = (id) => id === 'serara-normal' || id === 'serara-hard';
 export function activeChallenge(config) { return CHALLENGES.find(c=>c.id===config?.challenge?.id) || null; }
 export function canEditChallengeUnit(config, unit) { return !activeChallenge(config) || unit?.team==='A'; }
 export function challengePartyValid(config) {
@@ -42,24 +45,32 @@ export function startChallenge(config, id, preferredAId) {
   const chosen=CHALLENGES.find(c=>c.id===id);
   if (!chosen) throw Error('未対応のチャレンジです。');
   // Each new challenge must supply its own boss data and AI builder.
-  if (id!=='serara-normal') throw Error('このチャレンジの敵データは未実装です。');
+  if (!isSeraraChallengeId(id)) throw Error('このチャレンジの敵データは未実装です。');
   if (activeChallenge(config)) throw Error('チャレンジを終了してから別のチャレンジを選択してください。');
   const existingA=config.units.filter(u=>u.team==='A');
   if (!existingA.length) throw Error('チームAに参加キャラが必要です。');
   const selectedA=existingA.find(u=>u.id===preferredAId)||existingA[0];
   const next=clone(config);
-  next.units=[clone(selectedA),freshUnit({id:CHALLENGE_BOSS_ID,name:chosen.enemyName,team:'B',x:10,y:0,skills:[]})];
-  next.units[0].x=-10;next.units[0].y=0;
-  const loaded=importUnitCharacter(next,CHALLENGE_BOSS_ID,SERARA_CHARACTER);
+  // HARD starts with every available participant (up to eight); Normal retains one.
+  // If there are more than eight, the current selection gets first priority.
+  const entrants=chosen.teamALimit===1?[selectedA]:[...existingA.slice(0,chosen.teamALimit)];
+  if(chosen.teamALimit>1 && !entrants.some(u=>u.id===selectedA.id)) entrants[entrants.length-1]=selectedA;
+  next.units=[...entrants.map(u=>clone(u)),freshUnit({id:CHALLENGE_BOSS_ID,name:chosen.enemyName,team:'B',x:10,y:0,skills:[]})];
+  arrangeInitialPositions(next.units);
+  const loaded=importUnitCharacter(next,CHALLENGE_BOSS_ID,id==='serara-hard'?SERARA_HARD_CHARACTER:SERARA_CHARACTER);
   const boss=loaded.config.units.find(u=>u.id===CHALLENGE_BOSS_ID);
-  boss.rules=seraraAiRules();
+  boss.rules=id==='serara-hard'?seraraHardAiRules():seraraAiRules();
   // The imported user JSON contains exactly these skill IDs. If the importer
   // remapped a conflicting custom skill, select the actual imported ID.
-  const original='acc-mwq2vuih-6';
-  if (!boss.skills.includes(original)) {
-    const mapped=Object.entries(boss.officialSkillIds||{}).find(([,v])=>v==='8582896')?.[0];
-    if (!mapped) throw Error('セララフェニックスのスキルを確認できません。');
-    boss.rules[1].skillId=mapped;
+  // If the importer remapped an ID because an entrant already defined it,
+  // repair every rule reference using the skill's official origin ID.
+  const sourceSkills=(id==='serara-hard'?SERARA_HARD_CHARACTER:SERARA_CHARACTER).tactics;
+  for (const rule of boss.rules) {
+    if (rule.action!=='skill' || boss.skills.includes(rule.skillId)) continue;
+    const original=sourceSkills.officialSkillIds?.[rule.skillId];
+    const mapped=Object.entries(boss.officialSkillIds||{}).find(([,v])=>v===original)?.[0];
+    if (!mapped || !boss.skills.includes(mapped)) throw Error('チャレンジのスキル対応を確認できません：'+rule.skillId);
+    rule.skillId=mapped;
   }
   boss.x=10;boss.y=0;
   loaded.config.challenge={id:chosen.id,backup:clone(config)};

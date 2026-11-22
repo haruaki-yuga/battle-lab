@@ -85,7 +85,7 @@ function lastEnemyDown(battle,log){return finalTeamMemberDown(battle,log);}
 export function buildBattleReactions(battle) {
   if(!battle?.config?.units || !Array.isArray(battle.logs))return [];
   const units=battle.config.units.filter(u=>Object.values(u.reactionLines||{}).some(v=>typeof v==='string'&&v.trim()) &&
-    !(battle.config.challenge?.id==='serara-normal' && u.team==='B'));
+    !(['serara-normal','serara-hard'].includes(battle.config.challenge?.id) && u.team==='B'));
   if(!units.length)return [];
   const cached=REACTION_CACHE.get(battle);
   if(cached && cached.count===battle.logs.length && cached.done===battle.done && cached.winner===battle.winner)return cached.events;

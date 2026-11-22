@@ -1,6 +1,6 @@
-// Presentation-only scripted lines for the Serara Normal challenge.
+// Presentation-only scripted lines for Serara Normal and HARD challenges.
 // These are derived from resolved engine logs; combat outcomes and AI are unchanged.
-import {CHALLENGE_BOSS_ID} from './challenge-content.js?v=1.18.19';
+import {CHALLENGE_BOSS_ID,isSeraraChallengeId} from './challenge-content.js?v=1.18.19&hard=1';
 
 export const SERARA_REACTION_LINES=Object.freeze({
     start:'甘味騎士セララだよ。よろしくねっ',
@@ -23,7 +23,7 @@ const LABELS=Object.freeze({
  * affect combat calculations, seed determinism or KO/drama resolution.
  */
 export function buildSeraraReactions(battle) {
-    if (battle?.config?.challenge?.id !== 'serara-normal') return [];
+    if (!isSeraraChallengeId(battle?.config?.challenge?.id)) return [];
     const events=[{key:'start',label:LABELS.start,text:SERARA_REACTION_LINES.start,logId:null,frameIndex:-1}];
     const logs=Array.isArray(battle.logs)?battle.logs:[];
     for (let i=0;i<logs.length;i++) {

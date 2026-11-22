@@ -1,4 +1,4 @@
-import { REACTION_DEFINITIONS, MAX_REACTION_LENGTH, buildBattleReactions, battleReactionByLog, battleReactionAt, normalizedReactionLines } from './battle-reactions.js?v=1.18.21&dialogueui=1';
+import { REACTION_DEFINITIONS, MAX_REACTION_LENGTH, buildBattleReactions, battleReactionByLog, battleReactionAt, normalizedReactionLines } from './battle-reactions.js?v=1.18.21&dialogueui=1&hard=1';
 import { exportReactionJson, readReactionJson } from './reaction-json-io.js?v=1.18.21&dialoguejson=1';
 import { confirmInApp } from './in-app-confirm.js?v=1.18.21&dialogueui=1';
 import { PAGE_GUIDES } from './page-guide.js?v=1.18.21&dialoguejson=1&reactions=2&logfirst=1&labels=0&seraramap=1&guidecopy=1';
@@ -30,8 +30,8 @@ import { createCharacterImporter } from './character-ui.js?v=1.18.21&dialogueui=
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
 import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.18';
-import { CHALLENGES, CHALLENGE_BOSS_ID, activeChallenge, canEditChallengeUnit, challengePartyValid, startChallenge, endChallenge } from './challenge-content.js?v=1.18.19';
-import { SERARA_REACTION_LINES, seraraReactionAt, seraraReactionByLog } from './challenge-reactions.js?v=1.18.19&logfirst=1&labels=0';
+import { CHALLENGES, CHALLENGE_BOSS_ID, isSeraraChallengeId, activeChallenge, canEditChallengeUnit, challengePartyValid, startChallenge, endChallenge } from './challenge-content.js?v=1.18.19&hard=1';
+import { SERARA_REACTION_LINES, seraraReactionAt, seraraReactionByLog } from './challenge-reactions.js?v=1.18.19&logfirst=1&labels=0&hard=1';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
 const ACCEL_HEAL_MODES = { hp: 'HP回復', ap: 'AP回復', ha: 'HP・AP回復', cleanse: 'BS回復' };
@@ -993,7 +993,7 @@ function bindOfficialReplay() {
 
 function challengeReactionPanel() {
     const ch=challenge();
-    if(ch?.id!=='serara-normal')return '';
+    if(!isSeraraChallengeId(ch?.id))return '';
     const currentBattle=sim?.config?.challenge?.id===ch.id?sim:null;
     const chosen=currentBattle?seraraReactionAt(currentBattle,
         frame<0?Math.max(0,currentBattle.frames.length-1):frame,selectedLogId):
@@ -1006,8 +1006,8 @@ function challengeReactionPanel() {
 }
 function paintChallengeReaction() {
     const text=$('#serara-reaction-text');
-    if(!text||challenge()?.id!=='serara-normal')return;
-    const validBattle=sim?.config?.challenge?.id==='serara-normal'?sim:null;
+    if(!text||!isSeraraChallengeId(challenge()?.id))return;
+    const validBattle=isSeraraChallengeId(sim?.config?.challenge?.id)?sim:null;
     const picked=validBattle?seraraReactionAt(validBattle,frame,selectedLogId):
         {label:'試合開始前',text:SERARA_REACTION_LINES.start};
     text.textContent=picked?`「${picked.text}」`:'戦闘中のリアクションをリプレイで確認できます。';
@@ -1015,7 +1015,7 @@ function paintChallengeReaction() {
 
 function battleDialoguePanel(){
     const all=sim ? buildBattleReactions(sim) : [];
-    const preview=!sim ? config.units.filter(u=>!(challenge()?.id==='serara-normal' && u.team==='B') && u.reactionLines?.start?.trim())
+    const preview=!sim ? config.units.filter(u=>!(isSeraraChallengeId(challenge()?.id) && u.team==='B') && u.reactionLines?.start?.trim())
         .map(u=>({unitName:u.name,text:u.reactionLines.start,key:'start'})) : [];
     if(!all.length && !preview.length)return '';
     const lines=sim ? battleReactionAt(sim,frame<0?Math.max(0,sim.frames.length-1):frame,selectedLogId) : preview;
@@ -1087,7 +1087,7 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
 function visibleLogs() {
     if(!sim)return [];
     const dialogue=logSearch?battleReactionByLog(sim):null;
-    const serara=logSearch && sim?.config?.challenge?.id==='serara-normal'?seraraReactionByLog(sim):null;
+    const serara=logSearch && isSeraraChallengeId(sim?.config?.challenge?.id)?seraraReactionByLog(sim):null;
     return sim.logs.filter(l=>
         (logTurn==='all'||l.turn===Number(logTurn)) &&
         (logType==='all'||logType==='main'&&!['condition','actionEnd','reserve'].includes(l.type)||
@@ -1098,7 +1098,7 @@ function visibleLogs() {
         (serara?.get(l.id)||[]).some(e=>('セララ '+e.text).includes(logSearch))));
 }
 function logEntries() {
-    const logs = visibleLogs(), reactions = challenge()?.id==='serara-normal' && sim?.config?.challenge?.id==='serara-normal' ? seraraReactionByLog(sim) : new Map(), dialogueReactions = battleReactionByLog(sim), types = {
+    const logs = visibleLogs(), reactions = isSeraraChallengeId(challenge()?.id) && isSeraraChallengeId(sim?.config?.challenge?.id) ? seraraReactionByLog(sim) : new Map(), dialogueReactions = battleReactionByLog(sim), types = {
         action: '行動',
         turn: 'ターン',
         sudden: 'サドンデス',
@@ -1124,7 +1124,7 @@ function logEntries() {
     };
     // Display from the FIRST event forward. The previous slice(-700) hid
     // the beginning of long battles, even when the scrollbar was at the top.
-    const opening = sim?.config?.challenge?.id === 'serara-normal' &&
+    const opening = isSeraraChallengeId(sim?.config?.challenge?.id) &&
         logTurn === 'all' && ['all','main'].includes(logType) &&
         (!logSearch || (`${SERARA_REACTION_LINES.start} セララ 開始前 挨拶`).includes(logSearch))
         ? `<div class="log serara-start-log${selectedLogId===-1 && frame===0 ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="-1" data-act="select-log:-1" aria-pressed="${selectedLogId===-1 && frame===0}"><span class="time">開始前</span><span class="type">挨拶</span><div class="serara-log-reaction">${challengePortrait(challenge(),'serara-log-portrait')}<span><strong>セララ</strong>「${esc(SERARA_REACTION_LINES.start)}」</span></div></div>` : '';
@@ -1194,7 +1194,7 @@ function paintReplay() {
     });
 }
 function selectLog(id) {
-    if (Number(id) === -1 && sim && (sim.config?.challenge?.id === 'serara-normal' || buildBattleReactions(sim).some(e=>e.key==='start'))) {
+    if (Number(id) === -1 && sim && (isSeraraChallengeId(sim.config?.challenge?.id) || buildBattleReactions(sim).some(e=>e.key==='start'))) {
         selectedLogId = -1;
         frame = 0;
         persistUi();
@@ -2131,7 +2131,7 @@ async function onAction(act) {
         return;
     }
     if (a === 'add-unit') {
-        if (challenge() && (arg!=='A'||config.units.filter(x=>x.team==='A').length>=challenge().teamALimit)) {challengeInvalidMove('チャレンジの参加人数は1人までです。');return;}
+        if (challenge() && (arg!=='A'||config.units.filter(x=>x.team==='A').length>=challenge().teamALimit)) {challengeInvalidMove('チャレンジの参加人数が上限です。');return;}
         if (config.units.length >= 16) {
             toast('ユニットは最大16人です。');
             return;
@@ -2255,8 +2255,8 @@ async function onAction(act) {
         return;
     }
     else if (a === 'export-log') {
-        const reactions=challenge()?.id==='serara-normal' && sim?.config?.challenge?.id==='serara-normal' ? seraraReactionByLog(sim) : new Map();
-        const greeting=reactions.size||sim?.config?.challenge?.id==='serara-normal' ? `【セララ】「${SERARA_REACTION_LINES.start}」\n` : '';
+        const reactions=isSeraraChallengeId(challenge()?.id) && isSeraraChallengeId(sim?.config?.challenge?.id) ? seraraReactionByLog(sim) : new Map();
+        const greeting=reactions.size||isSeraraChallengeId(sim?.config?.challenge?.id) ? `【セララ】「${SERARA_REACTION_LINES.start}」\n` : '';
         const general=battleReactionByLog(sim);
         const otherGreetings=buildBattleReactions(sim).filter(e=>e.key==='start').map(e=>`【${e.unitName}】「${e.text}」`).join('\n');
         const openingDialogue=otherGreetings ? otherGreetings+'\n' : '';
