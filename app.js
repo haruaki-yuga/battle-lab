@@ -1,7 +1,7 @@
 import { REACTION_DEFINITIONS, MAX_REACTION_LENGTH, buildBattleReactions, battleReactionByLog, battleReactionAt, normalizedReactionLines } from './battle-reactions.js?v=1.18.21&dialogueui=1&hard=1';
 import { exportReactionJson, readReactionJson } from './reaction-json-io.js?v=1.18.21&dialoguejson=1';
 import { confirmInApp } from './in-app-confirm.js?v=1.18.21&dialogueui=1';
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.21&dialoguejson=1&reactions=2&logfirst=1&labels=0&seraramap=1&guidecopy=1';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.21&dialoguejson=1&reactions=2&logfirst=1&labels=0&seraramap=1&guidecopy=1&partyedit=1';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
@@ -30,7 +30,7 @@ import { createCharacterImporter } from './character-ui.js?v=1.18.21&dialogueui=
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
 import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.18';
-import { CHALLENGES, CHALLENGE_BOSS_ID, isSeraraChallengeId, activeChallenge, canEditChallengeUnit, challengePartyValid, startChallenge, endChallenge } from './challenge-content.js?v=1.18.19&hard=1';
+import { CHALLENGES, CHALLENGE_BOSS_ID, isSeraraChallengeId, activeChallenge, canEditChallengeUnit, canCloneChallengeParticipant, canDeleteChallengeParticipant, challengePartyValid, startChallenge, endChallenge } from './challenge-content.js?v=1.18.21&hard=1&partyedit=1';
 import { SERARA_REACTION_LINES, seraraReactionByLog } from './challenge-reactions.js?v=1.18.19&logfirst=1&labels=0&hard=1';
 // アクセルカレイド編集用の3分類。既存WIKI・保存済みスキルの分類は維持する。
 const ACCEL_KINDS = { attack: '攻撃', heal: '回復', buff: '付与' };
@@ -560,7 +560,7 @@ function setupPage() {
     return heading('BATTLE CONFIGURATION', '編成・ステータス', '', btn('キャラ検索', 'character-import') + btn('チャレンジ', 'open-challenges', 'small') + btn('キャラスロット', 'jump-slots', 'small') + btn(`${icon('sim', 'inline-icon')}実行画面へ`, 'page:sim', 'primary'), 'setup-quick-actions') + (challenge()?`<section class="challenge-active-banner"><div class="challenge-banner-identity">${challengePortrait(challenge(), 'challenge-banner-portrait')}<div><strong>${esc(challenge().title)}（${esc(challenge().difficulty)}）</strong><span>チームA ${challenge().teamALimit}人まで・チームBは固定／能力値・AI非公開</span></div></div>${btn('通常編成に戻す','challenge-end','small')}</section>`:'') + teams() + `<div class="two-col">\
 <section class="panel"><div class="panel-head"><div><h2>${esc(u.name)} <span class="rule-count">\
 / TEAM ${u.team}</span>\
-</h2></div><div class="btnrow">${btn('複製', 'clone-unit', 'small',challenge() && config.units.filter(x=>x.team==='A').length>=challenge().teamALimit ?'disabled title="チャレンジ参加人数上限"':'')}${btn('削除', 'delete-unit', 'small danger',challenge()?'disabled title="チャレンジ中は最後の参加者を削除できません"':'')}</div>\
+</h2></div><div class="btnrow">${btn('複製', 'clone-unit', 'small',challenge() && !canCloneChallengeParticipant(config,u) ?'disabled title="チャレンジの参加人数上限です"':'')}${btn('削除', 'delete-unit', 'small danger',challenge() && !canDeleteChallengeParticipant(config,u)?'disabled title="チャレンジでは最後の参加者を削除できません"':'')}</div>\
 </div><div class="panel-body"><div class="fields two">${field('ユニット名', `<input data-unit="name" value="${esc(u.name)}" maxlength="50">`)}${field('陣営', challenge()?'<strong class="challenge-locked-team">チームA / チャレンジ参加者</strong>':select({ A: 'チームA / 自チーム', B: 'チームB / 相手チーム' }, u.team, 'data-unit="team"'))}</div>\
 <div class="field-section">耐久・リソース</div><div class="fields two"><div class="meter-field">${passiveAwareStatField(u, 'maxHp', 'min="1"', 'MAX HP')}<div class="bar">\
 </div></div><div class="meter-field ap">${passiveAwareStatField(u, 'maxAp', 'min="0"', 'MAX AP')}<div class="bar">\
@@ -2124,7 +2124,7 @@ async function onAction(act) {
         selected = v.id;
     }
     else if (a === 'clone-unit') {
-        if (challenge() && config.units.filter(x=>x.team==='A').length>=challenge().teamALimit) {challengeInvalidMove('チャレンジの参加人数が上限です。');return;}
+        if (challenge() && !canCloneChallengeParticipant(config,u)) {challengeInvalidMove('チャレンジの参加人数が上限です。');return;}
         if (config.units.length >= 16) {
             toast('ユニットは最大16人です。');
             return;
@@ -2143,7 +2143,10 @@ async function onAction(act) {
         selected = v.id;
     }
     else if (a === 'delete-unit') {
-        if (challenge() && u.team==='B') {challengeInvalidMove();return;}
+        if (challenge() && !canDeleteChallengeParticipant(config,u)) {
+            challengeInvalidMove('チャレンジでは最後の参加者を削除できません。');
+            return;
+        }
         if (config.units.filter(v => v.team === u.team).length <= 1) {
             toast('各チームに1人以上必要です。');
             return;

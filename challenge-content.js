@@ -13,6 +13,15 @@ export const CHALLENGES = Object.freeze([
 export const isSeraraChallengeId = (id) => id === 'serara-normal' || id === 'serara-hard';
 export function activeChallenge(config) { return CHALLENGES.find(c=>c.id===config?.challenge?.id) || null; }
 export function canEditChallengeUnit(config, unit) { return !activeChallenge(config) || unit?.team==='A'; }
+/** Only challengers (team A) can be duplicated or removed during a challenge. */
+export function canCloneChallengeParticipant(config, unit) {
+  const challenge = activeChallenge(config);
+  return !challenge || (unit?.team === 'A' && config.units.filter(u => u.team === 'A').length < challenge.teamALimit);
+}
+export function canDeleteChallengeParticipant(config, unit) {
+  const challenge = activeChallenge(config);
+  return !challenge || (unit?.team === 'A' && config.units.filter(u => u.team === 'A').length > 1);
+}
 export function challengePartyValid(config) {
   const c=activeChallenge(config);
   return !c || (config.units.filter(u=>u.team==='A').length>=1 && config.units.filter(u=>u.team==='A').length<=c.teamALimit && config.units.filter(u=>u.team==='B').length===1 && config.units.find(u=>u.team==='B')?.id===CHALLENGE_BOSS_ID);
