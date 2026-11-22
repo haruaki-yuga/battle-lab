@@ -1,19 +1,20 @@
-import { confirmInApp } from './in-app-confirm.js?v=1.18.20';
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.20&reactions=2&logfirst=1&labels=0&seraramap=1';
+import { REACTION_DEFINITIONS, buildBattleReactions, battleReactionByLog, battleReactionAt, normalizedReactionLines } from './battle-reactions.js?v=1.18.21';
+import { confirmInApp } from './in-app-confirm.js?v=1.18.21';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.21&reactions=2&logfirst=1&labels=0&seraramap=1';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
 import { deleteUnitSafely } from './unit-management.js?v=1.18.19';
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.19';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.21';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js?v=1.18.19';
-import { Battle, clamp } from './engine.js?v=1.18.19';
+import { Battle, clamp } from './engine.js?v=1.18.21';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.19';
 import { loadOfficialArenaViaWorker, parseOfficialArenaResult, officialArenaResultLocation, officialArenaStatistics, officialArenaDisplayGroups, officialArenaLogTypeLabel } from './official-arena-log.js?v=1.18.19';
-import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js?v=1.18.19';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.19';
+import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js?v=1.18.21';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.21';
 import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.19';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js?v=1.18.19';
 import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18.19';
@@ -24,7 +25,7 @@ import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js?v=1.18.19';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
-import { createCharacterImporter } from './character-ui.js?v=1.18.20';
+import { createCharacterImporter } from './character-ui.js?v=1.18.21';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
 import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.18';
@@ -140,6 +141,7 @@ const mobileExpandedRules = new Set([0]);
 let shareImportActions = null, shareImportTargetId = null, shareImportBusy = false;
 let shareExportTargetId = null, shareExportBusy = false;
 let passivePreviewTurn = 0, passivePreviewHp = 'start', slotsExpanded = false, selectedSlotIndex = 0;
+let aiSubTab = 'rules';
 let guideTopicId = ''; // Within each page, keep the selected manual topic until navigation
 const savedUi = readUiState(typeof sessionStorage === 'undefined' ? null : sessionStorage, config.units.map(u => u.id));
 let page = savedUi.page, selected = savedUi.selected, skillSearch = savedUi.skillSearch, kindFilter = savedUi.kindFilter, skillFilter = savedUi.skillFilter, skillPage = savedUi.skillPage, sim = readReplayState(typeof sessionStorage === 'undefined' ? null : sessionStorage, Battle), frame = savedUi.frame, logType = savedUi.logType, logTurn = savedUi.logTurn, logSearch = savedUi.logSearch, worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
@@ -282,7 +284,7 @@ function render() {
     const mobileTools = `<div class="mobile-top-tools"><button class="mobile-theme-toggle" type="button" data-act="toggle-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}" title="明暗の切替">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}</button>${helpButton()}${btn('データ管理', 'jump-data', 'mobile-data-shortcut')}</div>`;
     app.innerHTML = `<div class="shell"><aside class="sidebar"><div class="brand"><strong>ロスアカ Battle Lab</strong><small>闘技趣味レーター</small>\
 </div><div class="nav-label">メニュー</div><nav class="nav" aria-label="メインナビゲーション">${Object.entries(titles).map(([k, v]) => btn(`${icon(k)}<span>${v}</span>${k === 'skills' ? '<span class="count">220</span>' : ''}`, `page:${k}`, page === k ? 'active' : '')).join('')}</nav>\
-<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.20</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.20</small></div><div class="breadcrumb">\
+<div class="sidebar-footer">${btn('データ管理', 'jump-data', 'sidebar-data-button')}${btn('このページの使い方', 'page-help', 'sidebar-data-button help-sidebar-button')}${btn('不具合を報告', 'open-bug-report', 'sidebar-bug-report')}<button type="button" class="theme-toggle" data-act="toggle-theme" aria-pressed="${document.documentElement.dataset.theme === 'dark'}" aria-label="画面の明暗を切り替える">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span class="theme-toggle-label">${document.documentElement.dataset.theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}</span></button><span class="saved desktop-save-status" id="save-status">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span><div class="version">Web版 1.18.21</div></div></aside><main class="main"><header class="topbar"><div class="mobile-top-brand">Battle Lab <small>v1.18.21</small></div><div class="breadcrumb">\
 ロスアカ Battle Lab <span style="margin:0 9px;color:#a6aeb5">/</span> ${titles[page]}</div>\
 <div class="top-actions"><span class="saved">${saveFailed ? '保存できません' : 'ブラウザに自動保存'}</span>${helpButton()}${btn('データ管理', 'jump-data', 'small')}</div>${mobileTools}</header><div class="content">${errors.length ? `<div class="error-box" role="alert">${errors.map(esc).join('<br>')}</div>` : ''}${({ setup: setupPage, skills: skillsPage, rules: rulesPage, sim: simPage }[page])()}</div>\
 </main>${page === 'sim' && (sim || officialArena) ? `<aside id="mobile-replay-map" class="mobile-replay-map" hidden aria-label="ログ閲覧中の戦闘マップ"><button type="button" class="mobile-replay-map-button" data-act="map-expand" aria-label="現在の戦闘マップを拡大表示"><div id="mobile-replay-map-view" class="mobile-replay-map-view" aria-hidden="true"></div><span class="mobile-replay-map-caption"><span id="mobile-replay-map-turn">戦闘マップ</span><span>拡大 ↗</span></span></button></aside>` : ''}${mobileNav}</div>`;
@@ -746,9 +748,16 @@ function targetConditionRow(c, ri, ci) {
     const inputs = filter ? `${ARENA_CONDITION_SPECS[c.metric]?.has_bs_list ? bsConditionChecklist(c, attr) : ''}${officialRangeInputs(c, attr, '対象条件')}${select({false: 'である者', true: 'ではない者'}, String(!!c.not), attr('not'))}` : '';
     return `<div class="condition-row target-condition-row"><span class="join">${filter ? '絞込' : '優先'}</span>${choices}${inputs}${btn('×', `remove-target-condition:${ri}:${ci}`, 'small ghost remove', 'aria-label="対象選択の条件を削除"')}</div>`;
 }
+function reactionEditorPage(u) {
+    const groups = [...new Set(REACTION_DEFINITIONS.map(d=>d.group))];
+    const values = u.reactionLines || {};
+    return `<div class="reactions-edit-intro"><strong>${esc(u.name)}の演出・セリフ</strong><p>各条件で発動する台詞を入力してください。空欄は表示されません。表示確率は固定です。A/Bの被ダメージ台詞は同じ段階から半々で選びます。最も高い該当ダメージ段階を優先します。</p></div><div class="reactions-editor">${groups.map(group => `<section class="reaction-editor-group"><h2>${esc(group)}</h2><div class="reaction-editor-grid">${REACTION_DEFINITIONS.filter(d=>d.group===group).map(d=>`<label class="reaction-editor-item"><span class="reaction-editor-label">${esc(d.label)} <small>表示 ${d.chance}%</small></span><textarea data-reaction-key="${d.key}" rows="2" maxlength="500" placeholder="セリフ未設定">${esc(values[d.key]||'')}</textarea></label>`).join('')}</div></section>`).join('')}</div>`;
+}
 function rulesPage() {
-    const u = current();
-    return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '公式アリーナの条件・行動・対象・位置取り定義（2026年11月16日取得）に準拠。上から順に判定します。', btn('AI設定追加', 'add-rule', 'primary', u.rules.length >= ARENA_MAX_RULES ? 'disabled title="公式の最大20件"' : '')) + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
+    const u=current();
+    const tabs = `<div class="ai-settings-tabs" role="tablist" aria-label="AI設定の種類"><button type="button" role="tab" data-act="ai-tab:rules" aria-selected="${aiSubTab==='rules'}" class="${aiSubTab==='rules'?'active':''}">行動ルール</button><button type="button" role="tab" data-act="ai-tab:reactions" aria-selected="${aiSubTab==='reactions'}" class="${aiSubTab==='reactions'?'active':''}">演出（セリフ）</button></div>`;
+    if(aiSubTab==='reactions') return heading('REACTION SETTINGS', 'キャラAI設定（β版）', '戦闘に応じたセリフを設定します。命中・回避などの判定結果は変わりません。') + tabs + `<div class="toolbar-secondary tactics-toolbar">${unitSelect()}<span class="subtle">キャラごとに保存 · 未入力の条件は演出しません</span>${unitTacticsControls()}</div>` + reactionEditorPage(u);
+    return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '公式アリーナの条件・行動・対象・位置取り定義（2026年11月16日取得）に準拠。上から順に判定します。', btn('AI設定追加', 'add-rule', 'primary', u.rules.length >= ARENA_MAX_RULES ? 'disabled title="公式の最大20件"' : '')) + tabs + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
 <strong>公式アリーナの戦術を読み込みました：${arenaImportReport.ruleCount}ルール</strong>\
 <p>未解決のスキル・ID指定を含むルールは無効化しています。内容を確認してから有効にしてください。</p>${arenaImportReport.warnings.length ? `<details>\
 <summary>変換時の注意（${arenaImportReport.warnings.length}件）</summary>\
@@ -978,11 +987,22 @@ function paintChallengeReaction() {
     text.textContent=picked?`「${picked.text}」`:'戦闘中のリアクションをリプレイで確認できます。';
 }
 
+function battleDialoguePanel(){
+    const all=sim ? buildBattleReactions(sim) : [];
+    const preview=!sim ? config.units.filter(u=>!(challenge()?.id==='serara-normal' && u.team==='B') && u.reactionLines?.start?.trim())
+        .map(u=>({unitName:u.name,text:u.reactionLines.start,key:'start'})) : [];
+    if(!all.length && !preview.length)return '';
+    const lines=sim ? battleReactionAt(sim,frame<0?Math.max(0,sim.frames.length-1):frame,selectedLogId) : preview;
+    return `<section class="battle-dialogue-panel" id="battle-dialogue-panel" aria-label="キャラクターの演出セリフ"><h2>キャラクターのセリフ</h2><div id="battle-dialogue-lines">${battleDialogueMarkup(lines)}</div></section>`;
+}
+function battleDialogueMarkup(lines){
+    return lines?.length?lines.map(e=>`<div class="battle-dialogue-line"><strong>${esc(e.unitName)}</strong><p>「${esc(e.text)}」</p></div>`).join(''):'<p class="subtle">この場面にセリフはありません。</p>';
+}
 function simPage() {
     const result = sim?.result();
     const stale = sim && JSON.stringify(config) !== JSON.stringify(sim.config);
     const a = config.units.filter(u => u.team === 'A').length, b = config.units.filter(u => u.team === 'B').length;
-    return `<div class="sim-page-heading"><div class="sim-page-title"><h1>シミュレーション</h1><p class="subtitle">実行ごとに乱数を自動で更新します。</p></div><div class="sim-settings"><div class="sim-settings-fields">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('ターン制限', '<div class="fixed-turns">サドンデス込 25T</div>')}</div><div class="sim-settings-actions">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div></div></div>${stale ? '<div class="notice">設定が変更されています。表示中の結果は変更前のものです。次の実行時に初期状態から再計算します。</div>' : ''}${officialBattlePanel()}${challengeReactionPanel()}${batchPanel()}${!sim ? `<div class="result-grid">\
+    return `<div class="sim-page-heading"><div class="sim-page-title"><h1>シミュレーション</h1><p class="subtitle">実行ごとに乱数を自動で更新します。</p></div><div class="sim-settings"><div class="sim-settings-fields">${field('乱数', select({ auto: '毎回自動（通常）', fixed: 'シード固定（再現用）' }, config.settings.seedMode, 'data-settings="seedMode"'))}${config.settings.seedMode === 'fixed' ? field('再現用シード', `<input data-settings="seed" value="${esc(config.settings.seed)}">`) : ''}${field('ターン制限', '<div class="fixed-turns">サドンデス込 25T</div>')}</div><div class="sim-settings-actions">${btn('リセット', 'reset-sim', '', !sim ? 'disabled' : '')}${btn('1ターン進める', 'step', '', busy || (sim?.done && !stale) ? 'disabled' : '')}${btn(`${icon('sim', 'inline-icon')}${sim && !sim.done ? '最後まで実行' : 'シミュレーション実行'}`, 'run', 'primary', busy ? 'disabled' : '')}</div></div></div>${stale ? '<div class="notice">設定が変更されています。表示中の結果は変更前のものです。次の実行時に初期状態から再計算します。</div>' : ''}${officialBattlePanel()}${challengeReactionPanel()}${battleDialoguePanel()}${batchPanel()}${!sim ? `<div class="result-grid">\
 <section class="panel"><div class="panel-head"><h2>対戦プレビュー</h2>${pill(`${a} vs ${b}`, 'green')}</div>\
 <div class="panel-body">${map(config.units, true)}</div>\
 </section><section class="empty-state"><div class="big-icon">${icon('sim')}</div>${btn('シミュレーション実行', 'run', 'primary')}<p class="footnote">\
@@ -1039,10 +1059,20 @@ TEAM A ${tb.points.A}点 / TEAM B ${tb.points.B}点</span>\
 </section></div>`;
 }
 function visibleLogs() {
-    return !sim ? [] : sim.logs.filter(l => (logTurn === 'all' || l.turn === Number(logTurn)) && (logType === 'all' || logType === 'main' && !['condition', 'actionEnd', 'reserve'].includes(l.type) || logType === l.type || logType === 'damage' && (['pursuit', 'suddenDamage'].includes(l.type) || l.type === 'bs' && l.message.includes('障壁が'))) && (!logSearch || (l.message + ' ' + l.detail + ' ' + (l.tags || []).map(t => t.label).join(' ')).includes(logSearch)));
+    if(!sim)return [];
+    const dialogue=logSearch?battleReactionByLog(sim):null;
+    const serara=logSearch && sim?.config?.challenge?.id==='serara-normal'?seraraReactionByLog(sim):null;
+    return sim.logs.filter(l=>
+        (logTurn==='all'||l.turn===Number(logTurn)) &&
+        (logType==='all'||logType==='main'&&!['condition','actionEnd','reserve'].includes(l.type)||
+         logType===l.type||logType==='damage'&&(['pursuit','suddenDamage'].includes(l.type)||l.type==='bs'&&l.message.includes('障壁が'))) &&
+        (!logSearch || (
+            l.message+' '+l.detail+' '+(l.tags||[]).map(t=>t.label).join(' ')
+        ).includes(logSearch) || (dialogue?.get(l.id)||[]).some(e=>(e.unitName+' '+e.text).includes(logSearch)) ||
+        (serara?.get(l.id)||[]).some(e=>('セララ '+e.text).includes(logSearch))));
 }
 function logEntries() {
-    const logs = visibleLogs(), reactions = challenge()?.id==='serara-normal' && sim?.config?.challenge?.id==='serara-normal' ? seraraReactionByLog(sim) : new Map(), types = {
+    const logs = visibleLogs(), reactions = challenge()?.id==='serara-normal' && sim?.config?.challenge?.id==='serara-normal' ? seraraReactionByLog(sim) : new Map(), dialogueReactions = battleReactionByLog(sim), types = {
         action: '行動',
         turn: 'ターン',
         sudden: 'サドンデス',
@@ -1072,8 +1102,10 @@ function logEntries() {
         logTurn === 'all' && ['all','main'].includes(logType) &&
         (!logSearch || (`${SERARA_REACTION_LINES.start} セララ 開始前 挨拶`).includes(logSearch))
         ? `<div class="log serara-start-log${selectedLogId===-1 && frame===0 ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="-1" data-act="select-log:-1" aria-pressed="${selectedLogId===-1 && frame===0}"><span class="time">開始前</span><span class="type">挨拶</span><div class="serara-log-reaction">${challengePortrait(challenge(),'serara-log-portrait')}<span><strong>セララ</strong>「${esc(SERARA_REACTION_LINES.start)}」</span></div></div>` : '';
+    const genericGreetings=buildBattleReactions(sim).filter(e=>e.key==='start');
+    const genericOpening=genericGreetings.length && logTurn==='all' && ['all','main'].includes(logType) && (!logSearch || genericGreetings.some(e=>`${e.unitName} ${e.text}`.includes(logSearch))) ? `<div class="log character-greeting-log" data-act="select-log:-1" role="button" tabindex="0" data-log-id="-1"><span class="time">開始前</span><span class="type">挨拶</span><div>${genericGreetings.filter(e=>!logSearch||`${e.unitName} ${e.text}`.includes(logSearch)).map(e=>`<div class="battle-inline-reaction"><strong>${esc(e.unitName)}</strong>「${esc(e.text)}」</div>`).join('')}</div></div>` : '';
     const shown = logs.slice(0, logVisibleCount);
-    return opening + shown.map(l => `<div class="log ${l.type}${selectedLogId === l.id ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="${l.id}" data-act="select-log:${l.id}" aria-pressed="${selectedLogId === l.id}">\
+    return opening + genericOpening + shown.map(l => `<div class="log ${l.type}${selectedLogId === l.id ? ' selected-log' : ''}" role="button" tabindex="0" data-log-id="${l.id}" data-act="select-log:${l.id}" aria-pressed="${selectedLogId === l.id}">\
 <span class="time">T${String(l.turn).padStart(2, '0')}<span class="time-gauge">${['speed', 'sudden', 'suddenDamage'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}</span></span>\
 <span class="type">${combatLogTypeLabel(l.type, l.message) || types[l.type] || l.type}</span>\
 <div>${esc(l.message)}${l.tags?.length ? `<div class="log-tags">${l.tags.map(tag => `<span class="log-tag tag-${[
@@ -1082,8 +1114,8 @@ function logEntries() {
         'weak',
         'status',
         'result'
-    ].includes(tag.kind) ? tag.kind : 'other'}">${esc(tag.label)}</span>`).join('')}</div>` : ''}${l.detail ? `<div class="detail">${esc(l.detail)}</div>` : ''}${(reactions.get(l.id)||[]).map(r=>`<div class="serara-log-reaction">${challengePortrait(challenge(),'serara-log-portrait')}<span><strong>セララ</strong>「${esc(r.text)}」</span></div>`).join('')}</div>\
-</div>`).join('') + (!logs.length && !opening ? '<div class="empty">一致するログがありません。</div>' : '') + (logs.length > shown.length ? `<div class="log-load-more"><button type="button" data-act="log-more">続きを表示（${shown.length.toLocaleString()} / ${logs.length.toLocaleString()}件）</button></div>` : '');
+    ].includes(tag.kind) ? tag.kind : 'other'}">${esc(tag.label)}</span>`).join('')}</div>` : ''}${l.detail ? `<div class="detail">${esc(l.detail)}</div>` : ''}${(reactions.get(l.id)||[]).map(r=>`<div class="serara-log-reaction">${challengePortrait(challenge(),'serara-log-portrait')}<span><strong>セララ</strong>「${esc(r.text)}」</span></div>`).join('')}${(dialogueReactions.get(l.id)||[]).map(r=>`<div class="battle-inline-reaction"><strong>${esc(r.unitName)}</strong>「${esc(r.text)}」</div>`).join('')}</div>\
+</div>`).join('') + (!logs.length && !opening && !genericOpening ? '<div class="empty">一致するログがありません。</div>' : '') + (logs.length > shown.length ? `<div class="log-load-more"><button type="button" data-act="log-more">続きを表示（${shown.length.toLocaleString()} / ${logs.length.toLocaleString()}件）</button></div>` : '');
 }
 // 長いBS一覧でHP/APバーが縦に押し広げられないようにする。
 // 通常の再生と公式戦闘の再生の両方で共通使用する。
@@ -1127,6 +1159,8 @@ function paintReplay() {
     $('#replay-label').textContent = log ? `T${String(log.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(log.type) ? '開始時' : `残行動値 ${Math.floor(log.gauge)}`}｜${log.message}` : f.label;
     $('#frame-range').value = frame;
     paintChallengeReaction();
+    const dialogue=$('#battle-dialogue-lines');
+    if(dialogue)dialogue.innerHTML=battleDialogueMarkup(battleReactionAt(sim,frame,selectedLogId));
     $('#log-entries')?.querySelectorAll('[data-log-id]').forEach(el => {
         const active = Number(el.dataset.logId) === selectedLogId;
         el.classList.toggle('selected-log', active);
@@ -1134,7 +1168,7 @@ function paintReplay() {
     });
 }
 function selectLog(id) {
-    if (Number(id) === -1 && sim?.config?.challenge?.id === 'serara-normal') {
+    if (Number(id) === -1 && sim && (sim.config?.challenge?.id === 'serara-normal' || buildBattleReactions(sim).some(e=>e.key==='start'))) {
         selectedLogId = -1;
         frame = 0;
         persistUi();
@@ -1407,7 +1441,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.18', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.18.21', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];
@@ -1599,6 +1633,10 @@ async function applyShareResponse() {
 async function onAction(act) {
     const [a, arg, arg2] = act.split(':');
     const u = current();
+    if (a === 'ai-tab') {
+        if(['rules','reactions'].includes(arg)){aiSubTab=arg;render();}
+        return;
+    }
     if (a === 'open-challenges') {
         const choices=CHALLENGES.map(c=>`<section class="challenge-option">${challengePortrait(c, 'challenge-option-portrait')}<div class="challenge-option-details"><h3>${esc(c.title)} <span class="challenge-level">${esc(c.difficulty)}</span></h3><p>参加上限：チームA ${c.teamALimit}人 ／ 敵：${esc(c.enemyName)}</p><p>敵の能力値・AI設定は公開されず、変更もできません。</p></div>${btn(challenge()?.id===c.id?'挑戦中':'チャレンジ開始',`challenge-start:${c.id}`,'primary',challenge()?'disabled':'')}</section>`).join('');
         $('#modal').innerHTML=`<div class="modal-header"><div><div class="eyebrow">CHALLENGE CONTENTS</div><h2>チャレンジ</h2></div>${btn('×','close-modal','ghost')}</div><div class="challenge-list">${choices}</div><div class="modal-footer">${challenge()?btn('通常編成に戻す','challenge-end','small'):''}${btn('閉じる','close-modal','small')}</div>`;
@@ -2170,7 +2208,10 @@ async function onAction(act) {
     else if (a === 'export-log') {
         const reactions=challenge()?.id==='serara-normal' && sim?.config?.challenge?.id==='serara-normal' ? seraraReactionByLog(sim) : new Map();
         const greeting=reactions.size||sim?.config?.challenge?.id==='serara-normal' ? `【セララ】「${SERARA_REACTION_LINES.start}」\n` : '';
-        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + greeting + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}${(reactions.get(l.id)||[]).map(r=>`\n  【セララ】「${r.text}」`).join('')}`).join('\n'), 'text/plain');
+        const general=battleReactionByLog(sim);
+        const otherGreetings=buildBattleReactions(sim).filter(e=>e.key==='start').map(e=>`【${e.unitName}】「${e.text}」`).join('\n');
+        const openingDialogue=otherGreetings ? otherGreetings+'\n' : '';
+        download('arcadia-battle-log.txt', `ロスアカ Battle Lab / seed: ${sim.seed}\n\n` + greeting + openingDialogue + sim.logs.map(l => `[T${String(l.turn).padStart(2, '0')} / ${['speed', 'sudden', 'suddenDamage'].includes(l.type) ? '開始時' : `残行動値 ${Math.floor(l.gauge)}`}] ${l.message}${l.tags?.length ? '\n  【効果】' + l.tags.map(t => t.label).join(' / ') : ''}${l.detail ? '\n  ' + l.detail : ''}${(reactions.get(l.id)||[]).map(r=>`\n  【セララ】「${r.text}」`).join('')}${(general.get(l.id)||[]).map(r=>`\n  【${r.unitName}】「${r.text}」`).join('')}`).join('\n'), 'text/plain');
         return;
     }
     else if (a === 'reset-config') {
@@ -2212,6 +2253,13 @@ document.addEventListener('toggle', e => {
 }, true);
 document.addEventListener('change', e => {
     const el = e.target, u = current();
+    if (el.matches('[data-reaction-key]')) {
+        const key=el.dataset.reactionKey;
+        if (!REACTION_DEFINITIONS.some(d=>d.key===key))return;
+        const next={...(u.reactionLines||{})};
+        if(el.value.trim())next[key]=el.value.slice(0,500);else delete next[key];
+        u.reactionLines=next;save();return;
+    }
     if (el.matches('[data-guide-topic-select]')) {
         if (!PAGE_GUIDES[page]?.topics.some(t=>t.id===el.value)) return;
         guideTopicId=el.value; renderPageHelp(page); return;
@@ -2616,6 +2664,13 @@ document.addEventListener('compositionend', e => {
 });
 document.addEventListener('input', e => {
     const el = e.target;
+    if (el.matches('[data-reaction-key]')) {
+        const unit=current(),key=el.dataset.reactionKey;
+        if(!REACTION_DEFINITIONS.some(d=>d.key===key))return;
+        const next={...(unit.reactionLines||{})};
+        if(el.value.trim())next[key]=el.value.slice(0,500);else delete next[key];
+        unit.reactionLines=next;save();return;
+    }
     if (el.id === 'official-frame-range') {
         setOfficialFrame(el.value);return;
     }

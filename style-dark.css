@@ -347,3 +347,8 @@ html[data-theme="dark"] .replay-bs-overflow > summary {
   border-color: #3d4b58;
   color: #e1e8eb;
 }
+
+/* v1.18.21 dialogue editor readability */
+:root[data-theme="dark"] .ai-settings-tabs button.active { background:#24312f; }
+:root[data-theme="dark"] .battle-dialogue-line,
+:root[data-theme="dark"] .battle-inline-reaction { background:#202e33; }

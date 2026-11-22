@@ -1,4 +1,4 @@
-import { runBatch } from './batch.js?v=1.18';
+import { runBatch } from './batch.js?v=1.18.21';
 self.onmessage = ({ data: { config, n } }) => {
     try {
         self.postMessage(runBatch(config, n, progress => self.postMessage({ progress })));

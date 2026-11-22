@@ -1,3 +1,4 @@
+import { validReactionLines } from './battle-reactions.js?v=1.18.21';
 import { validConditionalPassives } from './conditional-passives.js?v=1.18';
 import { CATALOG } from './catalog.js';
 import { OFFICIAL_AI, OFFICIAL_BS_NAMES, OFFICIAL_METRIC_ROWS, OFFICIAL_SORT_ROWS, OFFICIAL_SUBJECT_ROWS, OFFICIAL_ACTION_ROWS, OFFICIAL_CONDITION_SPECS } from './official-ai-schema.js?v=1.17.16';
@@ -367,6 +368,7 @@ export function freshUnit(overrides = {}) {
         immunities: [],
         skills: ['wiki-001', 'wiki-041'],
         skillAliases: {},
+        reactionLines: {},
         specializedSkills: {},
         rules: [freshRule({ action: 'effectiveAttack' }), freshRule({ conditions: [], action: 'carry', autoMove: false, target: 'self' })],
         ...overrides
@@ -581,6 +583,8 @@ export function validateConfig(c) {
         ])
             if (!Number.isFinite(u[k]))
                 errors.push(`${u.name}: ${k}は数値で指定してください。`);
+        if (!validReactionLines(u.reactionLines))
+            errors.push(`${u.name}: 演出セリフの設定が不正です。`);
         if (u.conditionalPassives !== undefined && !validConditionalPassives(u.conditionalPassives))
             errors.push(`${u.name}: 条件付きパッシブのデータが不正です。`);
         if (u.element !== undefined && !validElement(u.element))

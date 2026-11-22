@@ -1,7 +1,7 @@
 import { validConditionalPassives } from './conditional-passives.js?v=1.18';
 /** One character per JSON file. Unit identity, team and map position belong to the destination slot. */
-import { clone, STAT_LABELS, RANGES, BS_NAMES, validateConfig } from './model.js?v=1.18.19';
-import { exportUnitTactics, importUnitTactics, UNIT_TACTICS_FORMAT } from './unit-tactics-io.js?v=1.18.19';
+import { clone, STAT_LABELS, RANGES, BS_NAMES, validateConfig } from './model.js?v=1.18.21';
+import { exportUnitTactics, importUnitTactics, UNIT_TACTICS_FORMAT } from './unit-tactics-io.js?v=1.18.21';
 import { normalizeLegacyBarrierConfig } from './barrier-rules.js';
 import { emptyElement, validElement, highestElement, validElements } from './element-bonus.js?v=1.17.16';
 

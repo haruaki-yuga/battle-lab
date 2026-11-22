@@ -1,6 +1,7 @@
+import {validReactionLines,normalizedReactionLines} from './battle-reactions.js?v=1.18.21';
 import { CATALOG } from './catalog.js';
 import { normalizeLegacyBarrierSkill } from './barrier-rules.js';
-import { clone, uid, validateConfig } from './model.js?v=1.18.19';
+import { clone, uid, validateConfig } from './model.js?v=1.18.21';
 export const UNIT_TACTICS_FORMAT = 'rosuaka-unit-tactics';
 export const UNIT_TACTICS_VERSION = 1;
 const WIKI_IDS = new Set(CATALOG.map(s => s.id));
@@ -37,6 +38,7 @@ export function exportUnitTactics(config, unitId) {
         sourceUnit: { id: unit.id, name: unit.name },
         skills: clone(unit.skills),
         rules: clone(unit.rules),
+        reactionLines: clone(normalizedReactionLines(unit.reactionLines)),
         customSkills: definitions,
         skillAliases: clone(unit.skillAliases || {}),
         specializedSkills: clone(unit.specializedSkills || {}),
@@ -70,6 +72,8 @@ export function importUnitTactics(config, targetId, data) {
         Object.entries(data.officialSkillIds).some(([id, originalId]) =>
             !isStringId(id) || typeof originalId !== 'string' || !originalId || originalId.length > 200)))
         throw Error('公式スキルIDの対応情報が不正です。');
+    if (!validReactionLines(data.reactionLines))
+        throw Error('演出セリフの設定が不正です。');
     if (data.rules.some(r => !r || typeof r !== 'object' || Array.isArray(r)))
         throw Error('キャラAIルールの形式が不正です。');
     const target = config.units.find(u => u.id === targetId);
@@ -134,6 +138,7 @@ export function importUnitTactics(config, targetId, data) {
     const warnings = [];
     if (ignoredOfficialIds.length)
         warnings.push(`存在しないスキルの公式ID対応 ${ignoredOfficialIds.length}件を無視しました。`);
+    dst.reactionLines = normalizedReactionLines(data.reactionLines);
     dst.rules = clone(data.rules).map(r => {
         r.id = uid('r');
         if (r.action === 'skill' && idMap.has(r.skillId))

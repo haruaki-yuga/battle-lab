@@ -3377,3 +3377,26 @@ details[open] > summary > .stat-chevron {transform:rotate(180deg)}
 .app-confirm-actions { display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
 .app-confirm-actions button { min-width:96px; }
 @media(max-width:440px) { .app-confirm-dialog form { padding:16px; } .app-confirm-actions button { flex:1; } }
+
+/* v1.18.21: per-character reaction dialogue settings, distinct from AI rules. */
+.ai-settings-tabs { display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--line); margin:14px 0 18px; }
+.ai-settings-tabs button { border-radius:7px 7px 0 0; border-bottom:3px solid transparent; background:transparent; padding:10px 18px; font-weight:650; }
+.ai-settings-tabs button.active { color:var(--green); border-bottom-color:var(--green); background:var(--white,#fff); }
+.reactions-edit-intro { padding:15px 18px; border:1px solid var(--line); border-radius:10px; margin:12px 0; }
+.reactions-edit-intro p { color:var(--muted,#64716a); font-size:13px; margin-top:4px; }
+.reactions-editor { display:grid; gap:18px; }
+.reaction-editor-group { border:1px solid var(--line); border-radius:10px; padding:17px; min-width:0; }
+.reaction-editor-group h2 { margin-bottom:12px; }
+.reaction-editor-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr)); gap:13px; }
+.reaction-editor-item { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.reaction-editor-label { font-weight:600; }
+.reaction-editor-label small { font-size:11px; font-weight:500; color:var(--muted,#64716a); margin-left:5px; }
+.reaction-editor-item textarea { width:100%; min-height:62px; resize:vertical; }
+.battle-dialogue-panel { border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin:12px 0; }
+.battle-dialogue-panel h2 { margin-bottom:8px; }
+#battle-dialogue-lines { display:grid; gap:8px; }
+.battle-dialogue-line { border-left:3px solid var(--green); padding:7px 10px; background:var(--surface,#f7f9f8); border-radius:0 6px 6px 0; }
+.battle-dialogue-line p { white-space:pre-wrap; overflow-wrap:anywhere; }
+.battle-inline-reaction { margin:5px 0 2px; padding:6px 9px; border-left:3px solid var(--green); background:var(--surface,#f7f9f8); border-radius:0 5px 5px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.battle-inline-reaction strong { margin-right:7px; }
+@media(max-width:580px){.reaction-editor-group{padding:12px}.ai-settings-tabs button{padding:9px 12px}.battle-dialogue-panel{padding:10px 12px}}

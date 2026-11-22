@@ -1,7 +1,7 @@
 import { conditionalPassiveModifier, conditionalPassiveEffectModifier } from './conditional-passives.js?v=1.18';
 import { normalizeSettings, runSeed } from './run-settings.js';
 import { freshBattleStatistics, finishBattleStatistics, HIT_RANK_KEYS } from './battle-statistics.js?v=1.18.6';
-import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js?v=1.18.19';
+import { clone, validateConfig, BS_GROUPS, BS_NAMES, STAT_LABELS, EFFECTS, targetCriteriaForRule } from './model.js?v=1.18.21';
 import { scoreDraw } from './battle-summary.js';
 import { selectDiskDestination } from './movement-disk.js';
 import { bsLogLabel } from './combat-log-format.js';
@@ -1448,6 +1448,10 @@ export class Battle {
         if (s.kind === 'attack') this.tally(u, 'attacks');
         if (s.kind !== 'attack') {
             const roll = this.roll(u, s.castMods);
+            // Presentation-only metadata for healing/transfer CT. No additional RNG
+            // calls or battle log entries; battle calculations are unchanged.
+            if (roll.critical && !roll.fumble && !this.quiet && this.logs.at(-1)?.type === 'skill')
+                this.logs[this.logs.length - 1].castCritical = true;
             if (roll.fumble) {
                 u.av = Math.max(0, u.av - roll.fb);
                 this.log('miss', `${s.name}の行使に失敗（ファンブル）`, `1d100 ${roll.die} / FB ${roll.fb}`, u);
