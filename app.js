@@ -1,6 +1,7 @@
 import { REACTION_DEFINITIONS, MAX_REACTION_LENGTH, buildBattleReactions, battleReactionByLog, battleReactionAt, normalizedReactionLines } from './battle-reactions.js?v=1.18.21&dialogueui=1';
+import { exportReactionJson, readReactionJson } from './reaction-json-io.js?v=1.18.21&dialoguejson=1';
 import { confirmInApp } from './in-app-confirm.js?v=1.18.21&dialogueui=1';
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.21&reactions=2&logfirst=1&labels=0&seraramap=1';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.21&dialoguejson=1&reactions=2&logfirst=1&labels=0&seraramap=1';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
@@ -137,7 +138,7 @@ if (config.initialLayoutVersion !== 2) {
 }
 const LOG_RENDER_BATCH = 700;
 let logVisibleCount = LOG_RENDER_BATCH;
-let selectedLogId = -1, logScrollTop = null, logScrollFrame = 0, unitTacticsImportTarget = null, characterJsonImportTarget = null, arenaImportTarget = null, arenaImportReport = null;
+let selectedLogId = -1, logScrollTop = null, logScrollFrame = 0, unitTacticsImportTarget = null, reactionJsonImportTarget = null, characterJsonImportTarget = null, arenaImportTarget = null, arenaImportReport = null;
 let mapZoom = 1, mapRelations = false, mapMoveCircle = false, mapFocus = 'selected', mapPan = { x: 0, y: 0 }, mapDrag = null;
 const mobileExpandedRules = new Set([0]);
 let shareImportActions = null, shareImportTargetId = null, shareImportBusy = false;
@@ -781,7 +782,7 @@ function reactionEditorPage(u) {
 function rulesPage() {
     const u=current();
     const tabs = `<div class="ai-settings-tabs" role="tablist" aria-label="AI設定の種類"><button type="button" role="tab" data-act="ai-tab:rules" aria-selected="${aiSubTab==='rules'}" class="${aiSubTab==='rules'?'active':''}">行動ルール</button><button type="button" role="tab" data-act="ai-tab:reactions" aria-selected="${aiSubTab==='reactions'}" class="${aiSubTab==='reactions'?'active':''}">演出（セリフ）</button></div>`;
-    if(aiSubTab==='reactions') return heading('REACTION SETTINGS', 'キャラAI設定（β版）', '戦闘に応じたセリフを設定します。命中・回避などの判定結果は変わりません。') + tabs + `<div class="toolbar-secondary tactics-toolbar">${unitSelect()}<span class="subtle">キャラごとに保存 · 未入力の条件は演出しません</span>${unitTacticsControls()}</div>` + reactionEditorPage(u);
+    if(aiSubTab==='reactions') return heading('REACTION SETTINGS', 'キャラAI設定（β版）', '戦闘に応じたセリフを設定します。命中・回避などの判定結果は変わりません。') + tabs + `<div class="toolbar-secondary tactics-toolbar">${unitSelect()}<div class="unit-tactics-buttons reaction-json-controls" role="group" aria-label="セリフJSON管理">${btn('セリフJSON書き出し','export-reaction-json','small')}${btn('セリフJSON読み込み','import-reaction-json','small')}</div></div>` + reactionEditorPage(u);
     return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '公式アリーナの条件・行動・対象・位置取り定義（2026年11月16日取得）に準拠。上から順に判定します。', btn('AI設定追加', 'add-rule', 'primary', u.rules.length >= ARENA_MAX_RULES ? 'disabled title="公式の最大20件"' : '')) + tabs + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
 <strong>公式アリーナの戦術を読み込みました：${arenaImportReport.ruleCount}ルール</strong>\
 <p>未解決のスキル・ID指定を含むルールは無効化しています。内容を確認してから有効にしてください。</p>${arenaImportReport.warnings.length ? `<details>\
@@ -1844,6 +1845,21 @@ async function onAction(act) {
         openCharacterImport();
         return;
     }
+    if (a === 'export-reaction-json') {
+        try {
+            if (!allowUnit(u)) { challengeInvalidMove(); return; }
+            const name = (u.name || 'character').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').slice(0,60) || 'character';
+            download(`${name}-セリフ.json`, exportReactionJson(u));
+            toast(`${u.name}のセリフ設定を書き出しました。`);
+        } catch (err) { toast('セリフを書き出せません：' + err.message); }
+        return;
+    }
+    if (a === 'import-reaction-json') {
+        if (!allowUnit(u)) { challengeInvalidMove(); return; }
+        reactionJsonImportTarget = u.id;
+        $('#reaction-json-import').click();
+        return;
+    }
     if (a === 'export-unit-tactics') {
         try {
             const filename = (u.name || 'unit').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').slice(0, 60) || 'unit';
@@ -2790,6 +2806,25 @@ $('#character-json-import').addEventListener('change', async (e) => {
     } finally {
         e.target.value = '';
     }
+});
+$('#reaction-json-import').addEventListener('change', async (e) => {
+    const f = e.target.files?.[0], targetId = reactionJsonImportTarget;
+    reactionJsonImportTarget = null;
+    if (!f) return;
+    try {
+        if (f.size > 300000) throw Error('セリフJSONは300KB以下にしてください。');
+        const payload = JSON.parse(await f.text());
+        const loaded = readReactionJson(payload);
+        const target = config.units.find(unit => unit.id === targetId);
+        if (!target || !allowUnit(target)) throw Error('読み込み先のキャラクターを編集できません。');
+        if (!await confirmInApp(`「${target.name}」のセリフ設定のみをJSONの内容で置き換えます。\n能力値・装備スキル・行動ルールは変更しません。\n続行しますか？`)) return;
+        target.reactionLines = loaded.lines;
+        reactionEditorSelections.delete(target);
+        sim = null; batch = null; frame = -1; selectedLogId = -1; errors = [];
+        save(); render();
+        toast(`セリフ設定を読み込みました。${loaded.adjusted ? '80文字を超える台詞は短縮しました。' : ''}`);
+    } catch (err) { toast('セリフJSONを読み込めません：' + err.message); }
+    finally { e.target.value = ''; }
 });
 $('#unit-tactics-import').addEventListener('change', async (e) => {
     const f = e.target.files?.[0];
