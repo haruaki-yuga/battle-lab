@@ -1,7 +1,7 @@
 import { REACTION_DEFINITIONS, MAX_REACTION_LENGTH, buildBattleReactions, battleReactionByLog, battleReactionAt, normalizedReactionLines } from './battle-reactions.js?v=1.18.21&dialogueui=1';
 import { exportReactionJson, readReactionJson } from './reaction-json-io.js?v=1.18.21&dialoguejson=1';
 import { confirmInApp } from './in-app-confirm.js?v=1.18.21&dialogueui=1';
-import { PAGE_GUIDES } from './page-guide.js?v=1.18.21&dialoguejson=1&reactions=2&logfirst=1&labels=0&seraramap=1';
+import { PAGE_GUIDES } from './page-guide.js?v=1.18.21&dialoguejson=1&reactions=2&logfirst=1&labels=0&seraramap=1&guidecopy=1';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
@@ -263,7 +263,7 @@ function guideTopicHtml(kind, topic) {
     return `<article class="guide-article" id="guide-article" tabindex="-1"><div class="guide-topic-header"><div class="eyebrow">${esc(guide.title)}</div><h3>${esc(topic.title)}</h3></div>`+
         (topic.intro ? `<p class="guide-intro">${esc(topic.intro)}</p>` : '')+
         `<ol class="guide-steps">${topic.steps.map(step=>`<li>${esc(step)}</li>`).join('')}</ol>`+
-        (topic.note ? `<p class="guide-note"><strong>覚えておきたいこと：</strong> ${esc(topic.note)}</p>` : '')+`</article>`;
+        (topic.note ? `<p class="guide-note"><strong>TIPS：</strong> ${esc(topic.note)}</p>` : '')+`</article>`;
 }
 function renderPageHelp(kind = page) {
     const guide=PAGE_GUIDES[kind] || PAGE_GUIDES.setup;
@@ -782,7 +782,7 @@ function reactionEditorPage(u) {
 function rulesPage() {
     const u=current();
     const tabs = `<div class="ai-settings-tabs" role="tablist" aria-label="AI設定の種類"><button type="button" role="tab" data-act="ai-tab:rules" aria-selected="${aiSubTab==='rules'}" class="${aiSubTab==='rules'?'active':''}">行動ルール</button><button type="button" role="tab" data-act="ai-tab:reactions" aria-selected="${aiSubTab==='reactions'}" class="${aiSubTab==='reactions'?'active':''}">演出（セリフ）</button></div>`;
-    if(aiSubTab==='reactions') return heading('REACTION SETTINGS', 'キャラAI設定（β版）', '戦闘に応じたセリフを設定します。命中・回避などの判定結果は変わりません。') + tabs + `<div class="toolbar-secondary tactics-toolbar">${unitSelect()}<div class="unit-tactics-buttons reaction-json-controls" role="group" aria-label="セリフJSON管理">${btn('セリフJSON書き出し','export-reaction-json','small')}${btn('セリフJSON読み込み','import-reaction-json','small')}</div></div>` + reactionEditorPage(u);
+    if(aiSubTab==='reactions') return heading('REACTION SETTINGS', 'キャラAI設定（β版）', '戦闘に応じたセリフを設定します。') + tabs + `<div class="toolbar-secondary tactics-toolbar">${unitSelect()}<div class="unit-tactics-buttons reaction-json-controls" role="group" aria-label="セリフJSON管理">${btn('セリフJSON書き出し','export-reaction-json','small')}${btn('セリフJSON読み込み','import-reaction-json','small')}</div></div>` + reactionEditorPage(u);
     return heading('ACTION RULE BUILDER', 'キャラAI設定（β版）', '公式アリーナの条件・行動・対象・位置取り定義（2026年11月16日取得）に準拠。上から順に判定します。', btn('AI設定追加', 'add-rule', 'primary', u.rules.length >= ARENA_MAX_RULES ? 'disabled title="公式の最大20件"' : '')) + tabs + (arenaImportReport && arenaImportReport.unitId === u.id ? `<section class="notice arena-import-report">\
 <strong>公式アリーナの戦術を読み込みました：${arenaImportReport.ruleCount}ルール</strong>\
 <p>未解決のスキル・ID指定を含むルールは無効化しています。内容を確認してから有効にしてください。</p>${arenaImportReport.warnings.length ? `<details>\
@@ -853,7 +853,7 @@ function officialBattlePanel() {
       <summary class="official-battle-summary"><strong>公式戦闘・訓練ログを取り込む</strong><span class="subtle">公開結果URL、または保存した公式JSONに対応</span></summary>
       <div class="panel-body">
         <div class="official-battle-controls"><label class="field"><span>公式闘技場・訓練メニューの結果URL</span><input id="official-battle-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://rev2.reversion.jp/arena/training/6/result/438580" value="${esc(officialArenaUrl)}"></label>${btn(officialArenaLoading ? '取得中…' : '取得して表示','load-official-battle','primary',officialArenaLoading?'disabled':'')}${btn('JSONから取込','import-official-json','small ghost')}${loaded?btn('表示を消す','clear-official-battle','small ghost'):''}</div>
-        <p id="official-battle-status" class="subtle" role="status" aria-live="polite">${esc(officialArenaStatusMessage || (loaded?'公式ログを表示しています。ローカルのシミュレーション結果には影響しません。':'公開されている対戦・訓練結果URLを入力してください。取得できない場合は保存した公式GraphQL応答JSONを読み込めます。'))}</p>
+        <p id="official-battle-status" class="subtle" role="status" aria-live="polite">${esc(officialArenaStatusMessage || (loaded?'公式ログを表示しています。ローカルのシミュレーション結果には影響しません。':'公開されている対戦・訓練結果URLを入力してください。'))}</p>
         ${loaded ? officialBattleContent(loaded) : ''}
       </div>
     </details>`;
