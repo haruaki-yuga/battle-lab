@@ -1,4 +1,4 @@
-import { clone, freshCondition, freshRule, freshSkill, uid, BS_NAMES, METRICS, TARGET_SORTS, validateConfig } from './model.js?v=1.18.21';
+import { clone, freshCondition, freshRule, freshSkill, uid, BS_NAMES, METRICS, TARGET_SORTS, validateConfig } from './model.js?v=1.18.21&dialogueui=1';
 import { displayedSkillName } from './skill-dedup.js?v=1.18.19';
 const normalize = text => String(text || '').replace(/\s+/g, '').trim();
 const actionTable = [

@@ -1,4 +1,4 @@
-import { arrangeInitialPositions } from './model.js?v=1.18.21';
+import { arrangeInitialPositions } from './model.js?v=1.18.21&dialogueui=1';
 
 /** Delete a character and prevent stale AI ID references from targeting a different character. */
 export function deleteUnitSafely(config, id) {

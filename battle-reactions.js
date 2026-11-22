@@ -1,5 +1,6 @@
 // Local battle-only dialogue. Never consumes the engine's RNG or changes battle outcomes.
 // Character settings contain only the text; trigger chances remain fixed game rules.
+export const MAX_REACTION_LENGTH = 80;
 const def = (key, label, chance, group) => Object.freeze({ key, label, chance, group });
 const entries = [
   def('start','試合開始前（挨拶）',100,'試合開始・終了'),
@@ -32,15 +33,15 @@ const entries = [
 export const REACTION_DEFINITIONS = Object.freeze(entries);
 const REACTION_CACHE=new WeakMap();
 const DEFINITIONS = new Map(entries.map(item => [item.key,item]));
-export function validReactionLines(lines) {
+export function validReactionLines(lines, {maxLength = MAX_REACTION_LENGTH} = {}) {
   return lines === undefined || (!!lines && typeof lines==='object' && !Array.isArray(lines) &&
     Object.entries(lines).length<=REACTION_DEFINITIONS.length &&
-    Object.entries(lines).every(([key,text])=> DEFINITIONS.has(key) && typeof text==='string' && text.length<=500));
+    Object.entries(lines).every(([key,text])=> DEFINITIONS.has(key) && typeof text==='string' && text.length<=maxLength));
 }
 export function normalizedReactionLines(lines) {
   if(!lines || typeof lines!=='object' || Array.isArray(lines))return {};
   return Object.fromEntries(Object.entries(lines).filter(([key,text])=>DEFINITIONS.has(key) && typeof text==='string' && text.trim())
-    .map(([key,text])=>[key,text.slice(0,500)]));
+    .map(([key,text])=>[key,text.slice(0,MAX_REACTION_LENGTH)]));
 }
 // A stable uniform draw, independent of the Battle engine's random generator.
 function draw(seed,unitId,logId,key,salt='') {

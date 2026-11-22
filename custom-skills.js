@@ -1,5 +1,5 @@
 import { CATALOG } from './catalog.js';
-import { clone, uid } from './model.js?v=1.18.21';
+import { clone, uid } from './model.js?v=1.18.21&dialogueui=1';
 import { normalizeLegacyBarrierConfig, normalizeLegacyBarrierSkill } from './barrier-rules.js';
 // WIKI originals are protected. The nine historical demo skills are removed on migration.
 const WIKI_IDS = new Set(CATALOG.map(skill => skill.id));

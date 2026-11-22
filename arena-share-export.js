@@ -1,6 +1,6 @@
 // Convert a Battle Lab unit's selected tactics to the official Arena EncodeArenaSettings input.
 // Fail closed on non-representable settings; never silently weaken, skip, or substitute a rule.
-import { ARENA_MAX_RULES, ARENA_MAX_CONDITIONS, targetCriteriaForRule } from './model.js?v=1.18.21';
+import { ARENA_MAX_RULES, ARENA_MAX_CONDITIONS, targetCriteriaForRule } from './model.js?v=1.18.21&dialogueui=1';
 import {
   OFFICIAL_AI, OFFICIAL_SUBJECT_KEYS, OFFICIAL_TARGET_KEYS,
   OFFICIAL_ACTION_KEYS, OFFICIAL_MOVE_KEYS, OFFICIAL_METRIC_KEYS,

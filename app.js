@@ -1,20 +1,20 @@
-import { REACTION_DEFINITIONS, buildBattleReactions, battleReactionByLog, battleReactionAt, normalizedReactionLines } from './battle-reactions.js?v=1.18.21';
-import { confirmInApp } from './in-app-confirm.js?v=1.18.21';
+import { REACTION_DEFINITIONS, MAX_REACTION_LENGTH, buildBattleReactions, battleReactionByLog, battleReactionAt, normalizedReactionLines } from './battle-reactions.js?v=1.18.21&dialogueui=1';
+import { confirmInApp } from './in-app-confirm.js?v=1.18.21&dialogueui=1';
 import { PAGE_GUIDES } from './page-guide.js?v=1.18.21&reactions=2&logfirst=1&labels=0&seraramap=1';
 import { readUiState, writeUiState, readReplayState, writeReplayState } from './view-state.js?v=1.18.4';
 import { conditionalPassiveDescription, conditionalPassiveState, passiveStatusPreview, conditionalPassivePreviewOptions, validConditionalPassives, CONDITIONAL_SUPPORTED_EFFECT_KEYS } from './conditional-passives.js?v=1.18.4&edit=1';
 import { CONDITIONAL_PASSIVE_TEMPLATES, CONDITIONAL_KIND_OPTIONS, makePresetPassive, makeCustomPassive, applyPassiveEditor, isFixedConditionalPassive } from './passive-editor.js?v=1.18.4&edit=1';
 import { deleteUnitSafely } from './unit-management.js?v=1.18.19';
-import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.21';
+import { normalizeMoveModes, STAT_LABELS, SUBJECTS, METRICS, ACTIONS, RANGES, SCOPES, SKILL_KINDS, EFFECTS, BOOL_EFFECTS, BS_NAMES, BS_GROUPS, freshCondition, freshTargetCondition, freshTargetCriterion, targetCriteriaForRule, ensureTargetCriteria, TARGET_SORTS, freshRule, freshSkill, freshUnit, sampleConfig, arrangeInitialPositions, allocateDefaultUnitName, uid, clone, validateConfig, ARENA_SUBJECT_CHOICES, ARENA_ACTION_CHOICES, ARENA_CONDITION_SPECS, ARENA_METRIC_ROWS, ARENA_SORT_ROWS, ARENA_SUBJECT_ROWS, ARENA_MAX_RULES, ARENA_MAX_CONDITIONS } from './model.js?v=1.18.21&dialogueui=1';
 import { OFFICIAL_MOVE_ROWS } from './official-ai-schema.js?v=1.18';
 import { isProtectedSkill, isReadOnlySkill, isCustomSkill, copyAsCustom, saveSkillDraft, deleteCustomSkill, migrateLegacyDemoSkills } from './custom-skills.js?v=1.18.19';
-import { Battle, clamp } from './engine.js?v=1.18.21';
+import { Battle, clamp } from './engine.js?v=1.18.21&dialogueui=1';
 import { combatLogTypeLabel, bsStatusLabel } from './combat-log-format.js';
 import { teamBattleStats } from './battle-summary.js';
 import { renderCombatStatistics } from './battle-statistics-ui.js?v=1.18.19';
 import { loadOfficialArenaViaWorker, parseOfficialArenaResult, officialArenaResultLocation, officialArenaStatistics, officialArenaDisplayGroups, officialArenaLogTypeLabel } from './official-arena-log.js?v=1.18.19';
-import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js?v=1.18.21';
-import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.21';
+import { exportUnitTactics, importUnitTactics } from './unit-tactics-io.js?v=1.18.21&dialogueui=1';
+import { exportUnitCharacter, importUnitCharacter } from './unit-character-io.js?v=1.18.21&dialogueui=1';
 import { CHARACTER_SLOT_COUNT, readCharacterSlots, saveCharacterSlot, clearCharacterSlot, loadCharacterSlot } from './character-slots.js?v=1.18.19';
 import { parseArenaHtml, importArenaTactics } from './arena-html-import.js?v=1.18.19';
 import { extractSharedArenaActions, convertArenaSharedActions, validateArenaShareCode } from './arena-share-import.js?v=1.18.19';
@@ -25,7 +25,7 @@ import { normalizeSettings } from './run-settings.js';
 import { deduplicateImportedSkills, displayedSkillName, displayedSkillText, isWikiSkill } from './skill-dedup.js?v=1.18.19';
 import { MAP_ZOOM_STEPS, mapRelationPairs, mapViewport } from './map-relations.js';
 import { replayActorId, groupReplayUnitsByTeam } from './replay-view.js';
-import { createCharacterImporter } from './character-ui.js?v=1.18.21';
+import { createCharacterImporter } from './character-ui.js?v=1.18.21&dialogueui=1';
 import { skillMatchesKind } from './skill-kind-filter.js';
 import { cleanWebConfiguration } from './web-configuration.js';
 import { ELEMENT_KEYS, emptyElement, elementLevel } from './element-bonus.js?v=1.18';
@@ -120,6 +120,8 @@ migrateLegacyDemoSkills(config);
 // Upgrade only the original blank default unit names in existing saved formations.
 // All other user-edited names remain unchanged.
 for (const unit of config.units) {
+    // Migrate older (up to 500 character) dialogue without breaking saved teams.
+    unit.reactionLines = normalizedReactionLines(unit.reactionLines);
     if (unit.team === 'A' && unit.id === 'a1' && unit.name === 'チームAのキャラクター')
         unit.name = 'チームAのキャラクター1';
     if (unit.team === 'B' && unit.id === 'b1' && ['チームBのキャラクター', 'トリックスター'].includes(unit.name))
@@ -142,6 +144,8 @@ let shareImportActions = null, shareImportTargetId = null, shareImportBusy = fal
 let shareExportTargetId = null, shareExportBusy = false;
 let passivePreviewTurn = 0, passivePreviewHp = 'start', slotsExpanded = false, selectedSlotIndex = 0;
 let aiSubTab = 'rules';
+// Empty added inputs are UI-only until text is entered. Weak keys cannot leak to another imported roster.
+const reactionEditorSelections = new WeakMap();
 let guideTopicId = ''; // Within each page, keep the selected manual topic until navigation
 const savedUi = readUiState(typeof sessionStorage === 'undefined' ? null : sessionStorage, config.units.map(u => u.id));
 let page = savedUi.page, selected = savedUi.selected, skillSearch = savedUi.skillSearch, kindFilter = savedUi.kindFilter, skillFilter = savedUi.skillFilter, skillPage = savedUi.skillPage, sim = readReplayState(typeof sessionStorage === 'undefined' ? null : sessionStorage, Battle), frame = savedUi.frame, logType = savedUi.logType, logTurn = savedUi.logTurn, logSearch = savedUi.logSearch, worker = null, batch = null, batchCount = 100, busy = false, modalDraft = null, modalMode = 'skill', errors = [], saveFailed = false;
@@ -748,10 +752,31 @@ function targetConditionRow(c, ri, ci) {
     const inputs = filter ? `${ARENA_CONDITION_SPECS[c.metric]?.has_bs_list ? bsConditionChecklist(c, attr) : ''}${officialRangeInputs(c, attr, '対象条件')}${select({false: 'である者', true: 'ではない者'}, String(!!c.not), attr('not'))}` : '';
     return `<div class="condition-row target-condition-row"><span class="join">${filter ? '絞込' : '優先'}</span>${choices}${inputs}${btn('×', `remove-target-condition:${ri}:${ci}`, 'small ghost remove', 'aria-label="対象選択の条件を削除"')}</div>`;
 }
+function editableReactionKeys(u) {
+    let keys = reactionEditorSelections.get(u);
+    if (!keys) { keys = new Set(); reactionEditorSelections.set(u,keys); }
+    for (const def of REACTION_DEFINITIONS) {
+        if (typeof u.reactionLines?.[def.key] === 'string' && u.reactionLines[def.key].trim()) keys.add(def.key);
+    }
+    return keys;
+}
 function reactionEditorPage(u) {
-    const groups = [...new Set(REACTION_DEFINITIONS.map(d=>d.group))];
-    const values = u.reactionLines || {};
-    return `<div class="reactions-edit-intro"><strong>${esc(u.name)}の演出・セリフ</strong><p>各条件で発動する台詞を入力してください。空欄は表示されません。表示確率は固定です。A/Bの被ダメージ台詞は同じ段階から半々で選びます。最も高い該当ダメージ段階を優先します。</p></div><div class="reactions-editor">${groups.map(group => `<section class="reaction-editor-group"><h2>${esc(group)}</h2><div class="reaction-editor-grid">${REACTION_DEFINITIONS.filter(d=>d.group===group).map(d=>`<label class="reaction-editor-item"><span class="reaction-editor-label">${esc(d.label)} <small>表示 ${d.chance}%</small></span><textarea data-reaction-key="${d.key}" rows="2" maxlength="500" placeholder="セリフ未設定">${esc(values[d.key]||'')}</textarea></label>`).join('')}</div></section>`).join('')}</div>`;
+    const active=editableReactionKeys(u);
+    const remaining=REACTION_DEFINITIONS.filter(d=>!active.has(d.key));
+    const groups=[...new Set(REACTION_DEFINITIONS.map(d=>d.group))];
+    const picker=`<div class="reaction-add-row"><label for="reaction-add-select">演出を追加</label>
+       <select id="reaction-add-select" data-add-reaction aria-label="追加する演出を選択" ${remaining.length?'':'disabled'}>
+         <option value="" selected>${remaining.length?'追加する演出を選択':'すべての演出を追加済み'}</option>
+         ${groups.map(g=>{const entries=remaining.filter(d=>d.group===g);return entries.length?`<optgroup label="${esc(g)}">${entries.map(d=>`<option value="${d.key}">${esc(d.label)}（${d.chance}%）</option>`).join('')}</optgroup>`:'';}).join('')}
+       </select></div>`;
+    const rows=groups.map(group=>{
+        const defs=REACTION_DEFINITIONS.filter(d=>d.group===group && active.has(d.key));
+        return defs.length?`<section class="reaction-editor-group"><h2>${esc(group)}</h2><div class="reaction-editor-grid">${defs.map(d=>`
+          <div class="reaction-editor-item"><label for="reaction-line-${d.key}" class="reaction-editor-label">${esc(d.label)} <small>表示 ${d.chance}%</small></label>
+          <div class="reaction-editor-input-row"><textarea id="reaction-line-${d.key}" data-reaction-key="${d.key}" rows="1" maxlength="${MAX_REACTION_LENGTH}" placeholder="80文字以内">${esc(u.reactionLines?.[d.key]||'')}</textarea>
+          ${btn('削除',`remove-reaction:${d.key}`,'small ghost','aria-label="'+esc(d.label)+'を削除"')}</div></div>`).join('')}</div></section>`:'';
+    }).join('');
+    return picker+`<div class="reactions-editor">${rows}</div>`;
 }
 function rulesPage() {
     const u=current();
@@ -1441,7 +1466,7 @@ function startBatch() {
     const n = Number($('#batch-count')?.value || batchCount);
     batchCount = n;
     batch = null;
-    worker = new Worker('./worker.js?v=1.18.21', { type: 'module' });
+    worker = new Worker('./worker.js?v=1.18.21&dialogueui=1', { type: 'module' });
     worker.onmessage = e => {
         if (e.data.error) {
             errors = [e.data.error];
@@ -1636,6 +1661,14 @@ async function onAction(act) {
     if (a === 'ai-tab') {
         if(['rules','reactions'].includes(arg)){aiSubTab=arg;render();}
         return;
+    }
+    if (a === 'remove-reaction') {
+        if (!REACTION_DEFINITIONS.some(d=>d.key===arg))return;
+        editableReactionKeys(u).delete(arg);
+        if (u.reactionLines && Object.hasOwn(u.reactionLines,arg)) {
+            const values={...u.reactionLines};delete values[arg];u.reactionLines=values;save();
+        }
+        render();return;
     }
     if (a === 'open-challenges') {
         const choices=CHALLENGES.map(c=>`<section class="challenge-option">${challengePortrait(c, 'challenge-option-portrait')}<div class="challenge-option-details"><h3>${esc(c.title)} <span class="challenge-level">${esc(c.difficulty)}</span></h3><p>参加上限：チームA ${c.teamALimit}人 ／ 敵：${esc(c.enemyName)}</p><p>敵の能力値・AI設定は公開されず、変更もできません。</p></div>${btn(challenge()?.id===c.id?'挑戦中':'チャレンジ開始',`challenge-start:${c.id}`,'primary',challenge()?'disabled':'')}</section>`).join('');
@@ -2253,11 +2286,21 @@ document.addEventListener('toggle', e => {
 }, true);
 document.addEventListener('change', e => {
     const el = e.target, u = current();
+    if (el.matches('[data-add-reaction]')) {
+        const key=el.value;
+        if (!REACTION_DEFINITIONS.some(d=>d.key===key))return;
+        const selected=editableReactionKeys(u);
+        if (selected.has(key))return;
+        selected.add(key);render();
+        document.querySelector(`[data-reaction-key="${key}"]`)?.focus();
+        return;
+    }
     if (el.matches('[data-reaction-key]')) {
         const key=el.dataset.reactionKey;
         if (!REACTION_DEFINITIONS.some(d=>d.key===key))return;
         const next={...(u.reactionLines||{})};
-        if(el.value.trim())next[key]=el.value.slice(0,500);else delete next[key];
+        if (el.value.length > MAX_REACTION_LENGTH) el.value=el.value.slice(0,MAX_REACTION_LENGTH);
+        if(el.value.trim())next[key]=el.value;else delete next[key];
         u.reactionLines=next;save();return;
     }
     if (el.matches('[data-guide-topic-select]')) {
@@ -2668,7 +2711,8 @@ document.addEventListener('input', e => {
         const unit=current(),key=el.dataset.reactionKey;
         if(!REACTION_DEFINITIONS.some(d=>d.key===key))return;
         const next={...(unit.reactionLines||{})};
-        if(el.value.trim())next[key]=el.value.slice(0,500);else delete next[key];
+        if (el.value.length > MAX_REACTION_LENGTH) el.value=el.value.slice(0,MAX_REACTION_LENGTH);
+        if(el.value.trim())next[key]=el.value;else delete next[key];
         unit.reactionLines=next;save();return;
     }
     if (el.id === 'official-frame-range') {

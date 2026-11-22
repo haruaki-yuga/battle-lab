@@ -1,4 +1,4 @@
-import { pruneOrphanOfficialSkillIds } from './model.js?v=1.18.21';
+import { pruneOrphanOfficialSkillIds } from './model.js?v=1.18.21&dialogueui=1';
 /**
  * Combat-equivalent active skills share a global skill ID even when the public
  * character page uses a specialized display name. Names are unit-scoped, not
